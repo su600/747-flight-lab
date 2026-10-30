@@ -1,0 +1,9 @@
+node_modules/
+output/
+.playwright-cli/
+.claude/
+tools/*
+!tools/check-flight.mjs
+.DS_Store
+Thumbs.db
+npm-debug.log*

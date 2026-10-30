@@ -1,0 +1,175 @@
+
+:root{--ink:#203d4c;--muted:#72848a;--orange:#d66b3e;--line:rgba(49,78,88,.12);--paper:rgba(249,251,247,.9);font-family:Inter,"Segoe UI","Microsoft YaHei",sans-serif;color:var(--ink);font-synthesis:none}*{box-sizing:border-box}body{margin:0;overflow:hidden;background:#c6d9e1}button,input,select{font:inherit}button{cursor:pointer;color:inherit;border:0;background:none}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #dc7c4e;outline-offset:4px}button{transition:background .18s,transform .18s,color .18s}button:hover{background:rgba(34,64,78,.07)}button:active{transform:translateY(1px)}[hidden]{display:none!important}.glass{background:rgba(249,251,247,.95);border:1px solid rgba(255,255,255,.7);box-shadow:0 8px 40px rgba(32,62,70,.06)}#viewport{position:fixed;inset:0;touch-action:none}#viewport canvas{display:block;width:100%;height:100%}header{position:fixed;left:28px;right:28px;top:22px;display:flex;align-items:center;justify-content:space-between;z-index:10}.brand{display:flex;gap:13px;align-items:center;text-decoration:none;color:var(--ink);font-size:15px;font-weight:650;letter-spacing:.03em}.brand-mark{font-weight:900;letter-spacing:-3px;font-size:35px;border-right:1px solid #81979c;padding-right:15px;line-height:1}.brand-mark span{color:var(--orange);font-size:23px;margin-left:3px}.brand small{display:block;font-size:9px;font-weight:550;letter-spacing:.15em;margin-top:6px}.airport-status{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:.07em;background:rgba(247,250,246,.75);padding:10px 16px;border-radius:30px}.airport-status span{color:#7c8c91;margin-left:10px;font-size:10px}.airport-status i,.live-dot,.status-pill i{width:6px;height:6px;background:#639886;border-radius:50%;display:inline-block}.header-actions{display:flex;gap:7px}.header-actions button{background:rgba(250,252,247,.78);width:34px;height:34px;border-radius:50%;font-size:17px}.mission{position:fixed;top:108px;left:28px;width:265px;padding:23px 19px 0;border-radius:17px;z-index:3}.eyebrow{font-size:9px;font-weight:650;letter-spacing:.15em;color:#7d9298;display:flex;align-items:center;gap:7px}h1{font-size:23px;letter-spacing:-.07em;margin:15px 0 10px;font-weight:650}p{font-size:12px;line-height:1.9}.intro{color:var(--muted);margin:0 0 18px}.mission-btn{display:flex;align-items:center;text-align:left;gap:12px;width:100%;padding:14px 4px;border-top:1px solid var(--line)}.mission-icon{display:grid;place-items:center;width:34px;height:34px;background:#e8eeea;border-radius:10px;font-size:24px;color:#527767}.mission-btn b{display:block;font-size:13px;font-weight:600}.mission-btn small{display:block;font-size:10px;margin-top:6px;color:#82918f}.arrow{margin-left:auto;color:#9dabaa;font-size:16px}.mission-btn.active .mission-icon{background:var(--orange);color:white}.mission-btn.active b{color:var(--orange)}.inspect-btn{display:flex;gap:7px;align-items:center;font-size:11px;padding:12px 6px;width:100%;border-top:1px solid var(--line)}.inspect-btn span:last-child{font-size:9px;color:#8b9794;margin-left:auto}.inspect-btn.active{color:var(--orange)}.lesson{margin-top:12px;background:#eaf0e9;border-radius:10px;padding:12px}.lesson-no{font-size:9px;letter-spacing:.1em;color:#688370;font-weight:700}.lesson p{margin:7px 0 0;font-size:11px;color:#667e73;line-height:1.85}.mission-footer{display:flex;align-items:center;margin:10px -19px 0;padding:9px 17px;border-top:1px solid var(--line);font-size:10px;gap:4px}.mission-footer span{margin-right:auto;color:#718883}.mission-footer button{font-size:12px;border-radius:5px;padding:5px 8px}.aircraft-caption{position:fixed;left:calc(50% - 105px);top:106px;pointer-events:none;text-shadow:0 1px 10px #dae5e680}.aircraft-caption>span{font-size:9px;letter-spacing:.27em;color:#68818d}.aircraft-caption strong{display:block;font-weight:300;font-size:25px;letter-spacing:.07em;margin:7px 0 10px}.aircraft-caption strong b{font-weight:650}.aircraft-caption div{font-size:10px;display:flex;align-items:center;gap:8px;color:#6a828a}.aircraft-caption i{width:6px;height:6px;border-radius:50%;background:#d77046}.caption-divider{margin:0 4px;color:#a2b2b2}.right-tools{position:fixed;right:28px;top:126px;display:flex;flex-direction:column;gap:11px;z-index:7}.right-tools button{width:53px;height:57px;background:rgba(250,252,248,.86);border:1px solid #fff9;border-radius:12px;font-size:10px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center}.right-tools button>span{font-size:22px;line-height:1}.right-tools button.active{background:#294a59;color:white}#drawer{position:fixed;right:94px;top:107px;width:300px;max-height:calc(100% - 305px);border-radius:15px;z-index:6;display:flex;flex-direction:column;overflow:hidden}.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:19px 20px 12px;border-bottom:1px solid var(--line)}.drawer-head .eyebrow{font-size:8px}.drawer-head h2{font-size:19px;font-weight:600;margin:8px 0 0}.drawer-head button{font-size:25px;color:#8a9a99}.drawer-content{overflow:auto;padding:8px 20px 20px;scrollbar-width:thin}.hint{font-size:11px;color:#7b8b8f;line-height:1.9}.part-row{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid var(--line)}.part-name{text-align:left;padding:0;font-size:12px;font-weight:550}.part-name small{display:block;font-size:9px;color:#8a999a;margin-top:5px;font-weight:400}.toggle{padding:7px 10px;background:#e7ece8;border-radius:6px;font-size:10px}.toggle.active{background:#e1ece3;color:#518263}.part-control{padding:13px 0 7px;border-bottom:1px solid var(--line)}.part-control>div:first-child{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}.part-control output{color:#d56e48;font-size:12px}input[type=range]{-webkit-appearance:none;appearance:none;background:#d4ded8;height:4px;width:100%;border-radius:5px;cursor:pointer;margin:12px 0}input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;background:#d77249;border:3px solid #fbfcf6;border-radius:50%;box-shadow:0 0 0 1px #c3cfc5}.range-labels{display:flex;justify-content:space-between;font-size:8px;color:#91a099}.part-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:15px}.part-grid button{border:1px solid #dce4dc;background:#f4f6ef;padding:10px 9px;border-radius:8px;font-size:11px;text-align:left}.part-grid button span{display:block;font-size:9px;color:#91a097;margin-top:6px}.part-grid button.active{border-color:#7eaa8c;background:#e8f0e7}.wide-btn{display:block;width:100%;border:1px solid #cedbd1;border-radius:7px;padding:10px;margin-top:14px;font-size:11px}.livery-card{display:flex;align-items:center;gap:13px;border:1px solid #dde4dd;border-radius:10px;padding:13px;width:100%;text-align:left;margin:10px 0;background:#fbfcf7}.livery-card.active{border-color:#d77650;background:#fff7ed}.livery-swatch{width:47px;height:43px;display:grid;place-items:center;color:white;font-size:18px;clip-path:polygon(27% 0,100% 0,100% 100%,0 100%);font-weight:700;font-style:italic}.livery-card b{display:block;font-size:12px;font-weight:550}.livery-card small{display:block;font-size:8px;color:#8a999d;margin-top:5px;letter-spacing:.04em}.livery-card .check{margin-left:auto;color:#bc6b4a}.fine-print{font-size:9px;color:#8b9a9b}.time-options{display:flex;gap:8px}.time-options button{flex:1;border:1px solid #dce3db;padding:16px 0;border-radius:9px;font-size:24px}.time-options button span{display:block;font-size:9px;margin-top:8px}.time-options .active{background:#e4eee2;border-color:#a5bba2}h3{font-size:12px;font-weight:600;margin:20px 0 12px}.setting{display:flex;align-items:center;text-align:left;justify-content:space-between;padding:10px 0;width:100%;font-size:12px}.setting small{font-size:9px;display:block;color:#8b9b96;margin-top:6px}.setting i{width:30px;height:16px;border-radius:15px;background:#b7c2bc;position:relative}.setting i:before{content:'';position:absolute;left:3px;top:3px;border-radius:50%;width:10px;height:10px;background:white}.setting.active i{background:#789b79}.setting.active i:before{left:17px}select{width:100%;padding:10px;font-size:11px;border:1px solid #cbd7cd;background:#f5f8ef;border-radius:6px;color:#567064}.about-number{font-size:60px;letter-spacing:-.08em;font-weight:750;margin:12px 0;color:#2b5261}.about-number span{font-size:25px;font-weight:400;letter-spacing:-.03em}.spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px 12px;background:#eaf0e7;padding:17px;border-radius:9px;margin-top:18px}.spec-grid strong{display:block;font-size:23px;font-weight:550}.spec-grid strong small{font-size:10px;font-weight:400}.spec-grid span{font-size:9px;color:#7a8f81;display:block;margin-top:5px}.source-link{font-size:11px;color:#b76a47;display:block;margin-top:20px}.camera-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:202px;display:flex;align-items:center;border-radius:30px;padding:5px;gap:1px;z-index:5}.camera-bar>span{font-size:9px;color:#9ba6a1;padding:0 9px}.camera-bar button{font-size:10px;padding:9px 13px;border-radius:22px;white-space:nowrap}.camera-bar button.active{background:#2c4c59;color:#fff}.status-pill{position:fixed;bottom:159px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;border-radius:20px;padding:8px 14px;font-size:10px;white-space:nowrap;z-index:4}.status-pill button{font-size:10px;color:#ba6b47;border-left:1px solid #d9ded6;padding-left:10px}.telemetry{position:fixed;left:28px;right:28px;bottom:45px;height:102px;border-radius:13px;display:flex;align-items:center;gap:0;padding:12px 14px;z-index:5}.attitude-wrap{width:110px;flex-shrink:0;text-align:center;padding-right:13px;position:relative}.attitude-wrap canvas{width:87px;height:66px;border-radius:8px;background:#7595a3}.attitude-wrap>span{position:absolute;left:37px;bottom:4px;font-size:7px;color:#fff9}.metric{border-left:1px solid var(--line);padding:0 23px;min-width:160px}.metric>span{display:block;font-size:10px;color:#72868b}.metric>span small{font-size:7px;letter-spacing:.06em;margin-left:5px;color:#a6b2af}.metric strong{font-size:30px;line-height:1.45;font-weight:550;font-variant-numeric:tabular-nums;letter-spacing:-.04em}.metric strong small{font-size:11px;font-weight:400;color:#849796;letter-spacing:0}.metric em{font-size:8px;color:#9ba8a2;display:block;font-style:normal;letter-spacing:.04em}.throttle-control{border-left:1px solid var(--line);padding:4px 25px;width:240px;min-width:170px;flex:1}.throttle-control>div:first-child{display:flex;justify-content:space-between;font-size:10px;color:#6c8588}.throttle-control output{color:#c46c47;font-weight:600}.throttle-control input{margin:15px 0 12px}.engine-bars{display:flex;gap:4px;align-items:center}.engine-bars i{width:14px;height:5px;background:#a2b4a1;border-radius:2px}.engine-bars span{font-size:7px;margin-left:5px;letter-spacing:.1em;color:#95a497}.quick-controls{display:grid;grid-template-columns:1fr;gap:4px;min-width:138px;border-left:1px solid var(--line);padding-left:18px}.quick-controls button{font-size:9px;display:flex;justify-content:space-between;align-items:center;padding:4px 8px;border-radius:4px}.quick-controls button span{font-size:8px;color:#899c8f}.quick-controls button.active{background:#e6edde;color:#65805b}.key-hint{position:fixed;bottom:17px;left:35px;right:35px;display:flex;gap:20px;font-size:9px;color:#526d71;z-index:5}.key-hint span{display:flex;align-items:center;gap:3px}.key-hint kbd{background:#f5f7f0c9;padding:2px 5px;font-size:8px;border-radius:3px;min-width:16px;text-align:center;color:#758b88}.drag-hint{margin-left:auto;color:#6f8989}#toast{position:fixed;top:80px;left:50%;transform:translateX(-50%);padding:12px 22px;background:#294a59ee;color:white;font-size:12px;border-radius:9px;z-index:50;max-width:80vw}dialog{border:1px solid white;border-radius:20px;padding:35px;background:#f8faf4;color:var(--ink);max-width:560px;width:90vw;box-shadow:0 30px 100px #152d3866}dialog::backdrop{background:#1d38435c}dialog h2{font-size:24px;font-weight:600;margin:15px 0}.dialog-close{position:absolute;right:22px;top:20px;font-size:23px}.help-grid{display:grid;grid-template-columns:1fr 1fr;gap:17px;margin:24px 0}.help-grid>div{display:flex;flex-direction:column;gap:8px;font-size:11px}.help-grid kbd{color:#cf7048;font-family:inherit;font-weight:600}.primary-btn{background:#d8754e;color:#fff;border-radius:8px;padding:13px 20px;font-size:12px;margin-top:14px}.primary-btn:hover{background:#bd613d}#loading{position:fixed;inset:0;background:#eff3ed;z-index:100;display:flex;flex-direction:column;justify-content:center;align-items:center}.loading-number{font-size:110px;font-weight:800;letter-spacing:-.09em;color:#294e5c}.loading-line{width:180px;height:3px;background:#d9e2d7;margin:28px 0 10px;overflow:hidden}.loading-line i{display:block;width:60%;height:100%;background:#d97b50;animation:load 1.2s infinite alternate}.loading-line h2{font-weight:500}#loading h2{font-size:18px;font-weight:500}#loading p{font-size:12px;color:#7d938b}@keyframes load{to{transform:translateX(100%)}}#cockpitOverlay{position:fixed;inset:0;pointer-events:none;z-index:2}.windshield-bar{position:absolute;top:-10%;height:90%;width:18px;background:linear-gradient(90deg,#1c2930,#52616a,#26343a);box-shadow:0 0 4px #0005}.windshield-bar.left{left:31%;transform:rotate(19deg)}.windshield-bar.right{right:11%;transform:rotate(-20deg)}.cockpit-glareshield{position:absolute;bottom:0;height:220px;width:100%;background:linear-gradient(#172930,#283a41);border-radius:45% 40% 0 0;box-shadow:0 -12px 0 #33474d}.cockpit-label{position:absolute;bottom:228px;left:43%;color:#fff9;font-size:9px;letter-spacing:.15em}.cockpit-label span{display:block;font-size:7px;margin-top:6px;color:#fff5}#touchControls{display:none}
+@media(min-width:1600px){.mission{top:122px;width:285px;padding:26px 22px 0}.mission-btn{padding:18px 4px}.mission-footer{margin-left:-22px;margin-right:-22px}.aircraft-caption{top:120px}.telemetry{height:112px;bottom:49px}.camera-bar{bottom:223px}.status-pill{bottom:176px}.metric{min-width:200px}.throttle-control{max-width:none}.lesson p{font-size:12px}}
+@media(max-height:760px){.mission{top:88px;padding-top:17px}.intro{display:none}.mission-btn{padding:10px 4px}.lesson{margin-top:6px;padding:9px}.lesson p{font-size:10px}.aircraft-caption{top:90px}#drawer{top:88px;max-height:calc(100% - 270px)}.telemetry{height:88px;bottom:36px}.camera-bar{bottom:173px}.status-pill{bottom:134px}.key-hint{bottom:10px}.metric strong{font-size:26px}}
+@media(max-width:1100px){.mission{left:18px;width:230px;padding:18px 15px 0}.mission-footer{margin-left:-15px;margin-right:-15px}.mission h1{font-size:20px}.telemetry{left:18px;right:18px;padding:10px}.metric{min-width:130px;padding:0 15px}.heading-metric{display:none}.key-hint{gap:12px}.key-hint .drag-hint{display:none}.right-tools{right:18px}#drawer{right:80px}.aircraft-caption{left:42%}.airport-status{display:none}}
+@media(max-width:760px){header{left:16px;right:16px;top:15px}.brand{font-size:12px;gap:9px}.brand-mark{font-size:28px;padding-right:10px}.brand small{font-size:7px}.header-actions button{width:29px;height:29px}.mission{top:76px;left:12px;width:176px;padding:12px 10px 0;border-radius:12px}.mission .eyebrow,.mission h1,.intro,.lesson,.mission-btn small,.mission-btn .arrow,.inspect-btn span:last-child{display:none}.mission-btn{padding:9px 0;border-top:0;gap:9px}.mission-icon{width:28px;height:28px;font-size:20px}.mission-btn b{font-size:12px}.inspect-btn{padding:10px 3px}.mission-footer{margin:0 -10px;padding:6px 9px}.aircraft-caption{top:80px;left:auto;right:15px;text-align:right}.aircraft-caption>span{font-size:7px}.aircraft-caption strong{font-size:18px}.aircraft-caption div{font-size:8px;justify-content:flex-end;max-width:170px;line-height:1.6}.aircraft-caption .caption-divider,.aircraft-caption div>i{display:none}.right-tools{right:12px;top:157px;gap:7px}.right-tools button{width:43px;height:46px;border-radius:10px;font-size:9px}.right-tools button>span{font-size:19px}#drawer{top:76px;right:64px;width:min(300px,calc(100vw - 77px));max-height:calc(100% - 260px)}.telemetry{left:10px;right:10px;bottom:14px;height:94px;padding:8px}.attitude-wrap{width:70px;padding-right:7px}.attitude-wrap canvas{width:60px;height:50px}.attitude-wrap>span{display:none}.metric{min-width:78px;padding:0 9px}.metric>span{font-size:8px}.metric>span small{display:none}.metric strong{font-size:24px}.metric strong small{font-size:8px}.metric em{font-size:6px}.throttle-control{min-width:90px;width:auto;padding:0 10px}.throttle-control>div:first-child{font-size:8px}.engine-bars{gap:2px}.engine-bars i{width:8px}.engine-bars span{display:none}.quick-controls{display:none}.key-hint{display:none}.status-pill{bottom:121px;font-size:9px;max-width:94vw;white-space:normal;width:max-content}.camera-bar{bottom:162px;padding:3px;max-width:94vw}.camera-bar>span{display:none}.camera-bar button{font-size:9px;padding:8px 10px}#touchControls{position:fixed;bottom:211px;right:12px;display:flex;align-items:center;gap:5px;z-index:5}#touchControls>div{display:flex;flex-direction:column;gap:5px}#touchControls button{width:40px;height:38px;border:1px solid #fffb;border-radius:10px;background:#f3f6ecc9;color:#3b5960;font-size:17px;touch-action:none;user-select:none}#touchControls button[data-hold=brake]{font-size:10px;width:35px}.cockpit-label{left:40%;bottom:210px}.help-grid{gap:12px}dialog{padding:25px}.help-grid span{font-size:10px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* The throttle and stopping controls are primary physical inputs, so keep their
+   scales, hit areas and state labels distinct from navigation actions. */
+.throttle-control{width:160px;min-width:150px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:4px 13px}
+.throttle-heading{display:flex;justify-content:space-between;align-items:baseline;color:#405f63;font-size:10px;font-weight:650}
+.throttle-heading label small{margin-left:4px;color:#99a7a0;font-size:7px;letter-spacing:.1em}
+.throttle-heading output{font-size:11px;font-variant-numeric:tabular-nums;color:#bd603e}
+.throttle-console{height:59px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.thrust-scale{height:52px;width:24px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;color:#889a92;font-size:7px;line-height:1}
+.thrust-lever{--lever-fill:0%;appearance:none;-webkit-appearance:none;width:22px;height:54px;margin:0!important;flex:none;border:1px solid #c8d3ca;border-radius:5px;background:#e5eae1;touch-action:none;cursor:ns-resize;writing-mode:vertical-lr;direction:rtl}
+.thrust-lever::-webkit-slider-runnable-track{width:6px;border-radius:5px;background:linear-gradient(to top,#cf7047 0%,#cf7047 var(--lever-fill),#b9c8bc var(--lever-fill),#b9c8bc 100%)}
+.thrust-lever::-moz-range-track{width:6px;border-radius:5px;background:linear-gradient(to top,#cf7047 0%,#cf7047 var(--lever-fill),#b9c8bc var(--lever-fill),#b9c8bc 100%)}
+.thrust-lever::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:21px;height:13px;margin-left:-7px;border:2px solid #fff;border-radius:4px;background:#bd603e;box-shadow:0 1px 4px #263d3d55}
+.thrust-lever::-moz-range-thumb{width:17px;height:9px;border:2px solid #fff;border-radius:4px;background:#bd603e;box-shadow:0 1px 4px #263d3d55}
+.engine-stack{width:50px;display:grid;grid-template-columns:1fr 1fr;align-items:center;column-gap:3px;row-gap:4px}
+.engine-meter{display:flex;align-items:center;gap:2px;font-size:6px;color:#708279}
+.engine-meter i{display:block;width:18px;height:5px;border-radius:2px;background:linear-gradient(to right,#78977b 0%,#78977b var(--n1,22%),#d7e0d6 var(--n1,22%),#d7e0d6 100%)}
+.engine-stack>small{grid-column:1/-1;text-align:center;font-size:6px;color:#92a098;white-space:nowrap}
+.quick-controls{min-width:174px;padding-left:11px;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:4px}
+.control-tile{min-width:0;min-height:31px;position:relative;display:grid;grid-template-columns:25px 1fr;grid-template-rows:1fr 1fr;align-items:center;column-gap:5px;padding:3px 5px;border:1px solid #d5dfd6;border-radius:7px;background:#f3f6ef;text-align:left}
+.control-tile .control-code{grid-row:1/3;display:grid;place-items:center;width:23px;height:23px;border-radius:5px;background:#e5ebe3;color:#55736a;font-size:9px;font-weight:750}
+.control-tile b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;font-weight:650;line-height:1.15}
+.control-tile small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#738b80;font-size:7px;line-height:1.15}
+.control-tile:hover{background:#edf2e9;border-color:#b6c8b8}
+.control-tile.active{background:#e4eee2;border-color:#95b396}
+.control-tile.active .control-code{background:#77977a;color:white}
+.brake-tile .control-code{background:#f0dfd7;color:#a64d36}
+.brake-tile.active{background:#f8e9e1;border-color:#d8896c}
+.brake-tile.active .control-code{background:#c46243}
+.control-tile:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:1100px){.throttle-control{width:142px;min-width:138px;padding-right:8px;padding-left:8px}.quick-controls{min-width:148px;padding-left:8px}.control-tile{grid-template-columns:21px 1fr;column-gap:4px;padding:3px}.control-tile .control-code{width:20px;height:20px}}
+@media(max-width:760px){.throttle-control{width:104px;min-width:104px;padding:0 4px}.throttle-heading{font-size:8px}.throttle-heading label small{display:none}.throttle-console{height:54px;gap:3px}.thrust-scale{width:18px;font-size:6px}.thrust-lever{height:48px;width:19px}.engine-stack{width:34px;column-gap:1px;row-gap:3px}.engine-meter{gap:1px;font-size:5px}.engine-meter i{width:10px;height:4px}.engine-stack>small{font-size:5px}.quick-controls{display:none}.metric em{max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#touchControls button[data-hold=brake]{width:44px;height:44px;font-size:13px;line-height:1.1}#touchControls button[data-hold=brake] small{font-size:8px}}
+
+/* Keep the WebGL surface and recovery image in one opaque, clipped layer. */
+#viewport{isolation:isolate;overflow:hidden;background:#b9d2db}#viewport canvas{position:absolute;inset:0}#viewport canvas.last-frame{z-index:1;pointer-events:none}
+
+/* ==========================================================================
+   Flight Lab v2 — physical thrust lever + a kid-sized control deck.
+   These rules intentionally come last so they win over the original bottom bar.
+   ========================================================================== */
+.telemetry{height:128px;padding:10px 14px;gap:0;bottom:48px}
+.attitude-wrap{width:104px;padding-right:12px}
+.attitude-wrap canvas{width:82px;height:62px}
+.metric{min-width:118px;padding:0 16px}
+.metric strong{font-size:26px;line-height:1.35}
+.metric em{font-size:8px;letter-spacing:.03em}
+.thrust-console{flex:none;width:190px;min-width:172px;border-left:1px solid var(--line);padding:0 12px;display:flex;flex-direction:column;justify-content:center;gap:4px}
+.thrust-head{display:flex;align-items:baseline;justify-content:space-between;font-size:10px;font-weight:700;color:#3f6064}
+.thrust-head small{font-size:7px;letter-spacing:.1em;color:#9aa8a0;margin-left:3px;font-weight:500}
+.thrust-head output{font-size:11px;color:#bd5f3c;font-variant-numeric:tabular-nums;white-space:nowrap}
+.thrust-slot{height:88px;display:flex;align-items:stretch;gap:6px}
+.thrust-detents{position:relative;width:24px;flex:none;font-size:7px;color:#8a9c94;letter-spacing:.02em}
+.thrust-detents span{position:absolute;right:1px;top:calc((1 - var(--at)) * 100%);transform:translateY(-50%);line-height:1}
+.thrust-lever{position:relative;flex:none;width:44px;height:100%;border:1px solid #cbd6cb;border-radius:9px;background:linear-gradient(#eef2e9,#dfe7dc);cursor:ns-resize;touch-action:none}
+.thrust-lever:focus-visible{outline:3px solid #dc7c4e;outline-offset:3px}
+.lever-slot{position:absolute;inset:5px 13px;border-radius:6px;background:#cfd9cd;box-shadow:inset 0 1px 3px #7c8f7d55;overflow:hidden}
+.lever-fill{position:absolute;left:0;right:0;bottom:0;height:calc(var(--p,0) * 100%);background:linear-gradient(#e0875c,#c9653f);border-radius:4px;transition:height .08s linear}
+.lever-handle{position:absolute;left:-9px;right:-9px;bottom:calc(var(--p,0) * (100% - 18px));height:18px;border-radius:5px;background:linear-gradient(#fbfcfa,#dfe7dd);border:1px solid #aebdae;box-shadow:0 2px 5px #2c403b44;display:flex;align-items:center;justify-content:center;gap:2px;transition:bottom .08s linear}
+.lever-handle span{font-size:6px;font-weight:700;color:#7d6357;letter-spacing:.08em}
+.lever-handle i{width:1px;height:8px;background:#c3cec0}
+.engine-stack{flex:1;min-width:0;display:grid;grid-template-columns:1fr 1fr;align-content:center;column-gap:5px;row-gap:5px}
+.engine-meter{display:flex;align-items:center;gap:3px;font-size:7px;color:#7c8d84}
+.engine-meter i{flex:1;height:6px;border-radius:2px;background:linear-gradient(to right,#7d9c7f 0%,#7d9c7f var(--n1,22%),#dbe3d8 var(--n1,22%),#dbe3d8 100%)}
+.engine-meter b{font-size:6px;font-weight:600;color:#95a49a;font-variant-numeric:tabular-nums}
+.engine-stack>small{grid-column:1/-1;text-align:center;font-size:6px;color:#93a198;letter-spacing:.08em;white-space:nowrap}
+.control-deck{flex:none;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:5px;min-width:224px;padding-left:12px;border-left:1px solid var(--line)}
+.deck-tile{min-width:0;display:flex;align-items:center;gap:7px;padding:3px 8px;border:1px solid #d3ded4;border-radius:10px;background:#f4f7f0;text-align:left;line-height:1.12}
+.deck-key{flex:none;display:grid;place-items:center;width:27px;height:27px;border-radius:7px;background:#e5ebe2;color:#5a7669;font-size:11px;font-weight:800}
+.deck-text{min-width:0;display:flex;flex-direction:column;gap:1px}
+.deck-text b{font-size:11px;font-weight:700;white-space:nowrap}
+.deck-text small{font-size:8px;color:#788d81;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.deck-tile:hover{background:#eef3e8;border-color:#b7c9b8}
+.deck-tile:active{transform:translateY(1px)}
+.brake-tile{grid-row:1/3;background:#fbece5;border-color:#e6bda9}
+.brake-tile .deck-key{background:#c8603f;color:#fff;font-size:13px}
+.brake-tile b{color:#a34a2f;font-size:13px}
+.brake-tile small{color:#b06a51}
+.brake-tile.active{background:#f09168;border-color:#c85f39;box-shadow:0 0 0 3px #e8895e44}
+.brake-tile.active .deck-key{background:#fff;color:#b4471f}
+.brake-tile.active b,.brake-tile.active small{color:#fff}
+.park-tile{background:#fdf5dc;border-color:#e3d3a0}
+.park-tile .deck-key{background:#caa73f;color:#fff}
+.park-tile.active{background:#f4e2a0;border-color:#c9a63c}
+.park-tile.active .deck-key{background:#8f6f18;color:#fff}
+.gear-tile{background:#e9f1f5;border-color:#c4d5de}
+.gear-tile .deck-key{background:#5d8496;color:#fff}
+.gear-tile.active{background:#d5e6ef;border-color:#7ba0b1}
+.flap-tile{background:#eaf2e6;border-color:#c8dac2}
+.flap-tile .deck-key{background:#6f9468;color:#fff}
+.flap-tile.active{background:#d8e9d1;border-color:#8aa87f}
+.warning-badge{position:fixed;right:28px;bottom:190px;z-index:8;display:flex;align-items:center;gap:7px;padding:8px 15px;border-radius:22px;background:#b6452c;color:#fff;font-size:11px;font-weight:650;box-shadow:0 8px 24px #7a2a1840;animation:warning-pulse 1.6s infinite}
+.warning-badge b{font-size:13px}
+@keyframes warning-pulse{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.camera-bar{bottom:232px}
+.status-pill{bottom:190px}
+.key-hint{bottom:17px}
+@media(min-width:1600px){.telemetry{height:136px;bottom:50px}.thrust-slot{height:94px}.camera-bar{bottom:242px}.status-pill{bottom:198px}}
+@media(max-width:1200px){.metric{min-width:104px;padding:0 12px}.metric strong{font-size:23px}.thrust-console{width:168px;min-width:150px;padding:0 9px}.control-deck{min-width:196px;padding-left:9px;gap:4px}.deck-tile{padding:2px 6px;gap:5px}.deck-key{width:24px;height:24px;font-size:10px}.deck-text b{font-size:10px}.deck-text small{font-size:7px}.attitude-wrap{width:92px}}
+@media(min-width:761px) and (max-height:820px){.telemetry{height:116px;bottom:40px;padding:8px 12px}.thrust-slot{height:74px}.metric strong{font-size:23px}.camera-bar{bottom:208px}.status-pill{bottom:170px}.deck-key{width:24px;height:24px}}
+@media(max-width:760px){
+ .telemetry{left:10px;right:10px;bottom:10px;height:104px;padding:6px 8px}
+ .attitude-wrap{width:64px;padding-right:6px}.attitude-wrap canvas{width:56px;height:46px}
+ .metric{min-width:70px;padding:0 7px}.metric strong{font-size:21px}.metric em{font-size:6px}.metric>span{font-size:8px}
+ .heading-metric{display:none}
+ .thrust-console{width:126px;min-width:112px;padding:0 5px}
+ .thrust-head{font-size:8px}.thrust-head small{display:none}.thrust-head output{font-size:9px}
+ .thrust-slot{height:64px;gap:3px}.thrust-detents{width:18px;font-size:6px}
+ .thrust-lever{width:34px}.lever-slot{inset:4px 10px}.lever-handle{left:-7px;right:-7px;height:15px;bottom:calc(var(--p,0) * (100% - 15px))}.lever-handle span{font-size:5px}.lever-handle i{height:6px}
+ .engine-stack{column-gap:2px;row-gap:3px}.engine-meter{font-size:5px;gap:1px}.engine-meter i{height:4px}.engine-meter b{display:none}.engine-stack>small{font-size:5px}
+ .control-deck{position:fixed;left:10px;right:10px;bottom:120px;display:flex;gap:5px;min-width:0;padding:0;border:0;background:transparent}
+ .deck-tile{flex:1;min-height:52px;flex-direction:column;justify-content:center;gap:2px;padding:4px 2px;text-align:center;background:rgba(249,251,247,.95);box-shadow:0 4px 18px #20403c22}
+ .deck-tile.brake-tile{flex:1.25;grid-row:auto}
+ .deck-key{width:20px;height:20px;font-size:9px}
+ .deck-text{align-items:center;gap:0}.deck-text b{font-size:10px}.deck-text small{font-size:7px}
+ .brake-tile b{font-size:11px}
+ .warning-badge{top:96px;bottom:auto;right:auto;left:50%;transform:translateX(-50%);font-size:9px;padding:6px 12px}
+ .camera-bar{bottom:244px}
+ .status-pill{bottom:200px;font-size:9px;max-width:94vw;white-space:normal;width:max-content}
+ #touchControls{bottom:182px;right:10px}
+ #touchControls button[data-hold=brake]{display:none}
+ #touchControls button{width:42px;height:40px;font-size:18px}
+}
+
+/* Fine-tuning pass for the v2 control bar (kept last so it overrides earlier rules). */
+.telemetry>.metric{flex:1 1 0}
+.thrust-console{width:206px;min-width:188px}
+.thrust-lever{width:56px;border-radius:13px}
+.lever-slot{inset:8px 18px;border-radius:7px}
+.lever-fill{border-radius:5px}
+.lever-handle{left:-13px;right:-13px;height:26px;border-radius:6px;bottom:calc(var(--p,0) * (100% - 26px));background:linear-gradient(#fdfefc,#dde6da);border:1px solid #a9b9aa;box-shadow:0 2px 6px #2c403b55,inset 0 1px 0 #fff}
+.lever-handle span{font-size:8px;letter-spacing:.12em;color:#7a5c4d}
+.lever-handle i{height:11px;background:#c6d1c3}
+.engine-meter span{color:#6b8175;font-weight:700}
+.engine-meter b{color:#7d9186}
+.engine-meter b:after{content:'%'}
+.deck-tile{padding:4px 9px}
+.deck-text b{font-size:12px}
+.brake-tile b{font-size:14px}
+.deck-text small{font-size:8px}
+@media(max-width:1200px){.thrust-console{width:182px;min-width:164px}.thrust-lever{width:48px}.lever-slot{inset:7px 15px}.lever-handle{left:-11px;right:-11px;height:23px;bottom:calc(var(--p,0) * (100% - 23px))}}
+@media(max-width:760px){
+ .thrust-console{width:136px;min-width:120px}
+ .thrust-lever{width:38px;border-radius:9px}
+ .lever-slot{inset:5px 11px}
+ .lever-handle{left:-8px;right:-8px;height:18px;bottom:calc(var(--p,0) * (100% - 18px))}
+ .lever-handle span{font-size:6px}
+ .lever-handle i{height:7px}
+ .deck-text b{font-size:10px}.brake-tile b{font-size:12px}
+}
+
+
+/* Let the lever handle overhang its slot like a real thrust lever. */
+.lever-slot{overflow:visible}
+.thrust-slot .lever-fill{overflow:hidden}
+
+
+/* Mobile: a proper D-pad cluster and a clean vertical stack of floating chrome. */
+@media(max-width:760px){
+ #touchControls{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,44px);gap:6px;bottom:182px;right:12px;align-items:center}
+ #touchControls button{width:46px;height:44px;border:1px solid #fffb;border-radius:12px;background:#f3f6ecdc;color:#33555c;font-size:19px;touch-action:none;user-select:none}
+ #touchControls button[data-hold=up]{grid-area:1/2}
+ #touchControls button[data-hold=left]{grid-area:2/1}
+ #touchControls button[data-hold=down]{grid-area:2/2}
+ #touchControls button[data-hold=right]{grid-area:2/3}
+ .status-pill{bottom:296px}
+ .camera-bar{bottom:344px}
+ .warning-badge{top:auto;bottom:184px;left:10px;right:auto;transform:none;max-width:62vw}
+}

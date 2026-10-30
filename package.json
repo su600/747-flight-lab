@@ -1,0 +1,8 @@
+{
+  "name": "747-flight-lab",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "check": "node tools/check-flight.mjs" },
+  "dependencies": { "three": "0.170.0" }
+}
