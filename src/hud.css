@@ -381,7 +381,7 @@ dialog .primary-btn{margin-top:14px}
  .status{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 54px);bottom:auto;max-width:200px;flex-wrap:nowrap}
  .status #phase{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
  .status #takeControl{flex:none}
- .cam-dock{top:auto;bottom:calc(var(--deck-b) + env(safe-area-inset-bottom) + var(--deck-h) + 12px);right:calc(max(10px,env(safe-area-inset-right)) + 150px)}
+.cam-dock{top:auto;bottom:calc(var(--deck-b) + env(safe-area-inset-bottom) + var(--deck-h) + 12px);left:calc(max(10px,env(safe-area-inset-left)) + 210px);right:max(10px,env(safe-area-inset-right))}
  .deck{display:grid;grid-template-columns:85px 85px 150px 240px;grid-template-rows:1fr;overflow-x:auto}
  .cell-metric{min-width:0;padding:8px}.cell-metric strong{font-size:24px}.cell-metric .cap small{display:none}
  .cell-thrust{grid-column:auto;padding:6px 8px;border-top:0}.thrust-body{height:56px}
