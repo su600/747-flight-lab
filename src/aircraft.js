@@ -3,7 +3,7 @@ import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 const ROOT='/assets/aircraft/';
 const textures=new Map();
 const loader=new T.TextureLoader();
-function texture(name){if(!textures.has(name)){const t=loader.load(ROOT+name);t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;textures.set(name,t);}return textures.get(name);}
+function texture(name){if(!textures.has(name)){const t=loader.load(ROOT+name);t.colorSpace=T.SRGBColorSpace;t.anisotropy=16;textures.set(name,t);}return textures.get(name);}
 const txt=(node,tag,def='')=>node?.querySelector(':scope > '+tag)?.textContent.trim()??def;
 const num=(node,tag,def=0)=>Number(txt(node,tag,def));
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
@@ -26,7 +26,7 @@ export function parseAC(text,folder=''){
    else if(key==='numvert'){for(let k=0;k<Number(parts[1]);k++)verts.push(lines[i++].trim().split(/\s+/).map(Number));}
    else if(key==='numsurf'){for(let k=0;k<Number(parts[1]);k++){let flags=0,mat=0;while(i<lines.length){let s=lines[i++].trim().split(/\s+/);if(s[0]==='SURF')flags=parseInt(s[1]);else if(s[0]==='mat')mat=+s[1];else if(s[0]==='refs'){const refs=[];for(let q=0;q<+s[1];q++)refs.push(lines[i++].trim().split(/\s+/).map(Number));faces.push({flags,mat,refs});break;}}}}
    else if(key==='kids'){
-    if(faces.length){const matIds=[...new Set(faces.map(f=>f.mat))],mats=matIds.map(id=>{const a=materials[id]||materials[0],glass=a.name.toLowerCase().includes('glass');return new T.MeshStandardMaterial({color:glass?0x243b4e:new T.Color(...a.rgb),map:glass?null:tex?texture(folder+tex):null,roughness:glass?.16:tex?.48:.38,metalness:glass?.55:.18,side:T.DoubleSide,transparent:false});});
+    if(faces.length){const matIds=[...new Set(faces.map(f=>f.mat))],mats=matIds.map(id=>{const a=materials[id]||materials[0],glass=a.name.toLowerCase().includes('glass');const painted=!glass&&!!tex;return new T.MeshPhysicalMaterial({color:glass?0x1b2d3b:new T.Color(...a.rgb),map:glass?null:tex?texture(folder+tex):null,roughness:glass?.06:tex?.4:.34,metalness:glass?.75:.16,clearcoat:glass?1:painted?.55:.1,clearcoatRoughness:glass?.02:.14,envMapIntensity:glass?1.5:1,side:T.DoubleSide,transparent:false});});
      const positions=[],uvs=[],geo=new T.BufferGeometry();
      const byMat=new Map();for(const f of faces){let a=byMat.get(f.mat);if(!a)byMat.set(f.mat,a=[]);a.push(f);}
      for(const id of matIds){const start=positions.length/3;for(const f of byMat.get(id)){if((f.flags&15)!==0)continue;for(let v=1;v<f.refs.length-1;v++)for(const r of [f.refs[0],f.refs[v],f.refs[v+1]]){const p=verts[r[0]];positions.push(p[0],p[1],p[2]);uvs.push(r[1],r[2]);}}geo.addGroup(start,positions.length/3-start,matIds.indexOf(id));}
