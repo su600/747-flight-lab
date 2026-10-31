@@ -39,11 +39,13 @@ function softDot(){const c=document.createElement('canvas');c.width=c.height=64;
 // wind streaks that stream past at flight speed.
 export class Airflow{
  constructor(scene,plane){
-  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0};
+  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0,smoke:0};this.smokeT=99;this.smokePower=0;this.lastTouchdown=null;
   const dot=softDot();
   this.vortex=new Pool(scene,{count:520,size:3.2,color:[.96,.98,1],map:dot});
   this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
   this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
+  // Tyre smoke: rubber vaporised when the main wheels spin up at touchdown, and a thin wisp under hard braking.
+  this.smoke=new Pool(scene,{count:1100,size:15,color:[.9,.9,.88],map:dot});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
@@ -52,9 +54,18 @@ export class Airflow{
   // Emitter points in the aircraft's own frame (x nose, y up, z right wing).
   this.engines=[[4.83,-21.23,-1.99],[-2.67,-13.46,-2.60],[-2.67,13.46,-2.60],[4.83,21.23,-1.99]].map(([x,y,z])=>fg(x,y,z).multiply(plane.native.scale).applyAxisAngle(Y,Math.PI));
   this.tips=[new T.Vector3(-14,2.6,-32),new T.Vector3(-14,2.6,32)];
+  // Main-gear bogie contact points (wing gear x -2.3, body gear x -5.7), measured from the gear model; nose is +x.
+  const sc=plane.native.scale;
+  this.mainGear=[[-2.3,5.25],[-2.3,-5.25],[-5.7,1.64],[-5.7,-1.64]].map(([x,z])=>new T.Vector3(x*sc.x,-plane.contact,z*sc.z));
   this.tmp=new T.Vector3();this.dir=new T.Vector3();this.v=new T.Vector3();this.pp=new T.Vector3();
  }
  setQuality(low){this.quality=low?.35:1;}
+ emitSmoke(gear,dir,speed,boost){
+  const p=this.plane.root.localToWorld(this.tmp.copy(gear));p.y=Math.max(.25,Math.min(p.y,1.2));
+  const v=this.v.copy(dir);v.y=0;v.normalize().multiplyScalar(speed*(.12+Math.random()*.14));
+  v.x+=(Math.random()-.5)*4;v.z+=(Math.random()-.5)*4;v.y=.8+Math.random()*2.2;
+  this.smoke.emit(p,v,2.8+Math.random()*2.4,.38+.3*Math.random()*boost);
+ }
  respawn(i,planePos,dir,spread){
   const p=this.streakP[i],a=Math.random()*Math.PI*2,r=8+Math.random()*spread;
   // Orthonormal frame around the flight direction.
@@ -81,6 +92,21 @@ export class Airflow{
    this.acc.contrail+=dt*40*q*cold;
    while(this.acc.contrail>=1){this.acc.contrail--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-7,e.y,e.z));this.contrail.emit(p,null,9,.5*cold);}}
   }
+  // Tyre smoke: an initial puff at the instant of touchdown, then a fading stream while the wheels spin up.
+  if(sim.touchdown&&sim.touchdown!==this.lastTouchdown){
+   this.lastTouchdown=sim.touchdown;this.smokeT=0;
+   this.smokePower=clamp(sim.touchdown.speed/80,.35,1)*clamp(.65+sim.touchdown.rate/2.5,.65,1.4);
+   if(!sim.paused)for(const g of this.mainGear)for(let k=0;k<Math.round(16*q*this.smokePower);k++)this.emitSmoke(g,dir,speed,1.3);
+  }else if(!sim.touchdown)this.lastTouchdown=null;
+  if(!sim.paused&&dt>0&&sim.onGround){
+   let rate=0;
+   if(this.smokeT<1.8)rate=110*Math.pow(1-this.smokeT/1.8,1.4)*this.smokePower;
+   else if(sim.mode!=='inspect'&&speed>45&&(sim.brakePressure||0)>.6)rate=14*clamp(speed/80,0,1);
+   this.smokeT+=dt;this.acc.smoke+=dt*rate*q;
+   while(this.acc.smoke>=1){this.acc.smoke--;for(const g of this.mainGear)this.emitSmoke(g,dir,speed,1);}
+  }else if(sim.mode==='inspect'||!sim.onGround)this.acc.smoke=0;
+  this.smoke.points.material.color.setScalar(timeOfDay==='night'?.32:timeOfDay==='dusk'?.82:1);
+  this.smoke.update(sim.paused?0:dt);
   this.vortex.update(sim.paused?0:dt);this.exhaust.update(sim.paused?0:dt);this.contrail.update(sim.paused?0:dt);
 
   // Wind streaks.
