@@ -5,6 +5,14 @@ let seed=747;const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/42949
 const matCache=new Map();
 const mat=(color,roughness=.8,metalness=0)=>{const key=color+'|'+roughness+'|'+metalness;let m=matCache.get(key);if(!m){m=new T.MeshStandardMaterial({color,roughness,metalness,envMapIntensity:.4});matCache.set(key,m);}return m;};
 const boxCache=new Map(),UNIT_PLANE=new T.PlaneGeometry(1,1);
+const LANDMARK_SITES=[
+ {kind:'eiffel',title:'EIFFEL TOWER · PARIS',x:-1550,z:-2800,clearance:340},
+ {kind:'bigben',title:'BIG BEN · LONDON',x:-750,z:-3000,clearance:260},
+ {kind:'burj',title:'BURJ KHALIFA · DUBAI',x:0,z:-3200,clearance:380},
+ {kind:'liberty',title:'STATUE OF LIBERTY · NYC',x:1250,z:-3000,clearance:300},
+ {kind:'opera',title:'SYDNEY OPERA HOUSE',x:4200,z:4300,clearance:370}
+];
+const nearLandmark=(x,z)=>LANDMARK_SITES.some(s=>(x-s.x)**2+(z-s.z)**2<s.clearance*s.clearance);
 const boxGeo=(w,h,d)=>{const key=w+'|'+h+'|'+d;let g=boxCache.get(key);if(!g){g=new T.BoxGeometry(w,h,d);boxCache.set(key,g);}return g;};
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 function noiseTexture(base,scale=1){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,512,512);for(let i=0;i<70000;i++){const g=Math.floor(rnd()*255);x.fillStyle=`rgba(${g},${g},${g},.065)`;x.fillRect(rnd()*512,rnd()*512,1+rnd()*2,1+rnd()*2);}const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
@@ -61,7 +69,7 @@ export class World{
   // Render pavement layers from bottom to top; equal-depth fragments then have a stable winner.
   o.renderOrder=Math.round(y*1000);this.scene.add(o);return o;}
  line(points,color,width=1){const m=new T.LineBasicMaterial({color,linewidth:width});const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));const o=new T.Line(g,m);this.scene.add(o);return o;}
- label(text,x,y,z,w,h,ground=false,fg='#f5f3dc',bg=null){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);}ctx.fillStyle=fg;ctx.font='bold 175px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,512,132);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:T.DoubleSide});const o=new T.Mesh(new T.PlaneGeometry(w,h),m);o.position.set(x,y,z);if(ground)o.rotation.x=-Math.PI/2;this.scene.add(o);return o;}
+ label(text,x,y,z,w,h,ground=false,fg='#f5f3dc',bg=null){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);}ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';let fontSize=175;ctx.font=`bold ${fontSize}px Arial`;while(fontSize>54&&ctx.measureText(text).width>930){fontSize-=8;ctx.font=`bold ${fontSize}px Arial`;}ctx.fillText(text,512,132,960);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:T.DoubleSide});const o=new T.Mesh(new T.PlaneGeometry(w,h),m);o.position.set(x,y,z);if(ground)o.rotation.x=-Math.PI/2;this.scene.add(o);return o;}
  build(){
   const scene=this.scene;scene.fog=new T.FogExp2(0xb9d2db,.000055);
   this.sky=new Sky();this.sky.scale.setScalar(200000);scene.add(this.sky);const u=this.sky.material.uniforms;u.turbidity.value=3;u.rayleigh.value=1.6;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.82;
@@ -109,14 +117,14 @@ export class World{
   // Distant urban edge and tree belts use instancing to keep the airport responsive.
   const temp=new T.Object3D(),col=new T.Color();
   this.cityMat=new T.MeshStandardMaterial({color:'#ffffff',roughness:.38,metalness:.35,map:facadeTexture(false),emissive:'#ffffff',emissiveMap:facadeTexture(true),emissiveIntensity:0});
-  const city=new T.InstancedMesh(boxGeo(1,1,1),this.cityMat,250);for(let i=0;i<250;i++){const h=10+rnd()*90;temp.position.set(-6000+rnd()*12000,h/2,-1300-rnd()*3500);temp.scale.set(35+rnd()*60,h,25+rnd()*55);temp.updateMatrix();city.setMatrixAt(i,temp.matrix);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));}scene.add(city);
+  const city=new T.InstancedMesh(boxGeo(1,1,1),this.cityMat,250);for(let i=0;i<250;i++){const x=-6000+rnd()*12000,z=-1300-rnd()*3500,h=10+rnd()*90;if(nearLandmark(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}else{temp.position.set(x,h/2,z);temp.scale.set(35+rnd()*60,h,25+rnd()*55);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));}temp.updateMatrix();city.setMatrixAt(i,temp.matrix);}scene.add(city);
   // Two tree species, tinted individually, scattered outside the airfield.
-  const spots=[];for(let i=0;i<1500;i++){let x=(rnd()-.5)*14000,z=(rnd()-.5)*11000;if(Math.abs(x)<2500&&z>-850&&z<200){z=350+rnd()*500;}spots.push([x,z,6+rnd()*13,rnd()]);}
+  const spots=[];for(let i=0;i<1500;i++){let x=(rnd()-.5)*14000,z=(rnd()-.5)*11000;if(Math.abs(x)<2500&&z>-850&&z<200){z=350+rnd()*500;}if(!nearLandmark(x,z))spots.push([x,z,6+rnd()*13,rnd()]);}
   const pines=spots.filter(s=>s[3]<.55),oaks=spots.filter(s=>s[3]>=.55);
   const pineMesh=new T.InstancedMesh(pineGeometry(),mat('#ffffff',.92),pines.length),oakMesh=new T.InstancedMesh(oakGeometry(),mat('#ffffff',.92),oaks.length);pineMesh.castShadow=oakMesh.castShadow=false;
   pines.forEach(([x,z,h],i)=>{temp.position.set(x,0,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.36,h,h*.36);temp.updateMatrix();pineMesh.setMatrixAt(i,temp.matrix);pineMesh.setColorAt(i,col.setHSL(.36+rnd()*.05,.35,.2+rnd()*.1));});
   oaks.forEach(([x,z,h],i)=>{temp.position.set(x,h*.42,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.42,h*.4,h*.42);temp.updateMatrix();oakMesh.setMatrixAt(i,temp.matrix);oakMesh.setColorAt(i,col.setHSL(.22+rnd()*.12,.4,.28+rnd()*.12));});
-  temp.rotation.set(0,0,0);scene.add(pineMesh,oakMesh);
+  temp.rotation.set(0,0,0);scene.add(pineMesh,oakMesh);this.buildLandmarks();
   for(let i=0;i<18;i++){const mh=700+rnd()*1900,mountain=new T.Mesh(mountainGeometry(1400+rnd()*2100,mh,mh>1700),new T.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:true}));mountain.position.set(-24000+i*2800,mh/2-40,-16000-rnd()*3000);mountain.rotation.y=rnd()*6;scene.add(mountain);}
   this.buildWindsock();this.buildStars();
   this.cloudMat=new T.SpriteMaterial({map:cumulusTexture(),transparent:true,opacity:.85,depthWrite:false,color:0xffffff});
@@ -125,6 +133,48 @@ export class World{
   for(let i=0;i<14;i++)mkCloud(4,1000+rnd()*600,420,420,230);
   this.glowTex=glowTexture();
   this.buildLamps();this.setTime('day');
+ }
+ buildLandmarks(){
+  const scene=this.scene,plaza=mat('#aaa99e',.9),sign=mat('#35444a',.72),steel=new T.MeshStandardMaterial({color:'#76634f',roughness:.58,metalness:.48}),stone=mat('#a89a80',.86),roof=mat('#465157',.75),gold=mat('#b89a56',.48,.5),copper=new T.MeshStandardMaterial({color:'#78927b',roughness:.58,metalness:.34}),white=new T.MeshPhysicalMaterial({color:'#eeeae0',roughness:.3,clearcoat:.65,clearcoatRoughness:.22}),glass=new T.MeshPhysicalMaterial({color:'#8faebc',roughness:.2,metalness:.42,clearcoat:.7,clearcoatRoughness:.16});
+  const add=(g,geometry,material,x,y,z,shadow=true)=>{const o=new T.Mesh(geometry,material);o.position.set(x,y,z);o.castShadow=shadow;o.receiveShadow=shadow;g.add(o);return o;};
+  const box=(g,w,h,d,x,y,z,m)=>add(g,boxGeo(w,h,d),m,x,y,z);
+  const cylinder=(g,rt,rb,h,x,y,z,m,n=10)=>add(g,new T.CylinderGeometry(rt,rb,h,n,1),m,x,y,z);
+  const sphere=(g,r,x,y,z,m)=>add(g,new T.SphereGeometry(r,12,8),m,x,y,z);
+  const beam=(g,a,b,r,m)=>{const from=new T.Vector3(...a),to=new T.Vector3(...b),dir=to.clone().sub(from),len=dir.length(),mid=from.add(to).multiplyScalar(.5),q=new T.Quaternion().setFromUnitVectors(new T.Vector3(0,1,0),dir.normalize());if(g.name==='landmark-eiffel'){g.userData.beamMatrices??=[];g.userData.beamMatrices.push(new T.Matrix4().compose(mid,q,new T.Vector3(r,len,r)));return;}const o=add(g,new T.CylinderGeometry(r*.82,r,len,7,1),m,0,0,0);o.position.copy(mid);o.quaternion.copy(q);return o;};
+  for(const site of LANDMARK_SITES){
+   this.ground(site.x,site.z,site.kind==='opera'?220:180,site.kind==='opera'?150:160,plaza,.008);
+   const g=new T.Group();g.name='landmark-'+site.kind;g.position.set(site.x,0,site.z);scene.add(g);
+   if(site.kind==='eiffel'){
+    g.userData.beamMatrices=[];const levels=[[0,64],[78,48],[150,32],[276,12],[300,5]];
+    for(const sx of [-1,1])for(const sz of [-1,1])beam(g,[sx*64,0,sz*64],[sx*5,300,sz*5],3.2,steel);
+    for(let i=0;i<levels.length-1;i++){const [y0,w0]=levels[i],[y1,w1]=levels[i+1];
+     for(const zSide of [-1,1]){beam(g,[-w0,y0,zSide*w0],[w0,y0,zSide*w0],1.6,steel);beam(g,[-w1,y1,zSide*w1],[w1,y1,zSide*w1],1.4,steel);beam(g,[-w0,y0,zSide*w0],[w1,y1,zSide*w1],1.1,steel);beam(g,[w0,y0,zSide*w0],[-w1,y1,zSide*w1],1.1,steel);}
+     for(const xSide of [-1,1]){beam(g,[xSide*w0,y0,-w0],[xSide*w0,y0,w0],1.6,steel);beam(g,[xSide*w1,y1,-w1],[xSide*w1,y1,w1],1.4,steel);beam(g,[xSide*w0,y0,-w0],[xSide*w1,y1,w1],1.1,steel);beam(g,[xSide*w0,y0,w0],[xSide*w1,y1,-w1],1.1,steel);}
+    }
+    const frame=new T.InstancedMesh(new T.CylinderGeometry(1,1,1,7),steel,g.userData.beamMatrices.length);g.userData.beamMatrices.forEach((m,i)=>frame.setMatrixAt(i,m));frame.castShadow=true;frame.receiveShadow=true;g.add(frame);delete g.userData.beamMatrices;
+    for(const [y,w] of levels.slice(1,4))box(g,w*1.65,3,w*1.65,0,y,0,steel);
+    cylinder(g,.7,2.2,24,0,312,0,steel,8);sphere(g,2.4,0,326,0,gold);
+   }else if(site.kind==='bigben'){
+    const clockDark=mat('#343b3c',.66),dial=mat('#e6dcc2',.72);
+    box(g,23,8,23,0,4,0,stone);box(g,18,15,18,0,15.5,0,stone);box(g,14,29,14,0,37.5,0,stone);box(g,17,25,17,0,64.5,0,stone);box(g,18,4,18,0,79,0,roof);cylinder(g,0,9,13,0,87.5,0,roof,8);cylinder(g,.45,1.6,8,0,98,0,gold,8);
+    for(const [angle,x,z] of [[0,0,8.7],[Math.PI,0,-8.7],[Math.PI/2,8.7,0],[-Math.PI/2,-8.7,0]]){const f=new T.Group();f.position.set(x,66,z);f.rotation.y=angle;g.add(f);add(f,new T.CircleGeometry(5.1,28),dial,0,0,0,false);add(f,new T.TorusGeometry(5.15,.42,8,28),gold,0,0,.08,false);const hands=new T.Group();hands.position.z=.12;f.add(hands);box(hands,.34,4.2,.18,0,.55,0,clockDark);const minute=box(hands,3.2,.26,.18,.7,-.45,0,clockDark);minute.rotation.z=-.29;sphere(hands,.48,0,0,.16,gold);}g.scale.y=1.5;
+   }else if(site.kind==='burj'){
+    const towerMat=new T.MeshPhysicalMaterial({color:'#9ab9c5',roughness:.22,metalness:.42,clearcoat:.72,clearcoatRoughness:.15});box(g,150,8,150,0,4,0,stone);
+    for(let i=0;i<16;i++){const y=i*40+20,r0=68*Math.pow(1-i/17,1.42)+3.5,r1=68*Math.pow(1-(i+1)/17,1.42)+2.4,o=cylinder(g,r1,r0,40,0,y,0,towerMat,12);o.rotation.y=i*.13;}
+    cylinder(g,1,8,150,0,715,0,towerMat,12);cylinder(g,0,.95,38,0,809,0,roof,8);
+   }else if(site.kind==='liberty'){
+    box(g,38,8,38,0,4,0,stone);box(g,29,17,29,0,16.5,0,stone);box(g,21,15,21,0,32.5,0,stone);box(g,14,9,14,0,44.5,0,stone);
+    cylinder(g,2.1,6.8,18,0,58,0,copper,9);box(g,4.5,10,4.5,0,72,0,copper);sphere(g,2.8,0,79,0,copper);
+    for(let i=0;i<7;i++){const a=i*Math.PI*2/7;beam(g,[Math.cos(a)*2.1,80,Math.sin(a)*2.1],[Math.cos(a)*4.2,87,Math.sin(a)*4.2],.55,copper);}
+    beam(g,[2,68,0],[8,89,0],1.6,copper);sphere(g,2.5,8,91,0,gold);box(g,2.6,12,3,3,66,-2,copper);g.scale.y=1.4;
+   }else if(site.kind==='opera'){
+    box(g,152,8,70,0,4,0,stone);box(g,126,9,52,0,12,0,glass);box(g,145,3,4,0,17,24,gold);
+    const shellGeo=new T.SphereGeometry(1,20,12,0,Math.PI,0,Math.PI/2),sails=[[-48,18,-7,18,29,15,-.34],[-23,20,5,21,38,17,-.22],[4,20,-3,21,36,16,.22],[31,17,8,18,28,14,.38],[50,15,-5,14,22,12,.45]];
+    for(const [x,y,z,w,h,d,lean] of sails){const sail=add(g,shellGeo,white,x,y,z);sail.scale.set(w,h,d);sail.rotation.z=lean;}
+   }
+   // Small airport-style plaques identify the miniature skyline without crowding the runway.
+   this.box(site.x,3,site.z+112,1.2,6,.9,sign,true);this.box(site.x,7,site.z+112,66,8,1.2,sign,true);this.label(site.title,site.x,7,site.z+112.7,62,5,false,'#f3eddd','#35444a');
+  }
  }
  lamp(x,y,z,color){this.lampData.push({x,y,z,color});}
  buildLamps(){
