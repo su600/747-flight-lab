@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#06111a"><title>747 Flight Lab · 小机长飞行实验室</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306111a'/%3E%3Cpath d='M10 44 54 20' stroke='%234fd8ff' stroke-width='5' stroke-linecap='round'/%3E%3Ctext x='8' y='56' font-size='16' fill='white' font-family='sans-serif' font-weight='bold'%3E747%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/src/hud.css"><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script></head>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#06111a"><title>747 Flight Lab · 小机长飞行实验室</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306111a'/%3E%3Cpath d='M10 44 54 20' stroke='%234fd8ff' stroke-width='5' stroke-linecap='round'/%3E%3Ctext x='8' y='56' font-size='16' fill='white' font-family='sans-serif' font-weight='bold'%3E747%3C/text%3E%3C/svg%3E"><link rel="stylesheet" href="/747/src/hud.css"><script type="importmap">{"imports":{"three":"/747/node_modules/three/build/three.module.js","three/addons/":"/747/node_modules/three/examples/jsm/"}}</script></head>
 <body>
-<div id="viewport" aria-label="可以拖动旋转、滚轮缩放的三维飞机场景"></div>
+<div id="viewport" aria-label="三维飞机场景：左键或单指旋转，右键平移，滚轮或双指缩放"></div>
 <div class="scrim" aria-hidden="true"></div>
 
 <header class="topbar">
- <a class="brand" href="/" aria-label="747 小机长飞行实验室"><span class="mark">747</span><span class="brand-text"><b>小机长飞行实验室</b><i>FLIGHT LAB</i></span></a>
+ <a class="brand" href="/747/" aria-label="747 小机长飞行实验室"><span class="mark">747</span><span class="brand-text"><b>小机长飞行实验室</b><i>FLIGHT LAB</i></span></a>
  <div class="airport"><i class="dot"></i><b>STAR BAY</b><span>星湾国际 · RWY 09/27</span></div>
  <div class="header-actions">
   <button id="sound" class="icon-btn" aria-label="开启声音" title="开启声音"><svg viewBox="0 0 24 24"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a8 8 0 0 1 0 11"/></svg></button>
@@ -28,7 +28,7 @@
   <button class="mode" data-mode="land"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5.5 6.5 18 12.5"/><path d="M12.6 12.8 18.2 12.6 15.8 7.4"/></svg></span><span class="mode-txt"><b>看飞机降落</b><small>进近 · 拉平 · 稳稳接地</small></span><span class="mode-no">02</span></button>
   <button class="mode" data-mode="free"><span class="mode-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M12 10.7V17"/><path d="M6.5 20.5h11M8 17h8"/></svg></span><span class="mode-txt"><b>我来开飞机</b><small>空中出发，尽情探索</small></span><span class="mode-no">03</span></button>
   <button class="mode mode-inspect active" data-mode="inspect"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="mode-txt"><b>地面观察</b><small>换涂装，动动部件</small></span><span class="mode-no">00</span></button>
-  <div class="copilot"><span class="copilot-no" id="lessonNo">01 / EXPLORE</span><p id="lesson">拖动飞机周围的画面，可以从任意角度观察；滚动鼠标滚轮，靠近看看。</p></div>
+  <div class="copilot"><span class="copilot-no" id="lessonNo">01 / EXPLORE</span><p id="lesson">左键或单指拖动环绕，滚轮或双指张合缩放；右键或双指移动可平移。</p></div>
   <div class="modes-foot"><span id="modeLabel">观察模式</span><div><button id="pause" class="chip-btn" title="暂停 / 继续">Ⅱ</button><button id="rate" class="chip-btn" title="演示速度">1×</button></div></div>
  </nav>
 
@@ -51,7 +51,7 @@
    <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door">下层货舱门<span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="engineInspect">发动机风扇<span>慢速转动</span></button></div>
    <button class="wide-btn" id="neutral">舵面回到中立位置</button>
   </section>
-  <section id="liveryPanel" class="drawer-content" hidden><p class="hint">换一种颜色，开始下一趟旅程。涂装来自开源飞机模型的历史版本。</p><div id="liveries"></div><p class="fine-print">航空公司名称与标识仅用于飞机识别和学习。模型与贴图来源见“百科”。</p></section>
+  <section id="liveryPanel" class="drawer-content" hidden><p class="hint">换一种颜色，开始下一趟旅程。</p><div id="liveries"></div><p class="fine-print">部分涂装参考其他机型设计，适配至本模拟器的 747-400，并非真实机型复刻。航空公司名称与标识仅用于飞机识别和学习。模型与贴图来源见“百科”。</p></section>
   <section id="worldPanel" class="drawer-content" hidden>
    <h3>选择一天中的时刻</h3>
    <div class="time-options">
@@ -72,7 +72,7 @@
    <div class="spec-grid"><div><strong>70.7<small> m</small></strong><span>机身长度</span></div><div><strong>64.4<small> m</small></strong><span>机翼展开宽度</span></div><div><strong>19.4<small> m</small></strong><span>飞机高度</span></div><div><strong>18<small> 个</small></strong><span>起落架轮胎</span></div></div>
    <h3>看看它和真实飞机的关系</h3>
    <p class="hint">使用 FlightGear 747-400 的机身、机翼、GE CF6 发动机与关节定义。保留上层客舱、翼尖小翼、三段后缘襟翼及五组起落架。飞行力学和仪表经过简化。</p>
-   <a class="source-link" href="/MODEL-NOTES.html" target="_blank">模型比对、来源与许可 ↗</a>
+   <a class="source-link" href="/747/MODEL-NOTES.html" target="_blank">模型比对、来源与许可 ↗</a>
   </section>
  </aside>
 
@@ -109,9 +109,9 @@
 </main>
 
 <dialog id="helpDialog"><button class="dialog-close" data-close="helpDialog" aria-label="关闭">×</button><span class="panel-label">HELLO, CAPTAIN</span><h2>你的第一本飞行手册</h2><p>先点“看飞机起飞”，观察一次完整起飞。想自己试试，点“我来开飞机”就能从空中出发；也可以在“环境”里选择从跑道开始。</p>
-<div class="help-grid"><div><kbd>↑ ↓</kbd><span>↑低头，↓抬头</span></div><div><kbd>← →</kbd><span>倾斜机翼，左右转弯</span></div><div><kbd>Q E</kbd><span>方向舵 / 地面转弯</span></div><div><kbd>Shift / Ctrl</kbd><span>推 / 收推力杆，也可以直接拖动推力杆</span></div><div><kbd>B</kbd><span>按住脚刹，慢慢减速</span></div><div><kbd>P</kbd><span>拉上 / 松开停留刹车</span></div><div><kbd>G / F</kbd><span>收放起落架 / 调节襟翼</span></div><div><kbd>1 — 5</kbd><span>切换观察视角</span></div><div><kbd>空格</kbd><span>暂停，仔细看看</span></div></div>
-<p class="hint">推力杆像一个真的油门：往上推到 TO 是起飞推力，CLB / CRZ 是爬升和巡航，最下面是慢车。松开手柄时它会自动停在最近的档位。</p><p class="hint">手动起飞：在环境面板选择“从跑道开始”，襟翼 20° → 松开停留刹车 → 推力杆推到 TO → 约 280 km/h 时轻轻按 ↓ 抬头。离地后按 G 收轮。</p><p class="hint">如果速度太慢、机头抬得太高，机翼会失速。小机长辅助会提前帮你压低机头；关闭辅助后就要自己控制迎角啦。</p><button class="primary-btn" data-close="helpDialog">准备好了，出发！ ↗</button></dialog>
+<div class="help-grid"><div><kbd>↑ ↓</kbd><span>↑低头，↓抬头</span></div><div><kbd>← →</kbd><span>倾斜机翼，左右转弯</span></div><div><kbd>Q E</kbd><span>方向舵 / 地面转弯</span></div><div><kbd>Shift / Ctrl</kbd><span>推 / 收推力杆，也可以直接拖动推力杆</span></div><div><kbd>B</kbd><span>按住脚刹，慢慢减速</span></div><div><kbd>P</kbd><span>拉上 / 松开停留刹车</span></div><div><kbd>G / F</kbd><span>收放起落架 / 调节襟翼</span></div><div><kbd>1 — 5</kbd><span>切换观察视角</span></div><div><kbd>I J K L</kbd><span>旋转或环视镜头</span></div><div><kbd>[ ] / R</kbd><span>缩放 / 重置观察视角</span></div><div><kbd>空格</kbd><span>暂停，仔细看看</span></div></div>
+<p class="hint">观察视角：鼠标左键拖动旋转，右键拖动平移，滚轮缩放。触屏用单指拖动旋转、双指张合缩放；环绕视角下双指移动可平移。驾驶舱和机翼视角可拖动环视。</p><p class="hint">推力杆像一个真的油门：往上推到 TO 是起飞推力，CLB / CRZ 是爬升和巡航，最下面是慢车。松开手柄时它会自动停在最近的档位。</p><p class="hint">手动起飞：在环境面板选择“从跑道开始”，襟翼 20° → 松开停留刹车 → 推力杆推到 TO → 约 280 km/h 时轻轻按 ↓ 抬头。离地后按 G 收轮。</p><p class="hint">如果速度太慢、机头抬得太高，机翼会失速。小机长辅助会提前帮你压低机头；关闭辅助后就要自己控制迎角啦。</p><button class="primary-btn" data-close="helpDialog">准备好了，出发！ ↗</button></dialog>
 <dialog id="retryDialog"><span class="panel-label">LET'S TRY AGAIN</span><h2>再试一次，你会飞得更好。</h2><p id="retryReason"></p><div class="retry-actions"><button class="primary-btn" data-retry="land">重新练习降落</button><button class="wide-btn" data-retry="free">回到天空</button><button class="wide-btn" data-retry="inspect">回到地面观察</button></div></dialog>
 <div id="loading"><div class="loading-inner"><span class="loading-number">747</span><div class="loading-line"><i></i></div><h2>你的巨无霸正在准备中</h2><p id="loadingText">装载机身、机翼与四台发动机…</p></div></div>
-<script type="module" src="/src/main.js"></script>
+<script type="module" src="/747/src/main.js"></script>
 </body></html>

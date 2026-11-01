@@ -1,9 +1,24 @@
 import * as T from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
-const ROOT='/assets/aircraft/';
+const ROOT='/747/assets/aircraft/';
 const textures=new Map();
+const textureLoads=new Map();
 const loader=new T.TextureLoader();
-function texture(name){if(!textures.has(name)){const t=loader.load(ROOT+name);t.colorSpace=T.SRGBColorSpace;t.anisotropy=16;textures.set(name,t);}return textures.get(name);}
+function texture(name){
+ if(!textures.has(name)){
+  let resolveLoad,rejectLoad;
+  const loaded=new Promise((resolve,reject)=>{resolveLoad=resolve;rejectLoad=reject;});
+  // Some textures are loaded by the model rather than awaited by the livery selector.
+  loaded.catch(()=>{});
+  const t=loader.load(ROOT+name,()=>resolveLoad(t),undefined,()=>{
+   if(textures.get(name)===t){textures.delete(name);textureLoads.delete(name);}
+   rejectLoad(Error('涂装载入失败，请重试'));
+  });
+  t.colorSpace=T.SRGBColorSpace;t.anisotropy=16;
+  textures.set(name,t);textureLoads.set(name,loaded);
+ }
+ return textures.get(name);
+}
 const txt=(node,tag,def='')=>node?.querySelector(':scope > '+tag)?.textContent.trim()??def;
 const num=(node,tag,def=0)=>Number(txt(node,tag,def));
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
@@ -38,10 +53,23 @@ export function parseAC(text,folder=''){
  }return object();
 }
 
-export const LIVERIES=[{id:'BOE',name:'波音经典',en:'BOEING HOUSE',color:'#164a83'},{id:'CCA',name:'中国国际航空',en:'AIR CHINA',color:'#c72c31'},{id:'BAW',name:'英国航空',en:'BRITISH AIRWAYS',color:'#172e56'},{id:'KLM',name:'荷兰皇家航空',en:'KLM ROYAL DUTCH',color:'#19a7e0'},{id:'DLH',name:'汉莎航空',en:'LUFTHANSA · CLASSIC',color:'#e8b537'}];
+export const LIVERIES=[
+ {id:'BOE',name:'波音经典',en:'BOEING HOUSE',color:'#164a83',symbol:'747',logo:'boeing.png'},
+ {id:'CCA',name:'中国国际航空',en:'AIR CHINA',color:'#c72c31',symbol:'凤',logo:'air-china.png'},
+ {id:'CEA',name:'中国东方航空',en:'CHINA EASTERN',color:'#174c9c',symbol:'东',logo:'china-eastern.png'},
+ {id:'CSN',name:'中国南方航空',en:'CHINA SOUTHERN',color:'#164d9f',symbol:'南',logo:'china-southern.png'},
+ {id:'CHH',name:'海南航空',en:'HAINAN AIRLINES',color:'#a61c2c',symbol:'海',logo:'hainan.png'},
+ {id:'UAE',name:'阿联酋航空',en:'EMIRATES',color:'#ae252d',symbol:'EK',logo:'emirates.png'},
+ {id:'BAW',name:'英国航空',en:'BRITISH AIRWAYS',color:'#172e56',symbol:'BA',logo:'british-airways.png'},
+ {id:'KLM',name:'荷兰皇家航空',en:'KLM ROYAL DUTCH',color:'#1683ad',symbol:'KLM',logo:'klm.png'},
+ {id:'DLH',name:'汉莎航空',en:'LUFTHANSA · CLASSIC',color:'#8d6806',symbol:'LH',logo:'lufthansa.png'},
+ {id:'DLH100',name:'汉莎航空 · 100周年',en:'LUFTHANSA · 100 YEARS',color:'#102958',symbol:'100',logo:'lufthansa.png'},
+ {id:'AF1_CLASSIC',name:'空军一号 · 经典涂装',en:'AIR FORCE ONE · CLASSIC',color:'#377fa3',symbol:'AF1',logo:'us-flag.png'},
+ {id:'AF1_2026',name:'空军一号 · 2026新版',en:'AIR FORCE ONE · 2026',color:'#142a50',symbol:'AF1',logo:'us-flag.png'},
+];
 
 export class Aircraft{
- constructor(){this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];}
+ constructor(){this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
@@ -104,5 +132,18 @@ export class Aircraft{
   }
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
  }
- async setLivery(id){if(!LIVERIES.some(x=>x.id===id))return;const t=texture(id+'.png');await new Promise((resolve,reject)=>{if(t.image?.complete)return resolve();const poll=setInterval(()=>{if(t.image?.complete){clearInterval(poll);clearTimeout(timer);resolve();}},40);const timer=setTimeout(()=>{clearInterval(poll);reject(Error('涂装载入超时'));},10000);});this.liveryMats.forEach(m=>{m.map=t;m.needsUpdate=true;});this.livery=id;}
+ async setLivery(id){
+  if(!LIVERIES.some(x=>x.id===id))return false;
+  const request=++this.liveryRequest,name=id+'.png',t=texture(name);
+  let timer;
+  try{
+   await Promise.race([textureLoads.get(name),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('涂装载入超时，请重试')),10000);})]);
+  }catch(error){
+   if(!t.image&&textures.get(name)===t){textures.delete(name);textureLoads.delete(name);}
+   if(request!==this.liveryRequest)return false;
+   throw error;
+  }finally{clearTimeout(timer);}
+  if(request!==this.liveryRequest)return false;
+  this.liveryMats.forEach(m=>{m.map=t;m.needsUpdate=true;});this.livery=id;return true;
+ }
 }

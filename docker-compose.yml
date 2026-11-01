@@ -1,0 +1,9 @@
+version: "3.8"
+services:
+  flight-lab:
+    build: .
+    image: ${FLIGHT_LAB_IMAGE:-747-flight-lab:local}
+    container_name: 747-flight-lab
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:18748:8748"

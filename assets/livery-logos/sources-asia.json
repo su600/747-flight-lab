@@ -1,0 +1,103 @@
+{
+  "description": "航司官网标志素材来源及处理记录；仅供权利核实，不代表已获得使用或分发授权。",
+  "common_processing": "PNG、透明 512×512 画布；按非透明边界裁切后等比缩放至最长边约410像素（约80%）并居中；不改变标志形状和配色。",
+  "logos": [
+    {
+      "id": "air-china",
+      "airline": "中国国际航空",
+      "file": "air-china.png",
+      "source_page": "https://www.airchina.com.cn/",
+      "source_image": "https://webresource.airchina.com.cn/_next/static/media/logo.85385003.png",
+      "author": "中国国际航空（官网标志，未另注明设计者）",
+      "license": "官网素材，未找到开放复用许可；使用或分发前应向权利人确认授权。",
+      "processing": "裁出原图凤凰部分，透明边界裁切、等比缩放、居中；原始图形约121×134像素。",
+      "dimensions": "512×512 RGBA",
+      "content_alpha_bounds": [
+        70,
+        51,
+        441,
+        461
+      ],
+      "sha256": "254b845dc14c5e261b0a8efc62bbc9376a4b4f83098842adb89f1c3b7ce6ff7c",
+      "trademark_notice": "航司标志和名称可能受商标及其他权利保护；素材来源或署名不构成使用许可，不得暗示航司赞助或认可。"
+    },
+    {
+      "id": "china-eastern",
+      "airline": "中国东方航空",
+      "file": "china-eastern.png",
+      "source_page": "https://m.ceair.com/",
+      "source_image": "https://ecresource.ceair.com/oss-m/ticketformapp/app.27e2310def62e8e3427e.js",
+      "verification_image": "https://www.ceair.com/favicon.ico",
+      "author": "中国东方航空（官网程序内标志，未另注明设计者）",
+      "license": "官网素材，未找到开放复用许可；使用或分发前应向权利人确认授权。",
+      "processing": "提取官网程序内 a1f9 Lottie 动画的“logo icon”矢量图层，按原贝塞尔路径转换为 PNG；动画图层水平反向，翻转以匹配官网 favicon 的标志朝向；透明边界裁切、等比缩放、居中。",
+      "dimensions": "512×512 RGBA",
+      "content_alpha_bounds": [
+        51,
+        95,
+        461,
+        417
+      ],
+      "sha256": "651f19bca587854d68ba641d04c191c165cd2852c64f7a9d4c7d8482761ace5a",
+      "trademark_notice": "航司标志和名称可能受商标及其他权利保护；素材来源或署名不构成使用许可，不得暗示航司赞助或认可。"
+    },
+    {
+      "id": "china-southern",
+      "airline": "中国南方航空",
+      "file": "china-southern.png",
+      "source_page": "https://www.csair.com/cn/index.shtml",
+      "source_stylesheet": "https://www.csair.com/cn/new/styles/home.css",
+      "source_image": "https://www.csair.com/cn/new/images/logo70_CN.png",
+      "author": "中国南方航空股份有限公司（官网标志，未另注明设计者）",
+      "license": "官网标注版权所有，未找到开放复用许可；使用或分发前应向权利人确认授权。",
+      "processing": "从官网70周年横幅左侧裁取含红色木棉的蓝色尾翼标志，排除周年图和文字；移除与外边界连通的白色背景，保留标志内部白色细节；透明边界裁切、等比缩放、居中。",
+      "dimensions": "512×512 RGBA",
+      "content_alpha_bounds": [
+        51,
+        102,
+        461,
+        410
+      ],
+      "sha256": "8fdd66001eb0204f2e3500a60b53751ac2691de103d688a67dc86b90bc4cc334",
+      "trademark_notice": "航司标志和名称可能受商标及其他权利保护；素材来源或署名不构成使用许可，不得暗示航司赞助或认可。"
+    },
+    {
+      "id": "hainan",
+      "airline": "海南航空",
+      "file": "hainan.png",
+      "source_page": "https://www.hnair.com/",
+      "source_image": "https://www.hnair.com/image_new/logo.png",
+      "author": "海南航空控股股份有限公司（官网标志，未另注明设计者）",
+      "license": "官网标注版权所有，未找到开放复用许可；使用或分发前应向权利人确认授权。",
+      "processing": "裁出官网原图红色图形，排除文字；透明边界裁切、等比缩放、居中。原图裁取部分仅约50×44像素，放大不增加原生细节，细线略软。",
+      "dimensions": "512×512 RGBA",
+      "content_alpha_bounds": [
+        51,
+        75,
+        461,
+        436
+      ],
+      "sha256": "f5453b3d0a8852a1ed684a904a9b5338c7345bc023acc4259f75520fb0fbc779",
+      "trademark_notice": "航司标志和名称可能受商标及其他权利保护；素材来源或署名不构成使用许可，不得暗示航司赞助或认可。"
+    },
+    {
+      "id": "emirates",
+      "airline": "阿联酋航空",
+      "file": "emirates.png",
+      "source_page": "https://www.emirates.com/jp/japanese/",
+      "source_image": "https://c.ekstatic.net/ecl/logos/emirates/emirates-logo-box.svg",
+      "author": "The Emirates Group（官网标志，未另注明设计者）",
+      "license": "官网标注 All Rights Reserved，未找到开放复用许可；使用或分发前应向权利人确认授权。",
+      "processing": "官网矢量图转 PNG 后裁出完整白色阿文书法标志及其原红色底，排除英文字标和靠近裁边的英文 i 字点；保持标志原色，透明画布居中。红色矩形为原标志底色而非透明背景。",
+      "dimensions": "512×512 RGBA",
+      "content_alpha_bounds": [
+        84,
+        51,
+        427,
+        461
+      ],
+      "sha256": "047097631b038cd867804acd17f994edd34ac2639ffcefdf15434640654bc113",
+      "trademark_notice": "航司标志和名称可能受商标及其他权利保护；素材来源或署名不构成使用许可，不得暗示航司赞助或认可。"
+    }
+  ]
+}

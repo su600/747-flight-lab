@@ -4,7 +4,7 @@ export class Cockpit extends Aircraft{
  async loadInterior(scale,attitudeCanvas){
   const origin=new T.Group();origin.position.set(-25.6,2.65,0);this.native.add(origin);this.native.scale.copy(scale);
   for(const [name,pos,angle] of [['cockpit',[0,0,0],0],['forward',[.751,.475,0],22],['overhead',[1.46,1.374,0],-162.5],['yokes',[0,0,0],0],['seats',[0,0,0],0]]){
-   const [ac,xml]=await Promise.all(['ac','xml'].map(ext=>fetch('/assets/aircraft/cockpit/'+name+'.'+ext).then(r=>{if(!r.ok)throw Error(name);return r.text();})));const g=parseAC(ac,'cockpit/');g.position.fromArray(pos);g.rotation.z=angle*Math.PI/180;origin.add(g);this.bind(g,new DOMParser().parseFromString(xml,'text/xml').documentElement);
+   const [ac,xml]=await Promise.all(['ac','xml'].map(ext=>fetch('/747/assets/aircraft/cockpit/'+name+'.'+ext).then(r=>{if(!r.ok)throw Error(name);return r.text();})));const g=parseAC(ac,'cockpit/');g.position.fromArray(pos);g.rotation.z=angle*Math.PI/180;origin.add(g);this.bind(g,new DOMParser().parseFromString(xml,'text/xml').documentElement);
   }
   this.root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material]){m.metalness=.05;m.roughness=.85;}}});
   this.pfd=new T.CanvasTexture(attitudeCanvas);this.pfd.colorSpace=T.SRGBColorSpace;

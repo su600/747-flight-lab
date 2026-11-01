@@ -11,7 +11,11 @@ const compressible=new Set(['.html','.js','.mjs','.css','.json','.svg','.ac','.x
 const longCache=p=>p.startsWith('/assets/')||p.startsWith('/node_modules/');
 http.createServer(async(req,res)=>{
  try{
-  const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+  const requestPath=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+  // The production proxy strips /747; accept it here too for local standalone use.
+  const pathname=requestPath==='/747'?'/':requestPath.startsWith('/747/')?requestPath.slice(4):requestPath;
+  // Never publish local configuration, Git metadata or other hidden files.
+  if(pathname.split('/').some(part=>part.startsWith('.'))){res.writeHead(404).end('Not found');return;}
   const target=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
   if(!target.startsWith(root+path.sep)){res.writeHead(403).end();return;}
   const stat=await fs.promises.stat(target);
@@ -26,4 +30,4 @@ http.createServer(async(req,res)=>{
   const stream=fs.createReadStream(target);
   if(gzip)pipeline(stream,zlib.createGzip({level:6}),res,()=>{});else pipeline(stream,res,()=>{});
  }catch{if(!res.headersSent)res.writeHead(404).end('Not found');else res.destroy();}
-}).listen(8748,'127.0.0.1',()=>console.log('747 Flight Lab: http://localhost:8748'));
+}).listen(Number(process.env.PORT)||8748,process.env.HOST||'0.0.0.0',()=>console.log(`747 Flight Lab: http://localhost:${Number(process.env.PORT)||8748}/747/`));

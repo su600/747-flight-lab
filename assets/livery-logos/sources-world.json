@@ -1,0 +1,116 @@
+{
+  "description": "涂装菜单素材来源记录；各素材版权状态不等于商标授权，英国航空官方素材未附开放许可。",
+  "accessed_utc": "2026-11-01",
+  "assets": [
+    {
+      "id": "boeing",
+      "label": "Boeing",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Boeing_full_logo.svg",
+      "source_file": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Boeing_full_logo.svg",
+      "creator": "Boeing; Richard Burch Eiber",
+      "license": {
+        "name": "Public domain (Commons: PD-textlogo)",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-textlogo",
+        "note": "Commons 将此标志标为简单几何形状或文字、未达到版权独创性门槛；各司法辖区的判断可能不同。该标记不授予商标使用权。"
+      },
+      "trademark": "Boeing 名称及标志可能受商标保护；公有领域版权标记不等于商标授权，不得暗示赞助或关联。",
+      "selection": "完整波音标志及字标",
+      "source_sha256": "6942323654a190407f870f7b0bdec028bdf4518ad033d539fd6397b941fddf26",
+      "file": "boeing.png",
+      "output_sha256": "1e4776de2a808b81141f88db385a18164d113033e91849c3c904b0b925926a99",
+      "output_size": [
+        512,
+        512
+      ],
+      "conversion": "源 SVG 用 librsvg 等比例栅格化，仅裁去透明留白、缩放并居中放入 512×512 透明画布；未重画或改变原图颜色。"
+    },
+    {
+      "id": "british-airways",
+      "label": "British Airways",
+      "source_page": "https://mediacentre.britishairways.com/",
+      "source_file": "https://mediacentre.britishairways.com/assets/britishairways__site_v2/images/ba_speedmarque.svg",
+      "creator": "British Airways",
+      "license": {
+        "name": "All rights reserved (官方网页页脚)",
+        "url": "https://mediacentre.britishairways.com/",
+        "note": "官方页面页脚标注 © British Airways - all rights reserved；未找到该图的开放许可或转载授权。使用前应自行确认适用法律及必要授权。"
+      },
+      "trademark": "Speedmarque 是 British Airways 品牌标识；不授予商标授权，不得暗示赞助或关联。",
+      "selection": "航司官方媒体中心的独立红蓝 Speedmarque，非自绘；较完整横向字标更适合小尺寸。",
+      "source_sha256": "c23bec2fea460d082b9f42229b59b90e6b2e04f5596bc8809f04f5d6d623009f",
+      "file": "british-airways.png",
+      "output_sha256": "ce79a4fcbf59a8f6078c66bab50205ae3bb50c0848549a88cb8f3280a9c1095c",
+      "output_size": [
+        512,
+        512
+      ],
+      "conversion": "源 SVG 用 librsvg 等比例栅格化，仅裁去透明留白、缩放并居中放入 512×512 透明画布；未重画或改变原图颜色。"
+    },
+    {
+      "id": "klm",
+      "label": "KLM Royal Dutch Airlines",
+      "source_page": "https://commons.wikimedia.org/wiki/File:KLM_logo.svg",
+      "source_file": "https://upload.wikimedia.org/wikipedia/commons/c/c7/KLM_logo.svg",
+      "creator": "F.H.K. Henrion; modified by Chris Ludlow",
+      "license": {
+        "name": "Public domain (Commons: PD-textlogo)",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-textlogo",
+        "note": "Commons 将此标志标为简单几何形状或文字、未达到版权独创性门槛；各司法辖区的判断可能不同。该标记不授予商标使用权。"
+      },
+      "trademark": "KLM 名称、皇冠及标志可能受商标保护；公有领域版权标记不等于商标授权，不得暗示赞助或关联。",
+      "selection": "皇冠与 KLM 字标",
+      "source_sha256": "b51dad39b4fb78410de0d5e72164d79da112956e5d3415ce5924d8da6ef01ee5",
+      "file": "klm.png",
+      "output_sha256": "365eba58dacab69796beeb47ddfdbbb03bbf9676a42c953c451ebc530f838a27",
+      "output_size": [
+        512,
+        512
+      ],
+      "conversion": "源 SVG 用 librsvg 等比例栅格化，仅裁去透明留白、缩放并居中放入 512×512 透明画布；未重画或改变原图颜色。"
+    },
+    {
+      "id": "lufthansa",
+      "label": "Lufthansa",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Lufthansa_Logo_2018_crane.svg",
+      "source_file": "https://upload.wikimedia.org/wikipedia/commons/c/c4/Lufthansa_Logo_2018_crane.svg",
+      "creator": "Lufthansa Group (Commons 标注，来源为 Lufthansa Styleguide y0.9)",
+      "license": {
+        "name": "Public domain (Commons: PD-textlogo)",
+        "url": "https://commons.wikimedia.org/wiki/Template:PD-textlogo",
+        "note": "Commons 将此标志标为简单几何形状或文字、未达到版权独创性门槛；各司法辖区的判断可能不同。该标记不授予商标使用权。"
+      },
+      "trademark": "Lufthansa 名称及鹤徽可能受商标保护；公有领域版权标记不等于商标授权，不得暗示赞助或关联。",
+      "selection": "2018 年鹤徽独立标识，取自 Commons 所列 Lufthansa Styleguide 版本。",
+      "source_sha256": "f5aedb5d1c88ba777d07eed35109b3dd8ad34870c79f28df0fbfe50a597cd7b9",
+      "file": "lufthansa.png",
+      "output_sha256": "7e545b6bebc50a99507d439314ba3e82d11c1182acf09b379ae679326e667ddc",
+      "output_size": [
+        512,
+        512
+      ],
+      "conversion": "源 SVG 用 librsvg 等比例栅格化，仅裁去透明留白、缩放并居中放入 512×512 透明画布；未重画或改变原图颜色。"
+    },
+    {
+      "id": "us-flag",
+      "label": "United States flag (Air Force One)",
+      "source_page": "https://commons.wikimedia.org/wiki/File:Flag_of_the_United_States.svg",
+      "source_file": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Flag_of_the_United_States.svg",
+      "creator": "Dbenbenn and other Commons contributors; design per U.S. flag specifications",
+      "license": {
+        "name": "Public domain (Commons: PD-flag / PD-USGov)",
+        "url": "https://commons.wikimedia.org/wiki/File:Flag_of_the_United_States.svg#Licensing",
+        "note": "Commons 标记为旗帜公共财产及美国联邦政府作品公有领域；参见具体文件页的两个声明。"
+      },
+      "trademark": "美国国旗是国家象征，不是航空公司商标或标志；使用时应遵守适用的国旗使用规范，勿暗示政府背书。",
+      "selection": "美国国旗，用于非航司空军一号条目，不代表航空公司。",
+      "source_sha256": "48f0d3e4a7bf2d5c0c8d09cd975696acb2f3af601aaca80c537933ad9ec166ec",
+      "file": "us-flag.png",
+      "output_sha256": "6c7100f21b9a8e7db7301beadbdf8a337f5397b85271ba8043a976cec4cc7675",
+      "output_size": [
+        512,
+        512
+      ],
+      "conversion": "源 SVG 用 librsvg 等比例栅格化，仅裁去透明留白、缩放并居中放入 512×512 透明画布；未重画或改变原图颜色。"
+    }
+  ]
+}
