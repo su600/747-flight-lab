@@ -40,7 +40,7 @@ function pavementTexture(base,scale=1,{joints=0,stains=18}={}){const S=1024,c=do
  for(let i=0;i<120000;i++){const g=Math.floor(rnd()*255);x.fillStyle=`rgba(${g},${g},${g},.07)`;x.fillRect(rnd()*S,rnd()*S,1+rnd()*2,1+rnd()*2);}
  x.strokeStyle='rgba(10,12,12,.28)';x.lineWidth=1;for(let i=0;i<26;i++){let px=rnd()*S,py=rnd()*S;x.beginPath();x.moveTo(px,py);for(let k=0;k<8;k++){px+=(rnd()-.5)*46;py+=(rnd()-.35)*34;x.lineTo(px,py);}x.stroke();}
  if(joints){x.strokeStyle='rgba(20,22,22,.34)';x.lineWidth=2;for(let k=0;k<=joints;k++){const q=k*S/joints;x.beginPath();x.moveTo(q,0);x.lineTo(q,S);x.stroke();x.beginPath();x.moveTo(0,q);x.lineTo(S,q);x.stroke();}}
- const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=16;return t;}
+ const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
 // Greyscale lumps for a gentle bump on grass, so the low sun grazes real relief.
 function grassBumpTexture(){const S=512,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#808080';x.fillRect(0,0,S,S);
  for(let i=0;i<90000;i++){const g=Math.floor(90+rnd()*80);x.fillStyle=`rgb(${g},${g},${g})`;x.fillRect(rnd()*S,rnd()*S,1+rnd()*2,1+rnd()*4);}
@@ -75,7 +75,7 @@ export class World{
   this.sky=new Sky();this.sky.scale.setScalar(200000);scene.add(this.sky);const u=this.sky.material.uniforms;u.turbidity.value=3;u.rayleigh.value=1.6;u.mieCoefficient.value=.004;u.mieDirectionalG.value=.82;
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
-  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(4096,4096);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
+  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.6;this.ground(0,0,100000,100000,grass,-.05);
   // Mowed stripes beside the runway and soft far-field patches break up the horizon.
   const mowA=mat('#7c9764',.95),mowB=mat('#8aa571',.95);for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,-.045);

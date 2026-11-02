@@ -7,24 +7,30 @@ const fg=(x,y,z)=>new T.Vector3(x,z,-y);
 // Round-robin particle pool drawn as soft points, with per-particle colour + alpha.
 class Pool{
  constructor(scene,{count,size,color,additive=false,map=null}){
-  this.n=count;this.next=0;
+  this.n=count;this.next=0;this.alive=0;
   this.pos=new Float32Array(count*3);this.col=new Float32Array(count*4);
   this.vel=new Float32Array(count*3);this.age=new Float32Array(count).fill(1e3);this.life=new Float32Array(count).fill(1);this.alpha=new Float32Array(count);
   for(let i=0;i<count;i++){this.col.set([color[0],color[1],color[2],0],i*4);}
   this.rgb=color;
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.pos,3));g.setAttribute('color',new T.BufferAttribute(this.col,4));
   this.points=new T.Points(g,new T.PointsMaterial({size,map,vertexColors:true,transparent:true,depthWrite:false,blending:additive?T.AdditiveBlending:T.NormalBlending}));
-  this.points.frustumCulled=false;this.points.renderOrder=10;scene.add(this.points);
+  this.points.frustumCulled=false;this.points.renderOrder=10;this.points.visible=false;this.wasLive=false;scene.add(this.points);
  }
  emit(p,v,life,alpha){
   const i=this.next;this.next=(i+1)%this.n;
-  this.pos.set([p.x,p.y,p.z],i*3);this.vel.set(v?[v.x,v.y,v.z]:[0,0,0],i*3);this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;
+  if(this.age[i]>=this.life[i])this.alive++;
+  this.points.visible=true;
+  const k=i*3;this.pos[k]=p.x;this.pos[k+1]=p.y;this.pos[k+2]=p.z;
+  this.vel[k]=v?v.x:0;this.vel[k+1]=v?v.y:0;this.vel[k+2]=v?v.z:0;
+  this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;
  }
  update(dt){
+  // Idle pools cost nothing: no per-particle loop and no GPU buffer upload.
+  if(this.alive===0){if(this.wasLive){this.points.visible=false;this.wasLive=false;}return;}
   let live=false;
   for(let i=0;i<this.n;i++){
-   const age=this.age[i]+=dt;
-   if(age>=this.life[i]){this.col[i*4+3]=0;continue;}
+   const prev=this.age[i],age=this.age[i]=prev+dt;
+   if(age>=this.life[i]){if(prev<this.life[i])this.alive--;this.col[i*4+3]=0;continue;}
    live=true;const k=i*3;this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
    const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);
   }
@@ -123,7 +129,8 @@ export class Airflow{
    this.streakPos[k]=p.x;this.streakPos[k+1]=p.y;this.streakPos[k+2]=p.z;
    this.streakPos[k+3]=p.x-dir.x*len;this.streakPos[k+4]=p.y-dir.y*len;this.streakPos[k+5]=p.z-dir.z*len;
    const a=on?base:0;
-   this.streakCol.set([shade,shade,1,a,shade,shade,1,0],c);
+   this.streakCol[c]=shade;this.streakCol[c+1]=shade;this.streakCol[c+2]=1;this.streakCol[c+3]=a;
+   this.streakCol[c+4]=shade;this.streakCol[c+5]=shade;this.streakCol[c+6]=1;this.streakCol[c+7]=0;
   }
   this.streaks.geometry.attributes.position.needsUpdate=true;this.streaks.geometry.attributes.color.needsUpdate=true;this.streaks.visible=strength>.02;
  }

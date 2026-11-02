@@ -204,8 +204,9 @@ def paint_body(im, kind):
                 eng, arabic = (555,92,1120,141), (727,39,1120,93)
             else:
                 eng, arabic = (1238,dy+92,1803,dy+141), (1238,dy+39,1631,dy+93)
-            text_fit(im, "Emirates", eng, SERIF_BOLD, (174,135,58,255), 72)
-            text_fit(im, "الإمارات", arabic, SANS_BOLD, (174,135,58,255), 74, "rtl")
+            # Emirates titles are red (Pantone 186C / #D71920), not gold.
+            text_fit(im, "Emirates", eng, SERIF_BOLD, (215,25,32,255), 72)
+            text_fit(im, "الإمارات", arabic, SANS_BOLD, (215,25,32,255), 74, "rtl")
         else:
             title = (560,79,1480,125) if side == 0 else (878,dy+79,1798,dy+125)
             text_fit(im, "UNITED STATES OF AMERICA", title, SERIF, NAVY+(255,), 52, tracking=1.5)
@@ -233,8 +234,9 @@ def paint_tails(im, kind):
             uae_tail(d, ox)
         elif kind == "classic":
             rect(d, (ox,650,ox+550,948), WHITE)
-            # Traditional small flag near the tip, hoist towards the leading edge.
-            flag(d, ox+389, 674, 112, 62, slant=13)
+            # The real VC-25A carries a large flag over most of the fin, with
+            # the hoist along the swept leading edge (not a small tip badge).
+            flag(d, ox+272, 690, 238, 150, slant=114)
             line(d, [(ox+23,936),(ox+407,936)], (91,164,203), 4)
         else:
             rect(d, (ox,650,ox+550,948), WHITE)

@@ -30,10 +30,10 @@ SPEC={
  'CEA':('CHINA EASTERN', '#243c82','#ffffff','cea'),
  'CSN':('CHINA SOUTHERN', '#0056a6','#0874b5','csn'),
  'CHH':('HAINAN AIRLINES', '#a81f2b','#a40f26','chh'),
- 'UAE':('EMIRATES', '#a27a2d','#ffffff','uae'),
+ 'UAE':('EMIRATES', '#d71920','#ffffff','uae'),
  'BAW':('BRITISH AIRWAYS', '#173457','#112c57','baw'),
  'KLM':('KLM ROYAL DUTCH AIRLINES', '#168cbf','#119ddd','klm'),
- 'DLH':('LUFTHANSA', '#15345e','#f6ca24','dlh'),
+ 'DLH':('LUFTHANSA', '#15345e','#15345e','dlh'),
  'DLH100':('LUFTHANSA 100 YEARS', '#15345e','#152d54','dlh100'),
  'AF1_CLASSIC':('UNITED STATES OF AMERICA', '#448db8','#ffffff','af1classic'),
  'AF1_2026':('UNITED STATES OF AMERICA', '#142d52','#142c52','af12026'),
@@ -118,7 +118,9 @@ def icon(kind, art):
   d.rectangle((95,125,295,142),fill='white');d.rectangle((181,22,193,113),fill='white');d.rectangle((163,39,212,51),fill='white')
   text_center(d,'KLM',(40,145,360,290),'white',125)
  elif kind in ('dlh','dlh100'):
-  col='#163056' if kind=='dlh' else '#ffffff'
+  # Lufthansa's fin is dark blue with a yellow crane; the earlier atlas had
+  # these two colours inverted (yellow fin, blue crane).
+  col='#f6ca24' if kind=='dlh' else '#ffffff'
   if kind=='dlh':d.ellipse((40,40,360,360),outline=col,width=13)
   d.line([(65,238),(170,195),(300,150),(335,153)],fill=col,width=12)
   d.line([(164,195),(208,100),(247,82)],fill=col,width=12)
@@ -153,14 +155,15 @@ def body_image(base, title, ink, kind):
   im.paste(layer,(25*Q,y*Q),layer)
  return im
 
-def tail_image(base, mask, tailcolor, glyph):
+def tail_image(base, mask, tailcolor, glyph, size=114):
  im=base.copy(); colored=ImageChops.multiply(Image.new('RGB',(N,N),tailcolor),base)
  im.paste(colored,(0,0),mask)
  # Two fin islands have a vertical offset of .36914, approximately 378/1024.
  for y,mirror in ((409,False),(787,True)):
-  pic=glyph.resize((114*Q,114*Q),Image.Resampling.LANCZOS)
+  pic=glyph.resize((size*Q,size*Q),Image.Resampling.LANCZOS)
   if mirror:pic=pic.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
-  x=758*Q; yy=y*Q
+  # Keep the emblem centred on the fin when a larger motif is requested.
+  x=round((758-(size-114)/2)*Q); yy=y*Q
   # Do not let an emblem spill into a nearby atlas island.
   alpha=ImageChops.multiply(pic.getchannel('A'),mask.crop((x,yy,x+pic.width,yy+pic.height)))
   full=np.asarray(pic.getchannel('A')); clipped=np.asarray(alpha)
@@ -181,7 +184,10 @@ def main():
  for ident,(title,ink,tailcolor,kind) in SPEC.items():
   info=PngImagePlugin.PngInfo(); info.add_text('Comment','Approximate or fictional 777-200LR interpretation; FlightGear 777-VMD GPL-2.0; original schematic artwork; no registration.')
   body_image(body,title,ink,kind).save(OUT/f'{ident}-body.png',pnginfo=info,optimize=True)
-  tail_image(tail,mask,tailcolor,icon(kind,art)).save(OUT/f'{ident}-fin.png',pnginfo=info,optimize=True)
+  # The presidential flag is the whole fin motif, so give it more of the fin
+  # than the small airline emblems need.
+  size=200 if ident in ('AF1_CLASSIC','AF1_2026') else 114
+  tail_image(tail,mask,tailcolor,icon(kind,art),size).save(OUT/f'{ident}-fin.png',pnginfo=info,optimize=True)
   print('generated',ident)
 
 if __name__=='__main__':main()

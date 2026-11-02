@@ -30,7 +30,7 @@ function requestLiveryTexture(owner,url,timeoutMs){
   try{texture=new T.TextureLoader().load(url,t=>{
    const image=t.image,w=image?.naturalWidth??image?.width,h=image?.naturalHeight??image?.height;
    if(w!==2048||h!==1024){finish(Error('A330 涂装贴图尺寸错误'),t);return;}
-   t.colorSpace=T.SRGBColorSpace;t.anisotropy=16;finish(null,t);
+   t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;finish(null,t);
   },undefined,()=>finish(Error('A330 涂装贴图载入失败')));}catch(error){finish(error);}
  });
 }

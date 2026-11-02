@@ -17,7 +17,7 @@ function texture(name){
    if(textures.get(name)===t){textures.delete(name);textureLoads.delete(name);}
    rejectLoad(Error('涂装载入失败，请重试'));
   });
-  t.colorSpace=T.SRGBColorSpace;t.anisotropy=16;
+  t.colorSpace=T.SRGBColorSpace;t.anisotropy=8;
   textures.set(name,t);textureLoads.set(name,loaded);
  }
  return textures.get(name);
@@ -25,6 +25,7 @@ function texture(name){
 const txt=(node,tag,def='')=>node?.querySelector(':scope > '+tag)?.textContent.trim()??def;
 const num=(node,tag,def=0)=>Number(txt(node,tag,def));
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
+const _pivot=new T.Vector3();
 const children=(el,name)=>Array.from(el.children).filter(x=>x.tagName===name);
 
 // AC3D is Y-up. FlightGear animation XML is Z-up; transform pivots and axes together.
@@ -133,7 +134,7 @@ export class Aircraft{
    let v=this.value(a.prop,s);if(a.table.length){const t=a.table;if(v<=t[0][0])v=t[0][1];else if(v>=t.at(-1)[0])v=t.at(-1)[1];else for(let i=1;i<t.length;i++)if(v<=t[i][0]){v=T.MathUtils.lerp(t[i-1][1],t[i][1],(v-t[i-1][0])/(t[i][0]-t[i-1][0]));break;}}
    v=v*a.factor+a.offset;
    if(a.type==='spin'){a.phase=(a.phase+v*dt*6)%360;v=a.phase;}
-   for(const o of a.wrappers){if(a.type==='translate')o.position.copy(a.axis).multiplyScalar(v);else{o.quaternion.setFromAxisAngle(a.axis,v*Math.PI/180);o.position.copy(a.center).sub(a.center.clone().applyQuaternion(o.quaternion));}}
+   for(const o of a.wrappers){if(a.type==='translate')o.position.copy(a.axis).multiplyScalar(v);else{o.quaternion.setFromAxisAngle(a.axis,v*Math.PI/180);o.position.copy(a.center).sub(_pivot.copy(a.center).applyQuaternion(o.quaternion));}}
   }
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
  }
