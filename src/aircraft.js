@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+import {CARGO_LIVERIES} from './cargo-liveries.js';
 const ROOT='/747/assets/aircraft/';
 const textures=new Map();
 const textureLoads=new Map();
@@ -66,10 +67,11 @@ export const LIVERIES=[
  {id:'DLH100',name:'汉莎航空 · 100周年',en:'LUFTHANSA · 100 YEARS',color:'#102958',symbol:'100',logo:'lufthansa.png'},
  {id:'AF1_CLASSIC',name:'空军一号 · 经典涂装',en:'AIR FORCE ONE · CLASSIC',color:'#377fa3',symbol:'AF1',logo:'us-flag.png'},
  {id:'AF1_2026',name:'空军一号 · 2026新版',en:'AIR FORCE ONE · 2026',color:'#142a50',symbol:'AF1',logo:'us-flag.png'},
+ ...CARGO_LIVERIES,
 ];
 
 export class Aircraft{
- constructor(){this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;}
+ constructor(){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
@@ -133,8 +135,10 @@ export class Aircraft{
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
  }
  async setLivery(id){
-  if(!LIVERIES.some(x=>x.id===id))return false;
-  const request=++this.liveryRequest,name=id+'.png',t=texture(name);
+  const livery=LIVERIES.find(x=>x.id===id);if(!livery)return false;
+  const request=++this.liveryRequest;
+  if(this.paintLivery){this.paintLivery(livery);this.livery=id;return true;}
+  const name=livery.file||id+'.png',t=texture(name);
   let timer;
   try{
    await Promise.race([textureLoads.get(name),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('涂装载入超时，请重试')),10000);})]);

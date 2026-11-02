@@ -9,6 +9,12 @@ tools/*
 !tools/check-flight.mjs
 !tools/check-liveries.mjs
 !tools/check-camera.mjs
+!tools/check-a380-lighting.mjs
+!tools/check-aircraft-options.mjs
+!tools/check-model-paint.mjs
+!tools/check-twin-animation.mjs
+!tools/aircraft-options-browser-adapter.mjs
+!tools/generate_cargo_liveries.py
 !tools/generate_china_liveries.py
 !tools/generate_lufthansa_100.py
 !tools/generate_world_liveries.py

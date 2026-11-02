@@ -1,0 +1,19 @@
+<!doctype html><meta charset="utf-8"><style>html,body{margin:0}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/747/node_modules/three/build/three.module.js","three/addons/":"/747/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as T from 'three';
+import {A380Aircraft} from '/747/src/a380-aircraft.js';
+import {TwinAircraft} from '/747/src/twin-aircraft.js';
+import {World} from '/747/src/world.js';
+const renderer=new T.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setSize(640,360);renderer.setPixelRatio(1);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
+const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,640/360,.2,2000);camera.position.set(0,8,95);camera.lookAt(0,-2,0);
+const sun=new T.DirectionalLight(),hemi=new T.HemisphereLight();scene.add(sun,sun.target,hemi);const envOwner={envs:{},renderer};
+const craft=await new A380Aircraft().load();scene.add(craft.root);await craft.setLivery('BOE');
+const ground=new T.Mesh(new T.PlaneGeometry(500,500),new T.MeshLambertMaterial({color:0xb8b5aa}));ground.rotation.x=-Math.PI/2;ground.position.y=-craft.contact-.05;ground.receiveShadow=true;scene.add(ground);
+function time(mode){const night=mode==='night',dusk=mode==='dusk';scene.background=new T.Color(night?0x081426:0xb9d2db);scene.environment=World.prototype.envFor.call(envOwner,mode);scene.environmentIntensity=night?.55:dusk?.8:1;sun.intensity=night?.35:dusk?2.6:3.2;sun.color.set(night?0x9db4ff:dusk?0xffa868:0xfff5de);sun.position.set(300,night?160:dusk?90:500,-250);hemi.intensity=night?.45:dusk?.75:1.15;hemi.color.set(night?0x6b86bf:dusk?0xffcfa8:0xcde9ff);hemi.groundColor.set(night?0x1e2a3a:dusk?0x6a5a56:0x758466);renderer.toneMappingExposure=night?1:dusk?.95:.83;}
+let twin;
+window.probe={craft,renderer,scene,time,render(){renderer.render(scene,camera);},async showTwin(id){
+ if(!twin){twin=await new TwinAircraft('b777').load();scene.remove(craft.root);scene.add(twin.root);ground.position.y=-twin.contact-.05;}
+ await twin.setLivery(id);camera.position.set(-31,9,24);camera.fov=32;camera.lookAt(-30,5,0);camera.updateProjectionMatrix();
+ }};time('day');window.probe.render();window.ready=true;
+</script>

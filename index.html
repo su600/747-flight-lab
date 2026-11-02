@@ -20,7 +20,7 @@
   <div class="compass-needle"></div>
   <div class="compass-box"><span>HDG</span><strong id="headingValue">090<small> °</small></strong></div>
  </div>
- <div class="craft-chip"><b>BOEING 747–400</b><i></i><span id="liveryName">波音经典涂装</span></div>
+ <div class="craft-chip"><b id="aircraftName">BOEING 747–400</b><i></i><span id="liveryName">波音经典涂装</span></div>
 
  <nav class="modes glass" aria-label="飞行模式">
   <div class="panel-label"><span class="live-dot"></span>MISSION · 今日任务</div>
@@ -33,6 +33,7 @@
  </nav>
 
  <nav class="rail" aria-label="探索工具">
+  <button data-panel="aircraft" title="切换机型"><svg viewBox="0 0 24 24"><path d="M12 2v20M12 4l-3 7-6 3v2l6-1 1 4-2 2h8l-2-2 1-4 6 1v-2l-6-3z"/></svg><em>机型</em></button>
   <button data-panel="parts" title="可动部件"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><em>部件</em></button>
   <button data-panel="livery" title="切换涂装"><svg viewBox="0 0 24 24"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg><em>涂装</em></button>
   <button data-panel="world" title="环境与设置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><em>环境</em></button>
@@ -41,17 +42,27 @@
 
  <aside id="drawer" class="glass" hidden>
   <div class="drawer-head"><div><span class="panel-label">EXPLORE · 探索</span><h2 id="drawerTitle">可动部件</h2></div><button id="closeDrawer" aria-label="关闭面板">×</button></div>
+  <section id="aircraftPanel" class="drawer-content" hidden>
+   <p class="hint">保留当前飞行状态与涂装；A380 和 A330 首次载入需要等待。驾驶舱与飞行模型为共用 747 简化示意。</p>
+   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–300ER</option></select>
+   <div id="aircraftChoices" class="aircraft-choices" role="group" aria-label="机型快捷选择">
+    <button data-aircraft="b747" class="active" aria-pressed="true"><b>BOEING 747–400</b><small>四发 · 标志性上层客舱</small></button>
+    <button data-aircraft="a380" aria-pressed="false"><b>AIRBUS A380–800</b><small>四发 · 全长双层客舱</small></button>
+    <button data-aircraft="a330" aria-pressed="false"><b>AIRBUS A330–303</b><small>双发 GE CF6 · FlightGear 外部模型</small></button>
+    <button data-aircraft="b777" aria-pressed="false"><b>BOEING 777–300ER</b><small>双发 · 后掠翼尖</small></button>
+   </div><p id="aircraftStatus" class="fine-print" role="status"></p><p class="fine-print">A380 模型采用 FlyByWire A380X，CC BY-NC 4.0，仅限非商业用途。<a href="/747/assets/a380/CREDITS.txt" target="_blank">模型署名与许可 ↗</a></p>
+  </section>
   <section id="partsPanel" class="drawer-content" hidden>
    <p class="hint">地面观察时也能收放起落架，看看轮子藏到哪里。点击部件名称可拉近镜头。</p>
-   <div class="part-row"><button class="part-name" data-focus="gear">起落架 <small>18 个轮子，5 组支撑</small></button><button class="toggle active" id="gear">已放下</button></div>
+   <div class="part-row"><button class="part-name" data-focus="gear">起落架 <small id="gearDescription">18 个轮子，5 组支撑</small></button><button class="toggle active" id="gear">已放下</button></div>
    <div class="part-control"><div><button class="part-name" data-focus="wing">襟翼 <small>让飞机慢一点也能飞</small></button><output id="flapsValue">0°</output></div><input id="flaps" type="range" min="0" max="30" step="5" value="0" aria-label="襟翼角度"><div class="range-labels"><span>收起</span><span>起飞 20°</span><span>着陆 30°</span></div></div>
    <div class="part-control"><div><button class="part-name" data-focus="wing">副翼</button><output id="aileronValue">0°</output></div><input id="aileron" type="range" min="-1" max="1" step=".05" value="0" aria-label="副翼"></div>
    <div class="part-control"><div><button class="part-name" data-focus="tail">升降舵</button><output id="elevatorValue">0°</output></div><input id="elevator" type="range" min="-1" max="1" step=".05" value="0" aria-label="升降舵"></div>
    <div class="part-control"><div><button class="part-name" data-focus="tail">方向舵</button><output id="rudderValue">0°</output></div><input id="rudder" type="range" min="-1" max="1" step=".05" value="0" aria-label="方向舵"></div>
-   <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door">下层货舱门<span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="engineInspect">发动机风扇<span>慢速转动</span></button></div>
+   <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door"><b id="doorLabel">下层货舱门</b><span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="engineInspect">发动机风扇<span>慢速转动</span></button></div>
    <button class="wide-btn" id="neutral">舵面回到中立位置</button>
   </section>
-  <section id="liveryPanel" class="drawer-content" hidden><p class="hint">换一种颜色，开始下一趟旅程。</p><div id="liveries"></div><p class="fine-print">部分涂装参考其他机型设计，适配至本模拟器的 747-400，并非真实机型复刻。航空公司名称与标识仅用于飞机识别和学习。模型与贴图来源见“百科”。</p></section>
+  <section id="liveryPanel" class="drawer-content" hidden><p class="hint">换一种颜色，开始下一趟旅程。</p><p id="liveryDetails" class="fine-print" role="status" hidden></p><div id="liveries"></div><p class="fine-print">部分涂装为示意设计，并非真实机队复刻。A330 采用机型专用涂装，14 款均为移植或近似；其他机型的适配方式不同。航空公司名称与标识仅用于识别和学习。</p></section>
   <section id="worldPanel" class="drawer-content" hidden>
    <h3>选择一天中的时刻</h3>
    <div class="time-options">
@@ -67,12 +78,12 @@
    <button class="wide-btn primary" id="runwayStart">从跑道开始手动起飞</button>
   </section>
   <section id="aboutPanel" class="drawer-content" hidden>
-   <div class="about-number">747<span>–400</span></div>
+   <div id="aboutDetails"><div class="about-number">747<span>–400</span></div>
    <p>“空中女王”拥有标志性的上层客舱、四台涡扇发动机，以及向上翘起的翼尖小翼。</p>
    <div class="spec-grid"><div><strong>70.7<small> m</small></strong><span>机身长度</span></div><div><strong>64.4<small> m</small></strong><span>机翼展开宽度</span></div><div><strong>19.4<small> m</small></strong><span>飞机高度</span></div><div><strong>18<small> 个</small></strong><span>起落架轮胎</span></div></div>
    <h3>看看它和真实飞机的关系</h3>
    <p class="hint">使用 FlightGear 747-400 的机身、机翼、GE CF6 发动机与关节定义。保留上层客舱、翼尖小翼、三段后缘襟翼及五组起落架。飞行力学和仪表经过简化。</p>
-   <a class="source-link" href="/747/MODEL-NOTES.html" target="_blank">模型比对、来源与许可 ↗</a>
+   </div><a class="source-link" href="/747/MODEL-NOTES.html" target="_blank">747 模型比对、来源与许可 ↗</a><p class="fine-print">A380：<a href="/747/assets/a380/CREDITS.txt" target="_blank">FlyByWire A380X · CC BY-NC 4.0，仅限非商业用途 ↗</a>。A330：<a href="/747/assets/accurate-a330/NOTICE" target="_blank">FlightGear A330-303 来源、署名与 GPL-2.0 ↗</a>；货运外观为近似示意，并非 A330-200F。777 为原创示意模型；驾驶舱与飞行动力学共用 747 简化版本。</p>
   </section>
  </aside>
 
@@ -87,12 +98,12 @@
   <div class="cell cell-att"><canvas id="attitude" width="200" height="150" aria-label="姿态仪"></canvas><span class="cell-cap" id="flightState">地面 · α 0° · 1.0 G</span></div>
   <div class="cell cell-metric"><span class="cap">速度 <small>AIRSPEED</small></span><strong id="speedValue">0<small> km/h</small></strong><em id="speedKts">0 KTS · M 0.00</em></div>
   <div class="cell cell-metric"><span class="cap">高度 <small>ALTITUDE</small></span><strong id="altValue">0<small> m</small></strong><em id="verticalValue">垂直速度 0 m/s</em></div>
-  <div class="cell cell-thrust" aria-label="四台发动机推力控制台">
+  <div class="cell cell-thrust" aria-label="发动机推力控制台">
    <div class="thrust-head"><span class="cap">推力 <small>THRUST</small></span><output id="throttleValue">慢车</output></div>
    <div class="thrust-body">
     <div class="detents" aria-hidden="true"><span style="--at:1">TO</span><span style="--at:.84">CLB</span><span style="--at:.66">CRZ</span><span style="--at:0">IDLE</span></div>
     <div id="throttle" class="thrust-lever" role="slider" tabindex="0" aria-label="发动机推力杆" aria-orientation="vertical" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-valuetext="慢车 0%"><div class="lever-slot"><div class="lever-fill" id="leverFill"></div><div class="lever-handle" id="leverHandle"><i></i><span>推力</span><i></i></div></div></div>
-    <div class="n1" aria-label="四台发动机 N1 转速"><div class="engine-meter"><span>1</span><i id="n1a"></i><b>22</b></div><div class="engine-meter"><span>2</span><i id="n1b"></i><b>22</b></div><div class="engine-meter"><span>3</span><i id="n1c"></i><b>22</b></div><div class="engine-meter"><span>4</span><i id="n1d"></i><b>22</b></div><small>GE CF6 · N1 %</small></div>
+    <div class="n1" aria-label="发动机 N1 转速"><div class="engine-meter"><span>1</span><i id="n1a"></i><b>22</b></div><div class="engine-meter"><span>2</span><i id="n1b"></i><b>22</b></div><div class="engine-meter"><span>3</span><i id="n1c"></i><b>22</b></div><div class="engine-meter"><span>4</span><i id="n1d"></i><b>22</b></div><small id="engineLabel">GE CF6 · N1 %</small></div>
    </div>
   </div>
   <div class="cell cell-actions" aria-label="主要飞行控制">

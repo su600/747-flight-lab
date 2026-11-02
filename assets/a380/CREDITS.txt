@@ -1,0 +1,36 @@
+A380 DISCOVERY — THIRD-PARTY MODEL ATTRIBUTION
+
+Aircraft exterior models and textures: FlyByWire Simulations and contributors.
+Project: FlyByWire A380X (Airbus A380-842, Rolls-Royce Trent 972B-84 configuration).
+Source: https://github.com/flybywiresim/aircraft-large-files
+Revision: 8ff04cf636ed4e0957054b9e4be5689e3a1d32e8
+Source directory:
+fbw-a380x/src/base/flybywire-aircraft-a380-842/SimObjects/AirPlanes/FlyByWire_A380X/
+
+Original 3D assets are licensed under Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
+License: https://creativecommons.org/licenses/by-nc/4.0/
+Legal text: https://creativecommons.org/licenses/by-nc/4.0/legalcode.en
+License evidence: https://github.com/flybywiresim/aircraft-large-files/blob/8ff04cf636ed4e0957054b9e4be5689e3a1d32e8/README.md#license
+
+THIS VIEWER'S INCLUDED MODEL ASSETS ARE FOR NON-COMMERCIAL USE ONLY.
+Attribution and license notices must accompany redistribution. This permission does not cover commercial deployments.
+No endorsement by FlyByWire Simulations, Airbus, Rolls-Royce or Microsoft is implied.
+Aircraft names and marks belong to their respective owners.
+
+Adaptations for this educational viewer:
+- Original exterior fuselage; LOD01 wings/engines and nose gear; original wing/body gear components.
+- Simulator-specific material extensions replaced with portable glTF PBR materials.
+- Original BC-compressed KTX2 diffuse/normal textures decoded, resized to at most 1024 pixels, and encoded as WebP.
+- Normal-map blue reconstructed from BC5 RG channels; DirectX Y converted to OpenGL convention.
+- Geometry deduplicated, quantised and meshopt-compressed into seven GLB files.
+- Original mesh hierarchy, skinning and supported animation channels retained.
+- ASOBO BLEND1 scalar skin weights expanded to standard VEC4 before optimisation.
+- Positive simulator skin-joint indices remapped from one-based to zero-based; weighted zero uses a fixed identity joint as a compatibility assumption not confirmed by an official optimized-format specification.
+- Simulator-invisible helper meshes excluded by the viewer; real tail surfaces are retained.
+- Two horizontal-stabilizer skins receive their source Bone rest-frame bind-shape transform in inverse bind matrices, before quantisation; original animation remains live. Source hierarchy and palette assertions guard this specific conversion.
+- Source animation clips mapped to simplified child-friendly UI controls. Some aircraft-system sequencing is intentionally omitted.
+- Aircraft aligned to the viewer's metre-scale display coordinate system.
+
+Adaptation tooling and application: Pi coding assistant.
+Reproduction scripts: scripts/acquire-fbw.py and scripts/optimize-models.mjs.
+These adaptations are not certified CAD, an engineering digital twin, a flight simulator or an aircraft operating procedure.

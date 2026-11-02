@@ -146,6 +146,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .part-grid button{padding:12px;border-radius:14px;text-align:left;font-size:13px;font-weight:600;background:rgba(255,255,255,.05);border:1px solid var(--line)}
 .part-grid button span{display:block;margin-top:5px;font-size:11px;font-weight:400;color:var(--t3)}
 .part-grid button:hover{border-color:var(--line-2)}
+.part-grid button:disabled{opacity:.48;cursor:not-allowed}.part-grid button:disabled:hover{border-color:var(--line)}
 .part-grid button.active{background:rgba(85,217,255,.1);border-color:rgba(85,217,255,.4)}
 .part-grid button.active span{color:var(--cyan)}
 .wide-btn{display:block;width:100%;padding:14px;border-radius:14px;font-size:13.5px;font-weight:650;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t1);text-align:center}
@@ -155,6 +156,8 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .wide-btn.primary:hover,.primary-btn:hover{color:#1a0d00;filter:brightness(1.08)}
 .primary-btn{padding:14px 28px;border-radius:16px;font-size:15px}
 .primary-btn:active{transform:scale(.97)}
+.aircraft-select-label{display:block;color:var(--t2);font-size:12px;margin:12px 0 6px}#aircraftSelect{width:100%;margin-bottom:12px;padding:10px;border:1px solid var(--line-2);border-radius:10px;background:#102633;color:var(--t1);font:inherit}
+.aircraft-choices{display:grid;gap:8px}.aircraft-choices button{display:flex;flex-direction:column;gap:6px;padding:14px;text-align:left;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.05)}.aircraft-choices button:hover,.aircraft-choices button.active{border-color:var(--cyan);background:rgba(85,217,255,.12)}.aircraft-choices small{color:var(--t2)}
 #liveries{display:grid;gap:8px}
 .livery-card{display:flex;align-items:center;gap:14px;width:100%;padding:10px 14px 10px 10px;border-radius:16px;text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line)}
 .livery-card:hover{transform:translateY(-1px);border-color:var(--line-2)}
