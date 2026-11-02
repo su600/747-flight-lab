@@ -1,0 +1,1572 @@
+{
+  "source": "777-200F.ac",
+  "faces": [
+    {
+      "object": "Fuselage.003",
+      "surfaceIndex": 18,
+      "surfaceFlags": "0X30",
+      "materialId": 11,
+      "refs": [
+        [
+          412.0,
+          0.434876,
+          0.95605
+        ],
+        [
+          492.0,
+          0.568813,
+          0.95605
+        ],
+        [
+          455.0,
+          0.577558,
+          0.95605
+        ],
+        [
+          302.0,
+          0.577521,
+          0.956049
+        ],
+        [
+          309.0,
+          0.577331,
+          0.956676
+        ],
+        [
+          308.0,
+          0.577266,
+          0.957329
+        ],
+        [
+          307.0,
+          0.577266,
+          0.960186
+        ],
+        [
+          414.0,
+          0.434876,
+          0.960186
+        ]
+      ],
+      "positions": [
+        [
+          8.77077,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          14.45732,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          14.82857,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          14.82702,
+          -2.49771,
+          -1.66886
+        ],
+        [
+          14.81894,
+          -2.47107,
+          -1.70479
+        ],
+        [
+          14.81621,
+          -2.44335,
+          -1.74216
+        ],
+        [
+          14.81621,
+          -2.32208,
+          -1.90568
+        ],
+        [
+          8.77077,
+          -2.32208,
+          -1.90568
+        ]
+      ],
+      "previousTriangles": 5,
+      "axes": [
+        0,
+        2
+      ],
+      "projectedSignedArea": -1.4317330759500013,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 4.18907142296045e-06,
+      "minEdgeMetres": 0.0015508062419270275,
+      "maxEdgeMetres": 6.045439999999999,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2,
+        4,
+        5,
+        6,
+        7
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          2
+        ],
+        "projectedSignedArea": -1.4317685082999994,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 4.211148815490496e-06,
+        "minEdgeMetres": 0.0015508062419270275,
+        "maxEdgeMetres": 6.045439999999999
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          305
+        ],
+        "removedB": [
+          185
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "Fuselage.003",
+      "surfaceIndex": 77,
+      "surfaceFlags": "0X30",
+      "materialId": 11,
+      "refs": [
+        [
+          327.0,
+          0.634139,
+          0.95605
+        ],
+        [
+          454.0,
+          0.702609,
+          0.95605
+        ],
+        [
+          186.0,
+          0.702616,
+          0.960186
+        ],
+        [
+          332.0,
+          0.634431,
+          0.960186
+        ],
+        [
+          330.0,
+          0.634431,
+          0.957329
+        ],
+        [
+          329.0,
+          0.634367,
+          0.956676
+        ],
+        [
+          328.0,
+          0.634176,
+          0.956049
+        ]
+      ],
+      "positions": [
+        [
+          17.23085,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          20.13786,
+          -2.49765,
+          -1.66895
+        ],
+        [
+          20.13813,
+          -2.32205,
+          -1.90572
+        ],
+        [
+          17.24321,
+          -2.32208,
+          -1.90568
+        ],
+        [
+          17.24321,
+          -2.44335,
+          -1.74216
+        ],
+        [
+          17.24049,
+          -2.47107,
+          -1.70479
+        ],
+        [
+          17.2324,
+          -2.49771,
+          -1.66886
+        ]
+      ],
+      "previousTriangles": 4,
+      "axes": [
+        0,
+        2
+      ],
+      "projectedSignedArea": -0.6857058295500025,
+      "properCrossings": [
+        [
+          0,
+          5
+        ]
+      ],
+      "maxPlaneDeviationMetres": 5.765955447849054e-06,
+      "minEdgeMetres": 0.001550806241925252,
+      "maxEdgeMetres": 2.9070100005847928,
+      "uncrossOrder": [
+        0,
+        5,
+        4,
+        3,
+        2,
+        1,
+        6
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          2
+        ],
+        "projectedSignedArea": 0.6857920160500015,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 5.7859360550491e-06,
+        "minEdgeMetres": 0.001550806241925252,
+        "maxEdgeMetres": 2.9054600020134522
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          305
+        ],
+        "removedB": [
+          209
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "Fuselage.003",
+      "surfaceIndex": 136,
+      "surfaceFlags": "0X30",
+      "materialId": 11,
+      "refs": [
+        [
+          67.0,
+          0.236242,
+          0.662081
+        ],
+        [
+          68.0,
+          0.236234,
+          0.662101
+        ],
+        [
+          302.0,
+          0.236234,
+          0.6618
+        ],
+        [
+          455.0,
+          0.236242,
+          0.6618
+        ]
+      ],
+      "positions": [
+        [
+          14.82857,
+          -2.58093,
+          -1.72452
+        ],
+        [
+          14.82702,
+          -2.57803,
+          -1.72843
+        ],
+        [
+          14.82702,
+          -2.49771,
+          -1.66886
+        ],
+        [
+          14.82857,
+          -2.49768,
+          -1.6689
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        1,
+        2
+      ],
+      "projectedSignedArea": 0.00024090280000033104,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.0013304310241558893,
+      "minEdgeMetres": 0.0015508062419270275,
+      "maxEdgeMetres": 0.10012066170376627,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          1,
+          2
+        ],
+        "projectedSignedArea": 0.0002459020500005238,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.0015499999999986035,
+        "minEdgeMetres": 0.0015508062419270275,
+        "maxEdgeMetres": 0.10012994806749867
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          185
+        ],
+        "removedB": [
+          138
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "Fuselage.003",
+      "surfaceIndex": 237,
+      "surfaceFlags": "0X30",
+      "materialId": 11,
+      "refs": [
+        [
+          94.0,
+          0.248361,
+          0.662101
+        ],
+        [
+          93.0,
+          0.248353,
+          0.662081
+        ],
+        [
+          327.0,
+          0.248353,
+          0.6618
+        ],
+        [
+          328.0,
+          0.248361,
+          0.6618
+        ]
+      ],
+      "positions": [
+        [
+          17.2324,
+          -2.57803,
+          -1.72843
+        ],
+        [
+          17.23085,
+          -2.58093,
+          -1.72452
+        ],
+        [
+          17.23085,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          17.2324,
+          -2.49771,
+          -1.66886
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        1,
+        2
+      ],
+      "projectedSignedArea": -0.00024090280000033104,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.0013304310242215405,
+      "minEdgeMetres": 0.001550806241925252,
+      "maxEdgeMetres": 0.10012066170376627,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          1,
+          2
+        ],
+        "projectedSignedArea": -0.0002459020500005238,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.001549999999998164,
+        "minEdgeMetres": 0.001550806241925252,
+        "maxEdgeMetres": 0.10012994806749864
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          135
+        ],
+        "removedB": [
+          209
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "LHEngChrome1.001",
+      "surfaceIndex": 13711,
+      "surfaceFlags": "0X10",
+      "materialId": 22,
+      "refs": [
+        [
+          14232.0,
+          0.762861,
+          0.343006
+        ],
+        [
+          14231.0,
+          0.762428,
+          0.342739
+        ],
+        [
+          14248.0,
+          0.762563,
+          0.342758
+        ],
+        [
+          14247.0,
+          0.762942,
+          0.34242
+        ]
+      ],
+      "positions": [
+        [
+          -0.38299,
+          -2.65981,
+          9.31732
+        ],
+        [
+          -0.38524,
+          -2.65952,
+          9.31734
+        ],
+        [
+          -0.38466,
+          -2.65939,
+          9.3172
+        ],
+        [
+          -0.38486,
+          -2.66115,
+          9.31861
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": 1.2812499999848015e-06,
+      "properCrossings": [
+        [
+          0,
+          2
+        ]
+      ],
+      "maxPlaneDeviationMetres": 3.2269066369040376e-05,
+      "minEdgeMetres": 0.0006106553856309036,
+      "maxEdgeMetres": 0.0026375367296018063,
+      "uncrossOrder": [
+        0,
+        2,
+        1,
+        3
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": 2.0089999999139962e-06,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 2.082516414925018e-05,
+        "minEdgeMetres": 0.0006106553856309036,
+        "maxEdgeMetres": 0.0026375367296018063
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          13696
+        ],
+        "removedB": [
+          13760
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "LHEngChrome1.001",
+      "surfaceIndex": 13727,
+      "surfaceFlags": "0X10",
+      "materialId": 22,
+      "refs": [
+        [
+          14216.0,
+          0.760672,
+          0.336273
+        ],
+        [
+          14215.0,
+          0.760799,
+          0.33578
+        ],
+        [
+          14264.0,
+          0.760822,
+          0.335915
+        ],
+        [
+          14263.0,
+          0.761255,
+          0.336181
+        ]
+      ],
+      "positions": [
+        [
+          -0.38736,
+          -2.67535,
+          9.3003
+        ],
+        [
+          -0.38511,
+          -2.67564,
+          9.30028
+        ],
+        [
+          -0.38569,
+          -2.67578,
+          9.30042
+        ],
+        [
+          -0.38549,
+          -2.67402,
+          9.29901
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": 1.2710000002469357e-06,
+      "properCrossings": [
+        [
+          0,
+          2
+        ]
+      ],
+      "maxPlaneDeviationMetres": 4.2010057332728835e-05,
+      "minEdgeMetres": 0.0006128621378417668,
+      "maxEdgeMetres": 0.0026324703227191813,
+      "uncrossOrder": [
+        0,
+        2,
+        1,
+        3
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": 2.009000000136041e-06,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 2.6994076072932654e-05,
+        "minEdgeMetres": 0.0006128621378417668,
+        "maxEdgeMetres": 0.0026324703227191813
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          13680
+        ],
+        "removedB": [
+          13744
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "LHEngChrome1.001",
+      "surfaceIndex": 40826,
+      "surfaceFlags": "0X10",
+      "materialId": 22,
+      "refs": [
+        [
+          41957.0,
+          0.762861,
+          0.343006
+        ],
+        [
+          41972.0,
+          0.762942,
+          0.34242
+        ],
+        [
+          41973.0,
+          0.762563,
+          0.342758
+        ],
+        [
+          41956.0,
+          0.762428,
+          0.342739
+        ]
+      ],
+      "positions": [
+        [
+          -0.38299,
+          -2.65981,
+          -9.31732
+        ],
+        [
+          -0.38486,
+          -2.66115,
+          -9.31861
+        ],
+        [
+          -0.38466,
+          -2.65939,
+          -9.3172
+        ],
+        [
+          -0.38524,
+          -2.65952,
+          -9.31734
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": -1.2812499999848015e-06,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 3.2269066369493735e-05,
+      "minEdgeMetres": 0.0006106553856309036,
+      "maxEdgeMetres": 0.0026375367296018063,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": -2.0089999999139962e-06,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 2.0825164149839088e-05,
+        "minEdgeMetres": 0.0006106553856309036,
+        "maxEdgeMetres": 0.0026375367296018063
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          40875
+        ],
+        "removedB": [
+          40811
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "LHEngChrome1.001",
+      "surfaceIndex": 40842,
+      "surfaceFlags": "0X10",
+      "materialId": 22,
+      "refs": [
+        [
+          41941.0,
+          0.760672,
+          0.336273
+        ],
+        [
+          41988.0,
+          0.761255,
+          0.336181
+        ],
+        [
+          41989.0,
+          0.760822,
+          0.335915
+        ],
+        [
+          41940.0,
+          0.760799,
+          0.33578
+        ]
+      ],
+      "positions": [
+        [
+          -0.38736,
+          -2.67535,
+          -9.3003
+        ],
+        [
+          -0.38549,
+          -2.67402,
+          -9.29901
+        ],
+        [
+          -0.38569,
+          -2.67578,
+          -9.30042
+        ],
+        [
+          -0.38511,
+          -2.67564,
+          -9.30028
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": -1.2710000002469357e-06,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 4.201005733219565e-05,
+      "minEdgeMetres": 0.0006128621378417668,
+      "maxEdgeMetres": 0.0026324703227191813,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": -2.009000000136041e-06,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 2.6994076072940274e-05,
+        "minEdgeMetres": 0.0006128621378417668,
+        "maxEdgeMetres": 0.0026324703227191813
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          40859
+        ],
+        "removedB": [
+          40795
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "Wings",
+      "surfaceIndex": 154,
+      "surfaceFlags": "0X30",
+      "materialId": 19,
+      "refs": [
+        [
+          170.0,
+          0.520207,
+          0.622907
+        ],
+        [
+          166.0,
+          0.520196,
+          0.623216
+        ],
+        [
+          169.0,
+          0.496728,
+          0.586938
+        ],
+        [
+          182.0,
+          0.501474,
+          0.585572
+        ]
+      ],
+      "positions": [
+        [
+          5.04963,
+          -1.55147,
+          7.71705
+        ],
+        [
+          5.04629,
+          -1.5523,
+          7.7116
+        ],
+        [
+          5.91568,
+          -1.3671,
+          7.80627
+        ],
+        [
+          5.91572,
+          -1.46897,
+          7.82645
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": -0.04406443130000026,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.004927862593970194,
+      "minEdgeMetres": 0.006445696238576931,
+      "maxEdgeMetres": 0.893924169602769,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": 0.04433759649999924,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.005000872116182418,
+        "minEdgeMetres": 0.006445696238576931,
+        "maxEdgeMetres": 0.8899410698467627
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          177
+        ],
+        "removedB": [
+          161
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "Wings",
+      "surfaceIndex": 359,
+      "surfaceFlags": "0X30",
+      "materialId": 19,
+      "refs": [
+        [
+          404.0,
+          0.520207,
+          0.622907
+        ],
+        [
+          416.0,
+          0.501474,
+          0.585572
+        ],
+        [
+          403.0,
+          0.496728,
+          0.586938
+        ],
+        [
+          400.0,
+          0.520196,
+          0.623216
+        ]
+      ],
+      "positions": [
+        [
+          5.04963,
+          -1.55147,
+          -7.71705
+        ],
+        [
+          5.91572,
+          -1.46897,
+          -7.82645
+        ],
+        [
+          5.91568,
+          -1.3671,
+          -7.80627
+        ],
+        [
+          5.04629,
+          -1.5523,
+          -7.7116
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": 0.04406443130000026,
+      "properCrossings": [
+        [
+          0,
+          2
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.004927862593968804,
+      "minEdgeMetres": 0.006445696238576931,
+      "maxEdgeMetres": 0.893924169602769,
+      "uncrossOrder": [
+        0,
+        2,
+        1,
+        3
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": -0.04433759649999924,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.00500087211618241,
+        "minEdgeMetres": 0.006445696238576931,
+        "maxEdgeMetres": 0.8899410698467627
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          366
+        ],
+        "removedB": [
+          382
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "entry6r",
+      "surfaceIndex": 38,
+      "surfaceFlags": "0X10",
+      "materialId": 11,
+      "refs": [
+        [
+          23.0,
+          0.102031,
+          0.329261
+        ],
+        [
+          22.0,
+          0.102011,
+          0.329145
+        ],
+        [
+          74.0,
+          0.102011,
+          0.329145
+        ],
+        [
+          75.0,
+          0.102031,
+          0.329261
+        ]
+      ],
+      "positions": [
+        [
+          14.82702,
+          -2.57803,
+          -1.72843
+        ],
+        [
+          14.82857,
+          -2.58093,
+          -1.72452
+        ],
+        [
+          14.82857,
+          -2.49768,
+          -1.6689
+        ],
+        [
+          14.82702,
+          -2.49771,
+          -1.66886
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        1,
+        2
+      ],
+      "projectedSignedArea": -0.00024090280000033104,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.0013304310241888766,
+      "minEdgeMetres": 0.0015508062419270275,
+      "maxEdgeMetres": 0.10012066170376627,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          1,
+          2
+        ],
+        "projectedSignedArea": -0.0002459020500005238,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.0015500000000357975,
+        "minEdgeMetres": 0.0015508062419270275,
+        "maxEdgeMetres": 0.10012994806749867
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          39
+        ],
+        "removedB": [
+          47
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "entry6r",
+      "surfaceIndex": 55,
+      "surfaceFlags": "0X10",
+      "materialId": 11,
+      "refs": [
+        [
+          37.0,
+          0.070623,
+          0.329144
+        ],
+        [
+          38.0,
+          0.070603,
+          0.329261
+        ],
+        [
+          90.0,
+          0.070603,
+          0.329261
+        ],
+        [
+          89.0,
+          0.070623,
+          0.329144
+        ]
+      ],
+      "positions": [
+        [
+          17.23085,
+          -2.58093,
+          -1.72452
+        ],
+        [
+          17.2324,
+          -2.57803,
+          -1.72843
+        ],
+        [
+          17.2324,
+          -2.49771,
+          -1.66886
+        ],
+        [
+          17.23085,
+          -2.49768,
+          -1.6689
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        1,
+        2
+      ],
+      "projectedSignedArea": 0.00024090280000033104,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 0.0013304310241556985,
+      "minEdgeMetres": 0.001550806241925252,
+      "maxEdgeMetres": 0.10012066170376627,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          1,
+          2
+        ],
+        "projectedSignedArea": 0.0002459020500005238,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 0.001550000000035737,
+        "minEdgeMetres": 0.001550806241925252,
+        "maxEdgeMetres": 0.10012994806749864
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          60
+        ],
+        "removedB": [
+          54
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "entry7r",
+      "surfaceIndex": 8,
+      "surfaceFlags": "0X10",
+      "materialId": 11,
+      "refs": [
+        [
+          59.0,
+          0.298211,
+          0.406553
+        ],
+        [
+          94.0,
+          0.315473,
+          0.502619
+        ],
+        [
+          93.0,
+          0.334792,
+          0.502678
+        ],
+        [
+          60.0,
+          0.318267,
+          0.406606
+        ],
+        [
+          58.0,
+          0.297946,
+          0.406583
+        ]
+      ],
+      "positions": [
+        [
+          20.76139,
+          -2.20979,
+          -1.86034
+        ],
+        [
+          21.68747,
+          -2.04343,
+          -1.79238
+        ],
+        [
+          21.68803,
+          -1.85716,
+          -1.99774
+        ],
+        [
+          20.76189,
+          -2.01646,
+          -2.0735
+        ],
+        [
+          20.76164,
+          -2.21235,
+          -1.85744
+        ]
+      ],
+      "previousTriangles": 2,
+      "axes": [
+        0,
+        2
+      ],
+      "projectedSignedArea": -0.19380849439999892,
+      "properCrossings": [
+        [
+          0,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 5.0817762938747e-06,
+      "minEdgeMetres": 0.0038763513772619718,
+      "maxEdgeMetres": 0.943354852428292,
+      "uncrossOrder": [
+        0,
+        3,
+        2,
+        1,
+        4
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          2
+        ],
+        "projectedSignedArea": 0.19517018539999498,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 5.046359488109557e-06,
+        "minEdgeMetres": 0.0038763513772619718,
+        "maxEdgeMetres": 0.9433599307263386
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          14
+        ],
+        "removedB": [
+          26
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "entry7r",
+      "surfaceIndex": 12,
+      "surfaceFlags": "0X10",
+      "materialId": 11,
+      "refs": [
+        [
+          72.0,
+          0.416992,
+          0.40706
+        ],
+        [
+          80.0,
+          0.42873,
+          0.494372
+        ],
+        [
+          81.0,
+          0.428524,
+          0.493918
+        ],
+        [
+          82.0,
+          0.429367,
+          0.491153
+        ],
+        [
+          77.0,
+          0.42965,
+          0.488282
+        ],
+        [
+          76.0,
+          0.42965,
+          0.421681
+        ],
+        [
+          64.0,
+          0.429367,
+          0.418804
+        ],
+        [
+          62.0,
+          0.428524,
+          0.416039
+        ],
+        [
+          61.0,
+          0.427162,
+          0.413492
+        ],
+        [
+          63.0,
+          0.425335,
+          0.411263
+        ],
+        [
+          70.0,
+          0.4231,
+          0.40943
+        ],
+        [
+          71.0,
+          0.420553,
+          0.408068
+        ],
+        [
+          69.0,
+          0.417788,
+          0.407231
+        ]
+      ],
+      "positions": [
+        [
+          20.76623,
+          -1.06475,
+          -2.70857
+        ],
+        [
+          21.60796,
+          -0.95155,
+          -2.61861
+        ],
+        [
+          21.60359,
+          -0.95354,
+          -2.61858
+        ],
+        [
+          21.57694,
+          -0.94546,
+          -2.6256
+        ],
+        [
+          21.54923,
+          -0.94273,
+          -2.63087
+        ],
+        [
+          20.90719,
+          -0.94273,
+          -2.73038
+        ],
+        [
+          20.87948,
+          -0.94546,
+          -2.7337
+        ],
+        [
+          20.85283,
+          -0.95354,
+          -2.73494
+        ],
+        [
+          20.82827,
+          -0.96667,
+          -2.73405
+        ],
+        [
+          20.80675,
+          -0.98433,
+          -2.73106
+        ],
+        [
+          20.78908,
+          -1.00586,
+          -2.7261
+        ],
+        [
+          20.77595,
+          -1.03042,
+          -2.71935
+        ],
+        [
+          20.76787,
+          -1.05707,
+          -2.71107
+        ]
+      ],
+      "previousTriangles": 10,
+      "axes": [
+        0,
+        1
+      ],
+      "projectedSignedArea": 0.05052921610000105,
+      "properCrossings": [
+        [
+          0,
+          2
+        ]
+      ],
+      "maxPlaneDeviationMetres": 5.898818783214115e-06,
+      "minEdgeMetres": 0.004801864221318901,
+      "maxEdgeMetres": 0.8540588003761785,
+      "uncrossOrder": [
+        0,
+        2,
+        1,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          0,
+          1
+        ],
+        "projectedSignedArea": 0.051163567000001464,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 6.228508662525686e-06,
+        "minEdgeMetres": 0.004801864221318901,
+        "maxEdgeMetres": 0.8494925743053912
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          10
+        ],
+        "removedB": [
+          47
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    },
+    {
+      "object": "entry7r",
+      "surfaceIndex": 23,
+      "surfaceFlags": "0X10",
+      "materialId": 11,
+      "refs": [
+        [
+          8.0,
+          0.095023,
+          0.334246
+        ],
+        [
+          9.0,
+          0.095011,
+          0.334188
+        ],
+        [
+          59.0,
+          0.095011,
+          0.334188
+        ],
+        [
+          58.0,
+          0.095023,
+          0.334246
+        ]
+      ],
+      "positions": [
+        [
+          20.77958,
+          -2.28525,
+          -1.92351
+        ],
+        [
+          20.77964,
+          -2.28588,
+          -1.92279
+        ],
+        [
+          20.76139,
+          -2.20979,
+          -1.86034
+        ],
+        [
+          20.76164,
+          -2.21235,
+          -1.85744
+        ]
+      ],
+      "previousTriangles": 1,
+      "axes": [
+        1,
+        2
+      ],
+      "projectedSignedArea": 0.00014321044999965338,
+      "properCrossings": [
+        [
+          1,
+          3
+        ]
+      ],
+      "maxPlaneDeviationMetres": 1.3861208998763884e-06,
+      "minEdgeMetres": 0.0009585927185204339,
+      "maxEdgeMetres": 0.10011370086057196,
+      "uncrossOrder": [
+        0,
+        1,
+        3,
+        2
+      ],
+      "uncrossedMetrics": {
+        "axes": [
+          1,
+          2
+        ],
+        "projectedSignedArea": -0.00023733064999964526,
+        "properCrossings": [],
+        "maxPlaneDeviationMetres": 8.364448769801084e-07,
+        "minEdgeMetres": 0.0009585927185204339,
+        "maxEdgeMetres": 0.10007765285017443
+      },
+      "edgeNeighbours": {
+        "removedA": [
+          24
+        ],
+        "removedB": [
+          26
+        ],
+        "replacementA": [],
+        "replacementB": []
+      }
+    }
+  ]
+}

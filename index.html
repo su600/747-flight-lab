@@ -43,13 +43,13 @@
  <aside id="drawer" class="glass" hidden>
   <div class="drawer-head"><div><span class="panel-label">EXPLORE · 探索</span><h2 id="drawerTitle">可动部件</h2></div><button id="closeDrawer" aria-label="关闭面板">×</button></div>
   <section id="aircraftPanel" class="drawer-content" hidden>
-   <p class="hint">保留当前飞行状态与涂装；A380 和 A330 首次载入需要等待。驾驶舱与飞行模型为共用 747 简化示意。</p>
-   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–300ER</option></select>
+   <p class="hint">保留当前飞行状态与涂装；新机型首次载入需要等待。驾驶舱与飞行模型为共用 747 简化示意。</p>
+   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–200LR / 777F</option></select>
    <div id="aircraftChoices" class="aircraft-choices" role="group" aria-label="机型快捷选择">
     <button data-aircraft="b747" class="active" aria-pressed="true"><b>BOEING 747–400</b><small>四发 · 标志性上层客舱</small></button>
     <button data-aircraft="a380" aria-pressed="false"><b>AIRBUS A380–800</b><small>四发 · 全长双层客舱</small></button>
     <button data-aircraft="a330" aria-pressed="false"><b>AIRBUS A330–303</b><small>双发 GE CF6 · FlightGear 外部模型</small></button>
-    <button data-aircraft="b777" aria-pressed="false"><b>BOEING 777–300ER</b><small>双发 · 后掠翼尖</small></button>
+    <button data-aircraft="b777" aria-pressed="false"><b>BOEING 777–200LR / 777F</b><small>双发 · 客机与货机外形</small></button>
    </div><p id="aircraftStatus" class="fine-print" role="status"></p><p class="fine-print">A380 模型采用 FlyByWire A380X，CC BY-NC 4.0，仅限非商业用途。<a href="/747/assets/a380/CREDITS.txt" target="_blank">模型署名与许可 ↗</a></p>
   </section>
   <section id="partsPanel" class="drawer-content" hidden>
@@ -83,7 +83,7 @@
    <div class="spec-grid"><div><strong>70.7<small> m</small></strong><span>机身长度</span></div><div><strong>64.4<small> m</small></strong><span>机翼展开宽度</span></div><div><strong>19.4<small> m</small></strong><span>飞机高度</span></div><div><strong>18<small> 个</small></strong><span>起落架轮胎</span></div></div>
    <h3>看看它和真实飞机的关系</h3>
    <p class="hint">使用 FlightGear 747-400 的机身、机翼、GE CF6 发动机与关节定义。保留上层客舱、翼尖小翼、三段后缘襟翼及五组起落架。飞行力学和仪表经过简化。</p>
-   </div><a class="source-link" href="/747/MODEL-NOTES.html" target="_blank">747 模型比对、来源与许可 ↗</a><p class="fine-print">A380：<a href="/747/assets/a380/CREDITS.txt" target="_blank">FlyByWire A380X · CC BY-NC 4.0，仅限非商业用途 ↗</a>。A330：<a href="/747/assets/accurate-a330/NOTICE" target="_blank">FlightGear A330-303 来源、署名与 GPL-2.0 ↗</a>；货运外观为近似示意，并非 A330-200F。777 为原创示意模型；驾驶舱与飞行动力学共用 747 简化版本。</p>
+   </div><a class="source-link" href="/747/MODEL-NOTES.html" target="_blank">747 模型比对、来源与许可 ↗</a><p class="fine-print">A380：<a href="/747/assets/a380/CREDITS.txt" target="_blank">FlyByWire A380X · CC BY-NC 4.0，仅限非商业用途 ↗</a>。A330：<a href="/747/assets/accurate-a330/NOTICE" target="_blank">FlightGear A330-303 来源、署名与 GPL-2.0 ↗</a>；货运外观为近似示意，并非 A330-200F。777：<a href="/747/assets/accurate-b777/CREDITS.txt" target="_blank">FlightGear 777-200LR / 777F 来源与 GPL-2.0 ↗</a>；驾驶舱与飞行动力学共用 747 简化版本。</p>
   </section>
  </aside>
 

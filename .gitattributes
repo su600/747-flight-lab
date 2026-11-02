@@ -1,0 +1,5 @@
+# Preserve upstream FlightGear model sources byte-for-byte, including whitespace.
+assets/accurate-b777/*.xml -whitespace -text
+assets/accurate-b777/AUTHORS -whitespace -text
+assets/accurate-b777/source-alternatives/2048/*.xml -whitespace -text
+assets/accurate-b777/source-alternatives/2048/AUTHORS -whitespace -text

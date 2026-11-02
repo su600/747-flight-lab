@@ -17,7 +17,7 @@ SRC = HERE / 'Models' / '323_blank.png'
 FREIGHT = HERE / 'derived' / '323_windowless.png'
 OUT = HERE / 'derived' / 'liveries'
 SCHEMES = {
- 'BOE': ('BOEING HOUSE', '#164a83', 'BOEING', False),
+ 'BOE': ('AIRBUS HOUSE', '#164a83', 'AIRBUS', False),
  'CHH': ('HAINAN AIRLINES', '#a61c2c', 'HAINAN', False),
  'UAE': ('EMIRATES', '#ae252d', 'EMIRATES', False),
  'BAW': ('BRITISH AIRWAYS', '#172e56', 'BA', False),
@@ -93,6 +93,21 @@ def rect_text(draw, box, text, base_font, color):
     b=draw.textbbox((0,0),text,font=f)
     draw.text((x0+(x1-x0-(b[2]-b[0]))/2-b[0],y0+(y1-y0-(b[3]-b[1]))/2-b[1]),text,font=f,fill=color)
 
+def draw_fedex_mark(draw, box, light=False):
+    """Draw original purple/white Fed plus orange Ex on the aircraft UVs."""
+    x0,y0,x1,y1=box
+    for size in range(64,8,-1):
+        face=ImageFont.truetype(LATIN.path,size,index=getattr(LATIN,'index',0))
+        width=draw.textlength('Fed',font=face)+draw.textlength('Ex',font=face)
+        bounds=draw.textbbox((0,0),'FedEx',font=face)
+        if width<=x1-x0 and bounds[3]-bounds[1]<=(y1-y0)*.7:break
+    left=x0+(x1-x0-width)/2;top=y0-bounds[1]
+    draw.text((left,top),'Fed',font=face,fill='white' if light else '#4d148c')
+    draw.text((left+draw.textlength('Fed',font=face),top),'Ex',font=face,fill='#ff6600')
+    small=ImageFont.truetype(LATIN.path,max(8,round(size*.27)),index=getattr(LATIN,'index',0))
+    draw.text((left,y0+(y1-y0)*.72),'Express',font=small,fill='white' if light else '#4d148c')
+
+
 def roundel(draw, x, y, radius, dark_background=False):
     # Original simple text-and-ring design, not an extracted corporate emblem.
     foreground='white' if dark_background else '#282a2d'
@@ -122,11 +137,6 @@ def draw_scheme(code):
     if code=='sf':
         for poly,col in zip(stripe_polys(),('#282a2d','#73777a','#c8102e')):
             image=tint_polygon(image,poly,col);image=tint_polygon(image,mirror(poly),col)
-    elif code=='fedex':
-        band=[(80,442),(1950,442),(1950,470),(80,470)]
-        orange=[(80,437),(1950,437),(1950,441),(80,441)]
-        image=tint_polygon(image,band,'#4d148c');image=tint_polygon(image,mirror(band),'#4d148c')
-        image=tint_polygon(image,orange,'#ff6600');image=tint_polygon(image,mirror(orange),'#ff6600')
     draw=ImageDraw.Draw(image)
     # These forward title boxes are between the source's forward doors on each
     # side. They are individually typeset (not mirrored), and the atlas skin
@@ -137,14 +147,11 @@ def draw_scheme(code):
         # PBR lighting cannot wash them out. No second mark is painted here.
         draw_sf_marks()
     elif code=='fedex':
-        # Original split-color wordmark, set as text rather than using a
-        # third-party raster asset. The smaller port wordmark fits inside the
-        # approximate main-deck cargo door rather than crossing its outline.
-        for x,y,width,f in ((1510,350,180,LATIN),(335,844,112,font('DejaVu Sans:style=Bold',22))):
-            w1=draw.textlength('Fed',font=f);w2=draw.textlength('Ex',font=f)
-            left=x+(width-w1-w2)/2
-            draw.text((left,y+2),'Fed',font=f,fill='#4d148c')
-            draw.text((left+w1,y+2),'Ex',font=f,fill='#ff6600')
+        # Put each readable wordmark between the forward entry and cargo doors.
+        # The white fuselage and purple tail follow the real 777F style; this
+        # A330-300 cargo combination itself is an illustrative adaptation.
+        draw_fedex_mark(draw,(1327,345,1587,413))
+        draw_fedex_mark(draw,(460,831,720,899))
     else:
         rect_text(draw,(1508,351,1790,381),title,LATIN,color)
         rect_text(draw,(255,837,537,867),title,LATIN,color)
@@ -152,13 +159,15 @@ def draw_scheme(code):
     # externally sourced corporate logos; both sides remain upright.
     if code=='sf':
         roundel(draw,135,190,49,True);roundel(draw,1912,676,49,True)
+    elif code=='fedex':
+        draw_fedex_mark(draw,(65,165,190,210),True);draw_fedex_mark(draw,(1857,651,1982,696),True)
     else:
         tail_color='white' if code!='UAE' else color
         rect_text(draw,(65,165,190,210),tail,LATIN,tail_color)
         rect_text(draw,(1857,651,1982,696),tail,LATIN,tail_color)
     OUT.mkdir(parents=True,exist_ok=True)
     info=PngImagePlugin.PngInfo();info.add_text('Description',f'Unofficial approximate A330-303 {code} adaptation; GPL UV base, original vector/text. No endorsement. See assets/accurate-a330/NOTICE.')
-    destination=OUT/'sf-v2'/'sf.png' if code=='sf' else OUT/(code+'.png')
+    destination=OUT/'sf-v2'/'sf.png' if code=='sf' else OUT/('fedex-v2.png' if code=='fedex' else code+'.png')
     destination.parent.mkdir(parents=True,exist_ok=True);image.save(destination,pnginfo=info,optimize=True)
     if code=='sf':
         # Preserve the old URL for already-open sessions; its baked marks are

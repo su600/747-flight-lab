@@ -1,0 +1,52 @@
+FlightGear Boeing 777 exterior models and adapted liveries
+========================================================
+
+The 777-200LR passenger and 777F cargo models are adapted from community
+FlightGear aircraft. They are illustrative models, not manufacturer CAD or
+certified flight-training systems. The simulator retains its simplified 747
+cockpit and flight dynamics.
+
+Passenger model (777-200LR):
+  Source: https://github.com/franck-vmd/Boeing-777-Flightgear-2048
+  Revision: b64215060a0591ee39b9ecd7558db274014be223
+  Source mesh: 777-VMD/Models/Liveries-200LR/777-200LR.ac
+  Source animation: 777-VMD/Models/777-200LR-v2.xml
+  Converted asset: 777-200LR-2048.candidate.glb
+
+Cargo model (777-200F / 777F):
+  Source: https://github.com/franck-vmd/Boeing-777-Flightgear
+  Revision: cfa61378d1210a33e0520d4459d0baf1cf1511f5
+  Source mesh: 777-VMD/Models/Liveries-F/777-200F.ac
+  Source animation: 777-VMD/Models/777-200F-v2.xml
+  Converted asset: 777-200F-refined.candidate.glb
+
+Both upstream repositories declare GNU GPL version 2. The complete licence
+and upstream author attributions are included in LICENSE, AUTHORS and
+source-alternatives/2048/. Upstream credits Franck VMD for 3D models, UVs,
+XML and liveries and also lists earlier contributors in AUTHORS. Airline and
+manufacturer names or artwork may be separate trademarks; their inclusion does
+not imply endorsement or grant trademark rights.
+
+Source meshes, associated textures and XML are included in the GitHub
+repository; bulky conversion inputs are excluded from the runtime image.
+Conversion and texture-resizing scripts are under tools/
+(convert-b777.mjs, convert-b777-triangulation.mjs, convert-b777-variants.json
+and convert-b777-textures.py). The converted textures are reduced to at most
+1024 pixels. The 777F passenger-window opening is covered by a small
+UV-mapped patch; it is not a certified or topologically welded conversion.
+Animation bindings, landing-gear contact and controls are approximations.
+
+The 12 passenger atlases and the two freight atlases in assets/b777-liveries/
+are unofficial adaptations on GPL FlightGear texture/UV sources. Their artwork
+uses project-created text and vector elements, not copied aircraft photographs.
+The passenger atlas generator also uses two 200LR texture source files from the
+first repository at revision cfa61378d1210a33e0520d4459d0baf1cf1511f5.
+FedEx styling is based on publicly visible 777F aircraft; the SF 777F styling
+is an illustrative adaptation of SF 747 freighter references, not a claim
+that an SF 777F is in service. No combination guarantees the registration,
+engine option or paint details of a particular real aircraft.
+
+A small texture override from the passenger source is unavailable upstream;
+the converted aircraft retains the original mesh texture instead. Some source
+polygons required approximate triangulation. Neither detail is represented as
+manufacturer-verified geometry.

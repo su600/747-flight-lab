@@ -3,7 +3,7 @@
 export const CARGO_LIVERIES = [
   {
     id: 'fedex',
-    file: 'fedex.png',
+    file: 'fedex-v2.png',
     name: '联邦快递',
     en: 'FEDEX EXPRESS',
     color: '#4d148c',
@@ -16,7 +16,7 @@ export const CARGO_LIVERIES = [
       accent: '#ff6600',
     },
     markText: 'FedEx · FedEx Express',
-    description: '白色机身、紫色机尾与腹部，紫橙双色 FedEx 字标；原创排版图形。',
+    description: '白色机身、紫色机尾，紫橙双色 FedEx 字标；按真实货机风格近似适配。',
   },
   {
     id: 'sf',

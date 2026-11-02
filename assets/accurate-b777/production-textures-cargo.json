@@ -1,0 +1,1048 @@
+{
+  "variant": "cargo",
+  "source_identity": "FlightGear Boeing 777-200F",
+  "real_world_status": "Boeing 777F is based on the 777-200LR; asset accuracy and default states require validation",
+  "revision": "cfa61378d1210a33e0520d4459d0baf1cf1511f5",
+  "overrides": {
+    "Fuselage": "Liveries-F/AFR1blanc.png",
+    "Fuselage.004": "Liveries-F/AFR1blanc.png",
+    "Fuselage.005": "Liveries-F/AFR1blanc.png",
+    "Fuselage.006": "Liveries-F/AFR1blanc.png",
+    "Fuselage.007": "Liveries-F/AFR1blanc.png",
+    "Fuselage.008": "Liveries-F/AFR1blanc.png",
+    "queu pointe": "Liveries-F/AFR1blanc.png",
+    "Fuselage.010": "Liveries-F/AFR1blanc.png",
+    "ApuG": "Liveries-F/AFR1blanc.png",
+    "ApuD": "Liveries-F/AFR1blanc.png",
+    "ApuG.001": "Liveries-F/AFR1blanc.png",
+    "ApuD.001": "Liveries-F/AFR1blanc.png",
+    "entry8r": "Liveries-F/AFR1blanc.png",
+    "entry9r": "Liveries-F/AFR1blanc.png",
+    "entry8r.001": "Liveries-F/AFR1blanc.png",
+    "entry10r": "Liveries-F/AFR1blanc.png",
+    "entry11l": "Liveries-F/AFR1blanc.png",
+    "LFdoor": "Liveries-F/AFR1blanc.png",
+    "LRdoor": "Liveries-F/AFR1blanc.png",
+    "RFdoor": "Liveries-F/AFR1blanc.png",
+    "RRdoor": "Liveries-F/AFR1blanc.png",
+    "wiper.l": "Liveries-F/AFR1blanc.png",
+    "wiper.r": "Liveries-F/AFR1blanc.png",
+    "Valve1LB": "Liveries-F/AFR1blanc.png",
+    "Valve1LH": "Liveries-F/AFR1blanc.png",
+    "Valve1RB": "Liveries-F/AFR1blanc.png",
+    "Valve1RH": "Liveries-F/AFR1blanc.png",
+    "Valve2LB": "Liveries-F/AFR1blanc.png",
+    "Valve2LH": "Liveries-F/AFR1blanc.png",
+    "Valve2RB": "Liveries-F/AFR1blanc.png",
+    "Valve2RH": "Liveries-F/AFR1blanc.png",
+    "Valve3L": "Liveries-F/AFR1blanc.png",
+    "Valve3R": "Liveries-F/AFR1blanc.png",
+    "Valve4L": "Liveries-F/AFR1blanc.png",
+    "Valve4R": "Liveries-F/AFR1blanc.png",
+    "Valve5L": "Liveries-F/AFR1blanc.png",
+    "Valve5R": "Liveries-F/AFR1blanc.png",
+    "Valve6L": "Liveries-F/AFR1blanc.png",
+    "Valve6R": "Liveries-F/AFR1blanc.png",
+    "Valve7L": "Liveries-F/AFR1blanc.png",
+    "Valve7R": "Liveries-F/AFR1blanc.png",
+    "Valve8L": "Liveries-F/AFR1blanc.png",
+    "Valve8R": "Liveries-F/AFR1blanc.png",
+    "LHstab": "Liveries-F/AFR2.png",
+    "RHstab": "Liveries-F/AFR2.png",
+    "RHelevator": "Liveries-F/AFR2.png",
+    "LHelevator": "Liveries-F/AFR2.png",
+    "entry5r": "Liveries-F/AFR3.png",
+    "entry6r": "Liveries-F/AFR3.png",
+    "entry7r": "Liveries-F/AFR3.png",
+    "Fuselage.002": "Liveries-F/AFR3.png",
+    "TrapRat": "Liveries-F/AFR3.png",
+    "Fuselage.003": "Liveries-F/AFR3.png",
+    "Lmain.geardoor": "Liveries-F/AFR3.png",
+    "Rmain.geardoor": "Liveries-F/AFR3.png",
+    "Lmain.geardoor.001": "Liveries-F/AFR3.png",
+    "Rmain.geardoor.001": "Liveries-F/AFR3.png",
+    "ValveAR": "Liveries-F/AFR3.png",
+    "ValveAL": "Liveries-F/AFR3.png",
+    "entry1l": "Liveries-F/AFR4blanc.png",
+    "entry1l2": "Liveries-F/AFR4blanc.png",
+    "entry1lA": "Liveries-F/AFR4blanc.png",
+    "entry1lC": "Liveries-F/AFR4blanc.png",
+    "entry1lP": "Liveries-F/AFR4blanc.png",
+    "entry1lPE": "Liveries-F/AFR4blanc.png",
+    "entry1lC2": "Liveries-F/AFR4blanc.png",
+    "entry1r": "Liveries-F/AFR4blanc.png",
+    "entry1r2": "Liveries-F/AFR4blanc.png",
+    "entry1rA": "Liveries-F/AFR4blanc.png",
+    "entry1rC": "Liveries-F/AFR4blanc.png",
+    "entry1rP": "Liveries-F/AFR4blanc.png",
+    "entry1rPE": "Liveries-F/AFR4blanc.png",
+    "entry1rC2": "Liveries-F/AFR4blanc.png",
+    "Tail": "Liveries-F/AFR5blanc.png",
+    "Rudder": "Liveries-F/AFR5blanc.png",
+    "LRudder": "Liveries-F/AFR5blanc.png",
+    "Fuselage.001": "Liveries-F/AFR5blanc.png",
+    "taxiL-on": "Liveries-F/AFR5blanc.png",
+    "CTRLND-on": "Liveries-F/AFR5blanc.png",
+    "Rfan": "Liveries-F/AFR5blanc.png",
+    "Lfan": "Liveries-F/AFR5blanc.png",
+    "LInlets": "Liveries-F/AFR5blanc.png",
+    "LInlets.001": "Liveries-F/AFR5blanc.png",
+    "RInlets.001": "Liveries-F/AFR5blanc.png",
+    "RInlets": "Liveries-F/AFR5blanc.png",
+    "Rgear.tubing": "Liveries-F/AFR5blanc.png",
+    "Lgear.tubing": "Liveries-F/AFR5blanc.png",
+    "Wheelwell": "Liveries-F/AFR5blanc.png",
+    "Wings.003": "Liveries-F/AFR5blanc.png",
+    "WingsLightL": "Liveries-F/AFR5blanc.png",
+    "WingsLightR": "Liveries-F/AFR5blanc.png",
+    "Wings4": "Liveries-F/AFR5blanc.png",
+    "redlight": "Liveries-F/AFR5blanc.png",
+    "Wings": "Liveries-F/AFR6.png",
+    "Wingsal": "Liveries-F/AFR6.png",
+    "Wingsbl": "Liveries-F/AFR6.png",
+    "Wingscl": "Liveries-F/AFR6.png",
+    "Wingsdl": "Liveries-F/AFR6.png",
+    "Wingsel": "Liveries-F/AFR6.png",
+    "Wingsfl": "Liveries-F/AFR6.png",
+    "Wingsgl": "Liveries-F/AFR6.png",
+    "Wingshl": "Liveries-F/AFR6.png",
+    "Wingsar": "Liveries-F/AFR6.png",
+    "Wingsbr": "Liveries-F/AFR6.png",
+    "Wingscr": "Liveries-F/AFR6.png",
+    "Wingsdr": "Liveries-F/AFR6.png",
+    "Wingser": "Liveries-F/AFR6.png",
+    "Wingsfr": "Liveries-F/AFR6.png",
+    "Wingsgr": "Liveries-F/AFR6.png",
+    "Wingshr": "Liveries-F/AFR6.png",
+    "Wings.001": "Liveries-F/AFR6.png",
+    "Wings.002": "Liveries-F/AFR6.png",
+    "Wings.005": "Liveries-F/AFR6.png",
+    "Wings.006": "Liveries-F/AFR6.png",
+    "Wings.007": "Liveries-F/AFR6.png",
+    "Wings.008": "Liveries-F/AFR6.png",
+    "hinge1": "Liveries-F/AFR6.png",
+    "Laileron": "Liveries-F/AFR6.png",
+    "Lailerona": "Liveries-F/AFR6.png",
+    "Laileronb": "Liveries-F/AFR6.png",
+    "Raileron": "Liveries-F/AFR6.png",
+    "Railerona": "Liveries-F/AFR6.png",
+    "Raileronb": "Liveries-F/AFR6.png",
+    "Rflap1": "Liveries-F/AFR6.png",
+    "Rflap2": "Liveries-F/AFR6.png",
+    "Rflap1.001": "Liveries-F/AFR6.png",
+    "Rflap2.001": "Liveries-F/AFR6.png",
+    "Rflap4": "Liveries-F/AFR6.png",
+    "Rflap5": "Liveries-F/AFR6.png",
+    "Rflap6": "Liveries-F/AFR6.png",
+    "Lflap1": "Liveries-F/AFR6.png",
+    "Lflap2": "Liveries-F/AFR6.png",
+    "Lflap1.001": "Liveries-F/AFR6.png",
+    "Lflap2.001": "Liveries-F/AFR6.png",
+    "Lflap4": "Liveries-F/AFR6.png",
+    "Lflap5": "Liveries-F/AFR6.png",
+    "Lflap6": "Liveries-F/AFR6.png",
+    "Lslat": "Liveries-F/AFR6.png",
+    "Lslata": "Liveries-F/AFR6.png",
+    "Lslatb": "Liveries-F/AFR6.png",
+    "Lslatc": "Liveries-F/AFR6.png",
+    "Lslatd": "Liveries-F/AFR6.png",
+    "Lslate": "Liveries-F/AFR6.png",
+    "Lslatf": "Liveries-F/AFR6.png",
+    "Lslatg": "Liveries-F/AFR6.png",
+    "Lslath": "Liveries-F/AFR6.png",
+    "Rslat": "Liveries-F/AFR6.png",
+    "Rslata": "Liveries-F/AFR6.png",
+    "Rslatb": "Liveries-F/AFR6.png",
+    "Rslatc": "Liveries-F/AFR6.png",
+    "Rslatd": "Liveries-F/AFR6.png",
+    "Rslate": "Liveries-F/AFR6.png",
+    "Rslatf": "Liveries-F/AFR6.png",
+    "Rslatg": "Liveries-F/AFR6.png",
+    "Rslath": "Liveries-F/AFR6.png",
+    "Lbrake": "Liveries-F/AFR6.png",
+    "Lbrakea": "Liveries-F/AFR6.png",
+    "Lbrake1": "Liveries-F/AFR6.png",
+    "Rbrake": "Liveries-F/AFR6.png",
+    "Rbrakea": "Liveries-F/AFR6.png",
+    "Rbrake1": "Liveries-F/AFR6.png",
+    "Rflaperon": "Liveries-F/AFR6.png",
+    "Lflaperon": "Liveries-F/AFR6.png",
+    "Lramdoor": "Liveries-F/AFR6.png",
+    "Rramdoor": "Liveries-F/AFR6.png",
+    "Lwing.geardoor": "Liveries-F/AFR6.png",
+    "Rwing.geardoor": "Liveries-F/AFR6.png",
+    "Lgear1": "Liveries-F/AFR6.png",
+    "Rgear1": "Liveries-F/AFR6.png",
+    "Rnavlights": "Liveries-F/AFR6.png",
+    "Lnavlights": "Liveries-F/AFR6.png",
+    "LHEngChrome1": "Liveries-F/AFR7.png",
+    "cage1": "Liveries-F/AFR7.png",
+    "cage2": "Liveries-F/AFR7.png",
+    "cage3": "Liveries-F/AFR7.png",
+    "cage4": "Liveries-F/AFR7.png",
+    "clapetDD1": "Liveries-F/AFR7.png",
+    "clapetDD2": "Liveries-F/AFR7.png",
+    "clapetDD3": "Liveries-F/AFR7.png",
+    "clapetDD4": "Liveries-F/AFR7.png",
+    "clapetDD5": "Liveries-F/AFR7.png",
+    "clapetDD6": "Liveries-F/AFR7.png",
+    "clapetDD7": "Liveries-F/AFR7.png",
+    "clapetDG1": "Liveries-F/AFR7.png",
+    "clapetDG2": "Liveries-F/AFR7.png",
+    "clapetDG3": "Liveries-F/AFR7.png",
+    "clapetDG4": "Liveries-F/AFR7.png",
+    "clapetDG5": "Liveries-F/AFR7.png",
+    "clapetDG6": "Liveries-F/AFR7.png",
+    "clapetDG7": "Liveries-F/AFR7.png",
+    "clapetGG1": "Liveries-F/AFR7.png",
+    "clapetGG2": "Liveries-F/AFR7.png",
+    "clapetGG3": "Liveries-F/AFR7.png",
+    "clapetGG4": "Liveries-F/AFR7.png",
+    "clapetGG5": "Liveries-F/AFR7.png",
+    "clapetGG6": "Liveries-F/AFR7.png",
+    "clapetGG7": "Liveries-F/AFR7.png",
+    "clapetGD1": "Liveries-F/AFR7.png",
+    "clapetGD2": "Liveries-F/AFR7.png",
+    "clapetGD3": "Liveries-F/AFR7.png",
+    "clapetGD4": "Liveries-F/AFR7.png",
+    "clapetGD5": "Liveries-F/AFR7.png",
+    "clapetGD6": "Liveries-F/AFR7.png",
+    "clapetGD7": "Liveries-F/AFR7.png",
+    "LHEngChrome": "Liveries-F/AFR8LAT.png",
+    "Reversers1": "Liveries-F/AFR8LAT.png",
+    "Reversers2": "Liveries-F/AFR8LAT.png",
+    "Reversers3": "Liveries-F/AFR8LAT.png",
+    "Reversers4": "Liveries-F/AFR8LAT.png",
+    "Reversers1.001": "Liveries-F/AFR8LAT.png",
+    "Reversers1.002": "Liveries-F/AFR8LAT.png",
+    "Reversers2.001": "Liveries-F/AFR8LAT.png",
+    "Reversers2.002": "Liveries-F/AFR8LAT.png",
+    "Reversers3.001": "Liveries-F/AFR8LAT.png",
+    "Reversers3.002": "Liveries-F/AFR8LAT.png",
+    "Reversers4.001": "Liveries-F/AFR8LAT.png",
+    "Reversers4.002": "Liveries-F/AFR8LAT.png",
+    "moteur1": "Liveries-F/AFR8LAT.png",
+    "moteur2": "Liveries-F/AFR8LAT.png",
+    "moteur3": "Liveries-F/AFR8LAT.png",
+    "moteur4": "Liveries-F/AFR8LAT.png",
+    "Rat": "Liveries-F/AFR8LAT.png",
+    "HeliRat": "Liveries-F/AFR8LAT.png",
+    "HeliRat.001": "Liveries-F/AFR8LAT.png",
+    "HeliRat.002": "Liveries-F/AFR8LAT.png",
+    "FLdamper": "Liveries-F/AFR9.png",
+    "FUdamper": "Liveries-F/AFR9.png",
+    "FrtGear": "Liveries-F/AFR9.png",
+    "FrtStrut": "Liveries-F/AFR9.png",
+    "FrtStrut.001": "Liveries-F/AFR9.png",
+    "FrtWheel": "Liveries-F/AFR9.png",
+    "LBdamper": "Liveries-F/AFR9.png",
+    "LBsupport": "Liveries-F/AFR9.png",
+    "LHwheel.1": "Liveries-F/AFR9.png",
+    "LHwheel.2": "Liveries-F/AFR9.png",
+    "LHwheel.3": "Liveries-F/AFR9.png",
+    "LUdamper": "Liveries-F/AFR9.png",
+    "LUsupport": "Liveries-F/AFR9.png",
+    "Laxle": "Liveries-F/AFR9.png",
+    "Laxle.001": "Liveries-F/AFR9.png",
+    "Laxle.002": "Liveries-F/AFR9.png",
+    "Laxle.003": "Liveries-F/AFR9.png",
+    "Llbrace": "Liveries-F/AFR9.png",
+    "Llbrace1": "Liveries-F/AFR9.png",
+    "Llockbrace": "Liveries-F/AFR9.png",
+    "Llockbrace1": "Liveries-F/AFR9.png",
+    "Llockbrace.001": "Liveries-F/AFR9.png",
+    "Llockbrace1.001": "Liveries-F/AFR9.png",
+    "Lstrut": "Liveries-F/AFR9.png",
+    "RBsupport": "Liveries-F/AFR9.png",
+    "RBdamper": "Liveries-F/AFR9.png",
+    "RBdamper.001": "Liveries-F/AFR9.png",
+    "RHwheel.1": "Liveries-F/AFR9.png",
+    "RHwheel.2": "Liveries-F/AFR9.png",
+    "RHwheel.3": "Liveries-F/AFR9.png",
+    "RUdamper": "Liveries-F/AFR9.png",
+    "RUsupport": "Liveries-F/AFR9.png",
+    "Raxle": "Liveries-F/AFR9.png",
+    "Raxle.001": "Liveries-F/AFR9.png",
+    "Raxle.002": "Liveries-F/AFR9.png",
+    "Raxle.003": "Liveries-F/AFR9.png",
+    "Rlbrace": "Liveries-F/AFR9.png",
+    "Rlbrace1": "Liveries-F/AFR9.png",
+    "Rlockbrace": "Liveries-F/AFR9.png",
+    "Rlockbrace1": "Liveries-F/AFR9.png",
+    "Rlockbrace.001": "Liveries-F/AFR9.png",
+    "Rlockbrace1.001": "Liveries-F/AFR9.png",
+    "Rstrut": "Liveries-F/AFR9.png",
+    "Lgear": "Liveries-F/AFR9.png",
+    "Rgear": "Liveries-F/AFR9.png",
+    "FrtGear.lines": "Liveries-F/AFR9.png"
+  },
+  "slots": {
+    "Fuselage": "sim/model/fuselage",
+    "Fuselage.004": "sim/model/fuselage",
+    "Fuselage.005": "sim/model/fuselage",
+    "Fuselage.006": "sim/model/fuselage",
+    "Fuselage.007": "sim/model/fuselage",
+    "Fuselage.008": "sim/model/fuselage",
+    "queu pointe": "sim/model/fuselage",
+    "Fuselage.010": "sim/model/fuselage",
+    "ApuG": "sim/model/fuselage",
+    "ApuD": "sim/model/fuselage",
+    "ApuG.001": "sim/model/fuselage",
+    "ApuD.001": "sim/model/fuselage",
+    "entry8r": "sim/model/fuselage",
+    "entry9r": "sim/model/fuselage",
+    "entry8r.001": "sim/model/fuselage",
+    "entry10r": "sim/model/fuselage",
+    "entry11l": "sim/model/fuselage",
+    "LFdoor": "sim/model/fuselage",
+    "LRdoor": "sim/model/fuselage",
+    "RFdoor": "sim/model/fuselage",
+    "RRdoor": "sim/model/fuselage",
+    "wiper.l": "sim/model/fuselage",
+    "wiper.r": "sim/model/fuselage",
+    "Valve1LB": "sim/model/fuselage",
+    "Valve1LH": "sim/model/fuselage",
+    "Valve1RB": "sim/model/fuselage",
+    "Valve1RH": "sim/model/fuselage",
+    "Valve2LB": "sim/model/fuselage",
+    "Valve2LH": "sim/model/fuselage",
+    "Valve2RB": "sim/model/fuselage",
+    "Valve2RH": "sim/model/fuselage",
+    "Valve3L": "sim/model/fuselage",
+    "Valve3R": "sim/model/fuselage",
+    "Valve4L": "sim/model/fuselage",
+    "Valve4R": "sim/model/fuselage",
+    "Valve5L": "sim/model/fuselage",
+    "Valve5R": "sim/model/fuselage",
+    "Valve6L": "sim/model/fuselage",
+    "Valve6R": "sim/model/fuselage",
+    "Valve7L": "sim/model/fuselage",
+    "Valve7R": "sim/model/fuselage",
+    "Valve8L": "sim/model/fuselage",
+    "Valve8R": "sim/model/fuselage",
+    "LHstab": "sim/model/livery",
+    "RHstab": "sim/model/livery",
+    "RHelevator": "sim/model/livery",
+    "LHelevator": "sim/model/livery",
+    "entry5r": "sim/model/fuselage1",
+    "entry6r": "sim/model/fuselage1",
+    "entry7r": "sim/model/fuselage1",
+    "Fuselage.002": "sim/model/fuselage1",
+    "TrapRat": "sim/model/fuselage1",
+    "Fuselage.003": "sim/model/fuselage1",
+    "Lmain.geardoor": "sim/model/fuselage1",
+    "Rmain.geardoor": "sim/model/fuselage1",
+    "Lmain.geardoor.001": "sim/model/fuselage1",
+    "Rmain.geardoor.001": "sim/model/fuselage1",
+    "ValveAR": "sim/model/fuselage1",
+    "ValveAL": "sim/model/fuselage1",
+    "entry1l": "sim/model/fuselage2",
+    "entry1l2": "sim/model/fuselage2",
+    "entry1lA": "sim/model/fuselage2",
+    "entry1lC": "sim/model/fuselage2",
+    "entry1lP": "sim/model/fuselage2",
+    "entry1lPE": "sim/model/fuselage2",
+    "entry1lC2": "sim/model/fuselage2",
+    "entry1r": "sim/model/fuselage2",
+    "entry1r2": "sim/model/fuselage2",
+    "entry1rA": "sim/model/fuselage2",
+    "entry1rC": "sim/model/fuselage2",
+    "entry1rP": "sim/model/fuselage2",
+    "entry1rPE": "sim/model/fuselage2",
+    "entry1rC2": "sim/model/fuselage2",
+    "Tail": "sim/model/fuselage3",
+    "Rudder": "sim/model/fuselage3",
+    "LRudder": "sim/model/fuselage3",
+    "Fuselage.001": "sim/model/fuselage3",
+    "taxiL-on": "sim/model/fuselage3",
+    "CTRLND-on": "sim/model/fuselage3",
+    "Rfan": "sim/model/fuselage3",
+    "Lfan": "sim/model/fuselage3",
+    "LInlets": "sim/model/fuselage3",
+    "LInlets.001": "sim/model/fuselage3",
+    "RInlets.001": "sim/model/fuselage3",
+    "RInlets": "sim/model/fuselage3",
+    "Rgear.tubing": "sim/model/fuselage3",
+    "Lgear.tubing": "sim/model/fuselage3",
+    "Wheelwell": "sim/model/fuselage3",
+    "Wings.003": "sim/model/fuselage3",
+    "WingsLightL": "sim/model/fuselage3",
+    "WingsLightR": "sim/model/fuselage3",
+    "Wings4": "sim/model/fuselage3",
+    "redlight": "sim/model/fuselage3",
+    "Wings": "sim/model/fuselage4",
+    "Wingsal": "sim/model/fuselage4",
+    "Wingsbl": "sim/model/fuselage4",
+    "Wingscl": "sim/model/fuselage4",
+    "Wingsdl": "sim/model/fuselage4",
+    "Wingsel": "sim/model/fuselage4",
+    "Wingsfl": "sim/model/fuselage4",
+    "Wingsgl": "sim/model/fuselage4",
+    "Wingshl": "sim/model/fuselage4",
+    "Wingsar": "sim/model/fuselage4",
+    "Wingsbr": "sim/model/fuselage4",
+    "Wingscr": "sim/model/fuselage4",
+    "Wingsdr": "sim/model/fuselage4",
+    "Wingser": "sim/model/fuselage4",
+    "Wingsfr": "sim/model/fuselage4",
+    "Wingsgr": "sim/model/fuselage4",
+    "Wingshr": "sim/model/fuselage4",
+    "Wings.001": "sim/model/fuselage4",
+    "Wings.002": "sim/model/fuselage4",
+    "Wings.005": "sim/model/fuselage4",
+    "Wings.006": "sim/model/fuselage4",
+    "Wings.007": "sim/model/fuselage4",
+    "Wings.008": "sim/model/fuselage4",
+    "hinge1": "sim/model/fuselage4",
+    "Laileron": "sim/model/fuselage4",
+    "Lailerona": "sim/model/fuselage4",
+    "Laileronb": "sim/model/fuselage4",
+    "Raileron": "sim/model/fuselage4",
+    "Railerona": "sim/model/fuselage4",
+    "Raileronb": "sim/model/fuselage4",
+    "Rflap1": "sim/model/fuselage4",
+    "Rflap2": "sim/model/fuselage4",
+    "Rflap1.001": "sim/model/fuselage4",
+    "Rflap2.001": "sim/model/fuselage4",
+    "Rflap4": "sim/model/fuselage4",
+    "Rflap5": "sim/model/fuselage4",
+    "Rflap6": "sim/model/fuselage4",
+    "Lflap1": "sim/model/fuselage4",
+    "Lflap2": "sim/model/fuselage4",
+    "Lflap1.001": "sim/model/fuselage4",
+    "Lflap2.001": "sim/model/fuselage4",
+    "Lflap4": "sim/model/fuselage4",
+    "Lflap5": "sim/model/fuselage4",
+    "Lflap6": "sim/model/fuselage4",
+    "Lslat": "sim/model/fuselage4",
+    "Lslata": "sim/model/fuselage4",
+    "Lslatb": "sim/model/fuselage4",
+    "Lslatc": "sim/model/fuselage4",
+    "Lslatd": "sim/model/fuselage4",
+    "Lslate": "sim/model/fuselage4",
+    "Lslatf": "sim/model/fuselage4",
+    "Lslatg": "sim/model/fuselage4",
+    "Lslath": "sim/model/fuselage4",
+    "Rslat": "sim/model/fuselage4",
+    "Rslata": "sim/model/fuselage4",
+    "Rslatb": "sim/model/fuselage4",
+    "Rslatc": "sim/model/fuselage4",
+    "Rslatd": "sim/model/fuselage4",
+    "Rslate": "sim/model/fuselage4",
+    "Rslatf": "sim/model/fuselage4",
+    "Rslatg": "sim/model/fuselage4",
+    "Rslath": "sim/model/fuselage4",
+    "Lbrake": "sim/model/fuselage4",
+    "Lbrakea": "sim/model/fuselage4",
+    "Lbrake1": "sim/model/fuselage4",
+    "Rbrake": "sim/model/fuselage4",
+    "Rbrakea": "sim/model/fuselage4",
+    "Rbrake1": "sim/model/fuselage4",
+    "Rflaperon": "sim/model/fuselage4",
+    "Lflaperon": "sim/model/fuselage4",
+    "Lramdoor": "sim/model/fuselage4",
+    "Rramdoor": "sim/model/fuselage4",
+    "Lwing.geardoor": "sim/model/fuselage4",
+    "Rwing.geardoor": "sim/model/fuselage4",
+    "Lgear1": "sim/model/fuselage4",
+    "Rgear1": "sim/model/fuselage4",
+    "Rnavlights": "sim/model/fuselage4",
+    "Lnavlights": "sim/model/fuselage4",
+    "LHEngChrome1": "sim/model/fuselage5",
+    "cage1": "sim/model/fuselage5",
+    "cage2": "sim/model/fuselage5",
+    "cage3": "sim/model/fuselage5",
+    "cage4": "sim/model/fuselage5",
+    "clapetDD1": "sim/model/fuselage5",
+    "clapetDD2": "sim/model/fuselage5",
+    "clapetDD3": "sim/model/fuselage5",
+    "clapetDD4": "sim/model/fuselage5",
+    "clapetDD5": "sim/model/fuselage5",
+    "clapetDD6": "sim/model/fuselage5",
+    "clapetDD7": "sim/model/fuselage5",
+    "clapetDG1": "sim/model/fuselage5",
+    "clapetDG2": "sim/model/fuselage5",
+    "clapetDG3": "sim/model/fuselage5",
+    "clapetDG4": "sim/model/fuselage5",
+    "clapetDG5": "sim/model/fuselage5",
+    "clapetDG6": "sim/model/fuselage5",
+    "clapetDG7": "sim/model/fuselage5",
+    "clapetGG1": "sim/model/fuselage5",
+    "clapetGG2": "sim/model/fuselage5",
+    "clapetGG3": "sim/model/fuselage5",
+    "clapetGG4": "sim/model/fuselage5",
+    "clapetGG5": "sim/model/fuselage5",
+    "clapetGG6": "sim/model/fuselage5",
+    "clapetGG7": "sim/model/fuselage5",
+    "clapetGD1": "sim/model/fuselage5",
+    "clapetGD2": "sim/model/fuselage5",
+    "clapetGD3": "sim/model/fuselage5",
+    "clapetGD4": "sim/model/fuselage5",
+    "clapetGD5": "sim/model/fuselage5",
+    "clapetGD6": "sim/model/fuselage5",
+    "clapetGD7": "sim/model/fuselage5",
+    "LHEngChrome": "sim/model/fuselage6",
+    "Reversers1": "sim/model/fuselage6",
+    "Reversers2": "sim/model/fuselage6",
+    "Reversers3": "sim/model/fuselage6",
+    "Reversers4": "sim/model/fuselage6",
+    "Reversers1.001": "sim/model/fuselage6",
+    "Reversers1.002": "sim/model/fuselage6",
+    "Reversers2.001": "sim/model/fuselage6",
+    "Reversers2.002": "sim/model/fuselage6",
+    "Reversers3.001": "sim/model/fuselage6",
+    "Reversers3.002": "sim/model/fuselage6",
+    "Reversers4.001": "sim/model/fuselage6",
+    "Reversers4.002": "sim/model/fuselage6",
+    "moteur1": "sim/model/fuselage6",
+    "moteur2": "sim/model/fuselage6",
+    "moteur3": "sim/model/fuselage6",
+    "moteur4": "sim/model/fuselage6",
+    "Rat": "sim/model/fuselage6",
+    "HeliRat": "sim/model/fuselage6",
+    "HeliRat.001": "sim/model/fuselage6",
+    "HeliRat.002": "sim/model/fuselage6",
+    "FLdamper": "sim/model/fuselage7",
+    "FUdamper": "sim/model/fuselage7",
+    "FrtGear": "sim/model/fuselage7",
+    "FrtStrut": "sim/model/fuselage7",
+    "FrtStrut.001": "sim/model/fuselage7",
+    "FrtWheel": "sim/model/fuselage7",
+    "LBdamper": "sim/model/fuselage7",
+    "LBsupport": "sim/model/fuselage7",
+    "LHwheel.1": "sim/model/fuselage7",
+    "LHwheel.2": "sim/model/fuselage7",
+    "LHwheel.3": "sim/model/fuselage7",
+    "LUdamper": "sim/model/fuselage7",
+    "LUsupport": "sim/model/fuselage7",
+    "Laxle": "sim/model/fuselage7",
+    "Laxle.001": "sim/model/fuselage7",
+    "Laxle.002": "sim/model/fuselage7",
+    "Laxle.003": "sim/model/fuselage7",
+    "Llbrace": "sim/model/fuselage7",
+    "Llbrace1": "sim/model/fuselage7",
+    "Llockbrace": "sim/model/fuselage7",
+    "Llockbrace1": "sim/model/fuselage7",
+    "Llockbrace.001": "sim/model/fuselage7",
+    "Llockbrace1.001": "sim/model/fuselage7",
+    "Lstrut": "sim/model/fuselage7",
+    "RBsupport": "sim/model/fuselage7",
+    "RBdamper": "sim/model/fuselage7",
+    "RBdamper.001": "sim/model/fuselage7",
+    "RHwheel.1": "sim/model/fuselage7",
+    "RHwheel.2": "sim/model/fuselage7",
+    "RHwheel.3": "sim/model/fuselage7",
+    "RUdamper": "sim/model/fuselage7",
+    "RUsupport": "sim/model/fuselage7",
+    "Raxle": "sim/model/fuselage7",
+    "Raxle.001": "sim/model/fuselage7",
+    "Raxle.002": "sim/model/fuselage7",
+    "Raxle.003": "sim/model/fuselage7",
+    "Rlbrace": "sim/model/fuselage7",
+    "Rlbrace1": "sim/model/fuselage7",
+    "Rlockbrace": "sim/model/fuselage7",
+    "Rlockbrace1": "sim/model/fuselage7",
+    "Rlockbrace.001": "sim/model/fuselage7",
+    "Rlockbrace1.001": "sim/model/fuselage7",
+    "Rstrut": "sim/model/fuselage7",
+    "Lgear": "sim/model/fuselage7",
+    "Rgear": "sim/model/fuselage7",
+    "FrtGear.lines": "sim/model/fuselage7"
+  },
+  "textures": [
+    {
+      "path": "Liveries-F/26.png",
+      "name": "26.png",
+      "source_size": [
+        512,
+        512
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "source_sha256": "fac7b966bcabb076313be9138e1c48fa416fb2e0a4d666826dcd73987984aa60",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 137358,
+      "peak_rss_kib": 31316
+    },
+    {
+      "path": "Liveries-F/AFR1blanc.png",
+      "name": "AFR1blanc.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "0ca94868501239f7a1b342e9175e4a1ac6b88cd5d3d50bee1848645d256b03dc",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 253928,
+      "peak_rss_kib": 180016
+    },
+    {
+      "path": "Liveries-F/AFR2.png",
+      "name": "AFR2.png",
+      "source_size": [
+        2048,
+        2048
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "c5af194ced8273f54cc7dab5f33ef3b5810e1e683e949186fb1a479b4aad40fe",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 108983,
+      "peak_rss_kib": 73356
+    },
+    {
+      "path": "Liveries-F/AFR3.png",
+      "name": "AFR3.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "276690bf655e3d95b2fbde9d4f6cba4acaf44fd7345ce5fab2ea4766a59da531",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 507964,
+      "peak_rss_kib": 180248
+    },
+    {
+      "path": "Liveries-F/AFR4.png",
+      "name": "AFR4.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "3aadb559af7191880ae7fa186ca5ae9cd9c14a190bef3ea49074dfb725aad6d0",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 164845,
+      "peak_rss_kib": 180268
+    },
+    {
+      "path": "Liveries-F/AFR4blanc.png",
+      "name": "AFR4blanc.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "04f588df2977017dbf71fcdbf46e1afb3e2a25cebdfcc0c325e5c98bf032666b",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 161328,
+      "peak_rss_kib": 180196
+    },
+    {
+      "path": "Liveries-F/AFR5.png",
+      "name": "AFR5.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "71f408841ba696597807eecb91c77389f99d7e41068651e8f78ce333656004af",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 643992,
+      "peak_rss_kib": 180244
+    },
+    {
+      "path": "Liveries-F/AFR5blanc.png",
+      "name": "AFR5blanc.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "68be9333f563e56c96fa1b9ab8f0448dda996149ef25673a6f4485eda19ac126",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 541218,
+      "peak_rss_kib": 180280
+    },
+    {
+      "path": "Liveries-F/AFR6.png",
+      "name": "AFR6.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "37b8905cf1485445dc63ce3a52f39e46d2bc75087a6a4f80e9fb8815d108dda9",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 320237,
+      "peak_rss_kib": 180168
+    },
+    {
+      "path": "Liveries-F/AFR7.png",
+      "name": "AFR7.png",
+      "source_size": [
+        2048,
+        2048
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "89108ff665b86609970e72bf27306dbb29c02af5e84c9d9c5fbea0ca9b596479",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 1104974,
+      "peak_rss_kib": 73540
+    },
+    {
+      "path": "Liveries-F/AFR8LAT.png",
+      "name": "AFR8LAT.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "76e2d426ac972f83324e606e6ac093faad63003885eb5654ef7766c5a3c09a8c",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 235250,
+      "peak_rss_kib": 180360
+    },
+    {
+      "path": "Liveries-F/AFR9.png",
+      "name": "AFR9.png",
+      "source_size": [
+        2048,
+        2048
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "98ad45ad4fc834713a1367ee32dcf4c76846f3376e063b59905abd67ad5d7874",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 1183353,
+      "peak_rss_kib": 73464
+    },
+    {
+      "path": "Liveries-F/cafetiere.png",
+      "name": "cafetiere.png",
+      "source_size": [
+        512,
+        512
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "source_sha256": "dd538d7f1cfd332847ea2e908ac6a72155d80531804eb74e45b8d65043dfc2e9",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 135522,
+      "peak_rss_kib": 31624
+    },
+    {
+      "path": "Liveries-F/cargo_floor.png",
+      "name": "cargo_floor.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "8c4a45e0f5efab8bfbe6188df7b8d178b52f6a9695e07e187a1438c38d018eb6",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 158477,
+      "peak_rss_kib": 180300
+    },
+    {
+      "path": "Liveries-F/coter portef.png",
+      "name": "coter portef.png",
+      "source_size": [
+        1024,
+        1024
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "b9012c9beaf5ecd8abceac3ddc4137976a1029f1f3fb7f5875c63044a5fdb0a8",
+      "alpha_range": [
+        243,
+        255
+      ],
+      "bytes": 664696,
+      "peak_rss_kib": 40824
+    },
+    {
+      "path": "Liveries-F/galley-cart.png",
+      "name": "galley-cart.png",
+      "source_size": [
+        1024,
+        512
+      ],
+      "size": [
+        1024,
+        512
+      ],
+      "source_sha256": "565fb235643cb74d3b77a3e2ad8b6ed46e69d163c5ee8086fa62da9c0e2a1ccc",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "bytes": 125224,
+      "peak_rss_kib": 34448
+    },
+    {
+      "path": "Liveries-F/lampemur777f.png",
+      "name": "lampemur777f.png",
+      "source_size": [
+        512,
+        256
+      ],
+      "size": [
+        512,
+        256
+      ],
+      "source_sha256": "1801500154cbccb32286933a3f71074bfe2ccd8a2bc0f53dca8b2470e6c6ee34",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "bytes": 74175,
+      "peak_rss_kib": 29804
+    },
+    {
+      "path": "Liveries-F/light_spot.png",
+      "name": "light_spot.png",
+      "source_size": [
+        64,
+        64
+      ],
+      "size": [
+        64,
+        64
+      ],
+      "source_sha256": "64776c6c172bb4f3c9a0c75b515aa6fbc0460565d4b34e674361d2df7fa92ce7",
+      "alpha_range": [
+        0,
+        189
+      ],
+      "bytes": 2062,
+      "peak_rss_kib": 28748
+    },
+    {
+      "path": "Liveries-F/lightfuselage.png",
+      "name": "lightfuselage.png",
+      "source_size": [
+        1024,
+        1024
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "e3c9b658879880400bb87bebb5b7e36c7aa9c29cfe0453b4e48eb9f59f817129",
+      "alpha_range": [
+        0,
+        182
+      ],
+      "bytes": 80606,
+      "peak_rss_kib": 40452
+    },
+    {
+      "path": "Liveries-F/lumiere auto  porte.png",
+      "name": "lumiere auto  porte.png",
+      "source_size": [
+        128,
+        128
+      ],
+      "size": [
+        128,
+        128
+      ],
+      "source_sha256": "c3be956e25ee1fa74bf3b3da03f3e5c1a65918d497d8ffb29f537a8c67dd04d5",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "bytes": 17696,
+      "peak_rss_kib": 28656
+    },
+    {
+      "path": "Liveries-F/plafond.png",
+      "name": "plafond.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "bd38fce85d8ad641ae73be01a8f9424b7b0df34091fd725c83847a90abab15a5",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 368241,
+      "peak_rss_kib": 180188
+    },
+    {
+      "path": "Liveries-F/porte inter.png",
+      "name": "porte inter.png",
+      "source_size": [
+        2048,
+        2048
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "31f242abdbb14588dd2b950db30dcd21313358a446c64e268635b1ceeedf7ba7",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 92947,
+      "peak_rss_kib": 73500
+    },
+    {
+      "path": "Liveries-F/rouleau777f.png",
+      "name": "rouleau777f.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "b441b67ab6c1838ab43ac9caee5286bb99cd58f86ccdb6a4d33574731189bfe5",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 136678,
+      "peak_rss_kib": 180100
+    },
+    {
+      "path": "Liveries-F/texture moteur tuyaux.png",
+      "name": "texture moteur tuyaux.png",
+      "source_size": [
+        1024,
+        1024
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "8cdb6ee5abbe049359cce85ee7d501d019f0d8afac7833bc309496a36fd15163",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 825956,
+      "peak_rss_kib": 40524
+    },
+    {
+      "path": "Liveries-F/texture_sieges2.png",
+      "name": "texture_sieges2.png",
+      "source_size": [
+        4096,
+        4096
+      ],
+      "size": [
+        1024,
+        1024
+      ],
+      "source_sha256": "5d074d084d368e7a3a127a451902d93d4bd977deb0b5cf15ebe56e3da5387d0c",
+      "alpha_range": [
+        255,
+        255
+      ],
+      "bytes": 743057,
+      "peak_rss_kib": 180224
+    },
+    {
+      "path": "Liveries-F/transparent.png",
+      "name": "transparent.png",
+      "source_size": [
+        512,
+        512
+      ],
+      "size": [
+        512,
+        512
+      ],
+      "source_sha256": "c9cf05bfeafc3a5a0d904616b7c372c21496bdcb77c17c18d6733f7447418906",
+      "alpha_range": [
+        0,
+        255
+      ],
+      "bytes": 182860,
+      "peak_rss_kib": 31444
+    }
+  ]
+}

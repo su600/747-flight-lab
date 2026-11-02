@@ -78,9 +78,11 @@ export async function verifyAircraftSelectionAdapter(adapter){
   const state=await adapter.getLightingState();
   assert.equal(state.time,mode,`world time should be ${mode}`);
   // Time state/light behavior is authoritative; drawer active styling is merely a UI detail.
-  assert(Array.isArray(state.cabinLights)&&state.cabinLights.length>0,
-   `${state.aircraft} should expose at least one testable cabin-light resource`);
-  const expectedLit=mode==='night'&&!['fedex','sf'].includes(String(livery).toLowerCase());
+  const cargo=['fedex','sf'].includes(String(livery).toLowerCase());
+  assert(Array.isArray(state.cabinLights)&&(cargo||state.cabinLights.length>0),
+   `${state.aircraft} passenger livery should expose a cabin-light resource`);
+  // The actual 777F has no passenger-window geometry or light meshes at all.
+  const expectedLit=mode==='night'&&!cargo;
   for(const light of state.cabinLights)assert.equal(light.active,expectedLit,
    `${state.aircraft}/${livery} cabin light should be ${expectedLit?'lit':'dark'} at ${mode}`);
   assert.equal(state.skyVisible,mode!=='night','sky visibility should follow day/night mode');
@@ -255,8 +257,8 @@ async function verifyCargoModelPaint(Aircraft,fedex,sf,requests){
  const fakeDocument={createElement(name){
   assert.equal(name,'canvas');const calls=[];
   const context={calls,fillStyle:null,clearRect(...args){calls.push(['clear',...args]);},drawImage(...args){calls.push(['image',...args]);},
-   fillText(...args){calls.push(['text',this.fillStyle,...args]);},fillRect(...args){calls.push(['rect',this.fillStyle,...args]);},
-   beginPath(){calls.push(['begin']);},moveTo(...args){calls.push(['move',...args]);},lineTo(...args){calls.push(['line',...args]);},
+   fillText(...args){calls.push(['text',this.fillStyle,...args]);},fillRect(...args){calls.push(['rect',this.fillStyle,...args]);},measureText(text){return {width:String(text).length*20};},
+   beginPath(){calls.push(['begin']);},moveTo(...args){calls.push(['move',...args]);},lineTo(...args){calls.push(['line',...args]);},arc(...args){calls.push(['arc',...args]);},stroke(){calls.push(['stroke',this.strokeStyle]);},
    closePath(){calls.push(['close']);},fill(){calls.push(['fill',this.fillStyle]);}};
   const canvas={width:0,height:0,ctx:context,getContext(){return context;}};contexts.push(context);return canvas;
  }};
@@ -284,7 +286,7 @@ async function verifyCargoModelPaint(Aircraft,fedex,sf,requests){
   };
   const initialNight=()=>{aircraft.livery='BOE';updateCabinLights(aircraft,'night');};
   initialNight();assert(windows.material.emissiveIntensity>.01,'passenger windows should illuminate at night');
-  const sequence=[fedex,sf,fedex,sf];let stableBindings=null,staleLogoLoad=null,sfLogoLoad=null;
+  const sequence=[fedex,sf,fedex,sf];let stableBindings=null;
   for(const livery of sequence){
    const imageStart=images.length;
    assert.equal(await aircraft.setLivery(livery.id),true,`model-paint switch to ${livery.id}`);
@@ -305,17 +307,15 @@ async function verifyCargoModelPaint(Aircraft,fedex,sf,requests){
    }
    assert(contexts.some(context=>context.calls.some(call=>call[0]==='clear')),'paint path should clear and redraw reusable canvases');
    const textValues=contexts.flatMap(context=>context.calls.filter(call=>call[0]==='text').map(call=>String(call[2])));
-   const expectedText=livery.id===sf.id?['AIRLINES','顺丰航空','CARGO']:[`${livery.en} CARGO`];
+   const expectedText=livery.id===sf.id?['AIRLINES','顺丰航空','SF']:['Fed','Ex','Express'];
    for(const text of expectedText)assert(textValues.includes(text),`${livery.id} should draw ${text}`);
-   assert(images.slice(imageStart).some(image=>image.src.endsWith('/'+livery.logo)),`${livery.id} should request its catalog logo`);
-   if(livery.id===fedex.id)staleLogoLoad=images.slice(imageStart).find(image=>image.src.endsWith('/'+livery.logo))?.onload;
-   if(livery.id===sf.id)sfLogoLoad=images.slice(imageStart).find(image=>image.src.endsWith('/'+livery.logo))?.onload;
+   assert.equal(images.length,imageStart,`${livery.id} should draw transparent aircraft markings, not menu-card images`);
   }
   assert.equal(requests.length,requestCount,'procedural decals should not request or reload aircraft atlas textures');
+  await aircraft.setLivery('CCA');const staleLogoLoad=images.at(-1)?.onload;
+  await aircraft.setLivery('BOE');
   const callsBeforeStale=contexts.reduce((n,context)=>n+context.calls.length,0);staleLogoLoad?.();
-  assert.equal(contexts.reduce((n,context)=>n+context.calls.length,0),callsBeforeStale,'late logo callbacks from an older paint must not repaint');
-  sfLogoLoad?.();assert(contexts.some(context=>context.calls.some(call=>call[0]==='image')),'selected logo image should be composited onto the decal');
-  await aircraft.setLivery('BOE');assert.equal(windows.visible,true,'passenger livery restores passenger windows');
+  assert.equal(contexts.reduce((n,context)=>n+context.calls.length,0),callsBeforeStale,'late passenger-logo callbacks must not repaint');assert.equal(windows.visible,true,'passenger livery restores passenger windows');
   updateCabinLights(aircraft,'night');assert(windows.material.emissiveIntensity>.01,'passenger cabin light returns at night');
   updateCabinLights(aircraft,'day');assert.equal(windows.material.emissiveIntensity,0,'passenger cabin light switches off by day');
   assert.equal(aircraft.root.children.length,rootChildren,'repeated passenger/cargo changes keep the prepared decal geometry stable');

@@ -1,4 +1,6 @@
 node_modules/
+__pycache__/
+*.pyc
 .env
 .env.*
 !.env.example
@@ -15,6 +17,12 @@ tools/*
 !tools/check-twin-animation.mjs
 !tools/aircraft-options-browser-adapter.mjs
 !tools/generate_cargo_liveries.py
+!tools/convert-b777.mjs
+!tools/convert-b777-triangulation.mjs
+!tools/convert-b777-variants.json
+!tools/convert-b777-textures.py
+!tools/generate-b777-cargo.py
+!tools/optimize-b777-liveries.py
 !tools/generate_china_liveries.py
 !tools/generate_lufthansa_100.py
 !tools/generate_world_liveries.py

@@ -6,3 +6,12 @@ node_modules
 *.tar.gz
 *.tgz
 npm-debug.log*
+# Source assets and conversion inputs are retained in GitHub; the runtime
+# loads only the converted GLBs and versioned livery atlases.
+assets/accurate-b777/source-textures/
+assets/accurate-b777/production-textures/
+assets/accurate-b777/777-200F.ac
+assets/accurate-b777/source-alternatives/2048/777-200LR.ac
+assets/b777-liveries/passenger/*.png
+assets/b777-liveries/passenger/research-neutral/
+assets/b777-liveries/cargo/*.png

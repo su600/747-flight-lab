@@ -13,7 +13,7 @@ const UPSTREAM_LIVERIES={CCA:'A333RR/CCA',CEA:'A333RR/CES',CSN:'A333RR/CSN',DLH:
 const CARGO_IDS=new Set(['fedex','sf']);
 // The versioned SF URL avoids a cached pre-fix atlas being combined with the
 // new overlay. The original sf.png is retained for already-open old sessions.
-const liveryPath=id=>UPSTREAM_LIVERIES[id]?`${ROOT}Liveries/${UPSTREAM_LIVERIES[id]}.png`:id==='sf'?`${ASSET_ROOT}derived/liveries/sf-v2/sf.png`:`${ASSET_ROOT}derived/liveries/${id}.png`;
+const liveryPath=id=>UPSTREAM_LIVERIES[id]?`${ROOT}Liveries/${UPSTREAM_LIVERIES[id]}.png`:id==='sf'?`${ASSET_ROOT}derived/liveries/sf-v2/sf.png`:id==='fedex'?`${ASSET_ROOT}derived/liveries/fedex-v2.png`:`${ASSET_ROOT}derived/liveries/${id}.png${id==='BOE'?'?v=airbus-house-1':''}`;
 
 // Own livery maps have an explicit deadline and are discarded on cancellation.
 // A late TextureLoader callback is disposed as well; shared parseAC maps are
@@ -256,7 +256,7 @@ function bindAnimations(aircraft,doc){
 }
 
 export class AccurateA330Research extends Aircraft{
- constructor(options={}){super();this.type='a330';this.modelLabel='A330-303';this.cargoModelLabel='A330-300 货运外观示意（非 A330-200F）';this.a330Animations=[];this.textureTimeoutMs=options.textureTimeoutMs??15000;this.resourceTimeoutMs=options.resourceTimeoutMs??30000;this.pendingLiveries=new Set();this.disposed=false;this.loading=false;}
+ constructor(options={}){super(options);this.type='a330';this.modelLabel='A330-303';this.cargoModelLabel='A330-300 货运外观示意（非 A330-200F）';this.a330Animations=[];this.textureTimeoutMs=options.textureTimeoutMs??120000;this.resourceTimeoutMs=options.resourceTimeoutMs??120000;this.pendingLiveries=new Set();this.disposed=false;this.loading=false;}
  async load(){
   if(this.disposed||this.loading||this.loaded)throw Error('A330 模型已载入、正在载入或已释放');
   this.loading=true;this.loadController=new AbortController();let timer;

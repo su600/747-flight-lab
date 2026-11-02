@@ -14,12 +14,12 @@ const {Aircraft,LIVERIES}=await import('../src/aircraft.js');
 const ids=LIVERIES.map(livery=>livery.id);
 assert.equal(new Set(ids).size,ids.length,'livery IDs must be unique');
 for(const id of ['BOE','CCA','CEA','CSN','CHH','UAE','BAW','KLM','DLH','DLH100','AF1_CLASSIC','AF1_2026'])assert(ids.includes(id),`missing livery ${id}`);
-for(const {id,name,en,color,symbol,logo} of LIVERIES){
+for(const {id,name,en,color,symbol,logo,file} of LIVERIES){
  assert(name&&en&&color&&symbol&&/^[a-z-]+\.png$/.test(logo),`missing or invalid card metadata: ${id}`);
  const logoImage=await readFile(new URL(`../assets/livery-logos/${logo}`,import.meta.url));
  assert.equal(logoImage.subarray(0,8).toString('hex'),'89504e470d0a1a0a',`${id}: invalid logo PNG`);
  assert(logoImage.readUInt32BE(16)>0&&logoImage.readUInt32BE(20)>0,`${id}: empty logo`);
- const png=await readFile(new URL(`../assets/aircraft/${id}.png`,import.meta.url));
+ const png=await readFile(new URL(`../assets/aircraft/${file||id+'.png'}`,import.meta.url));
  assert.equal(png.subarray(0,8).toString('hex'),'89504e470d0a1a0a',`${id}: invalid PNG`);
  assert.equal(png.readUInt32BE(16),4096,`${id}: incorrect atlas width`);
  assert.equal(png.readUInt32BE(20),1024,`${id}: incorrect atlas height`);

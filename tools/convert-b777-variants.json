@@ -1,0 +1,86 @@
+{
+  "passenger": {
+    "ac": "777-300.ac",
+    "xml": "777-300ER-v2.xml",
+    "white": "AFR2blanc.xml",
+    "textureDirectory": "Liveries-300ER",
+    "outputPrefix": "777-300",
+    "sourceIdentity": "FlightGear 777-300ER",
+    "realWorldStatus": "777-300ER passenger reference; visual accuracy requires validation",
+    "windowSeal": null
+  },
+  "concept300f": {
+    "ac": "777-300F.ac",
+    "xml": "777-300F-v2.xml",
+    "white": "777-300F-AFR2blanc.xml",
+    "textureDirectory": "Liveries-300F",
+    "outputPrefix": "777-300F",
+    "sourceIdentity": "FlightGear 777-300F (nonstandard concept)",
+    "realWorldStatus": "NOT Boeing 777F; Boeing 777F is based on the 777-200LR",
+    "windowSeal": "300F-single-hublot",
+    "sealSkinRegion": [18.2, 19.3, 0.1, 1.1, 2.8]
+  },
+  "cargo-refined": {
+    "ac": "777-200F.ac",
+    "xml": "777-200F-v2.xml",
+    "white": "777-200F-AFR2blanc.xml",
+    "textureDirectory": "Liveries-F",
+    "textureVariant": "cargo",
+    "outputPrefix": "777-200F-refined",
+    "sourceIdentity": "FlightGear Boeing 777-200F",
+    "realWorldStatus": "Boeing 777F is based on the 777-200LR; asset accuracy and default states require validation",
+    "windowSeal": "200F-single-hublot",
+    "sealSkinRegion": [13.25, 14.35, 0.1, 1.1, 2.8],
+    "repairAudit": "777-200F.polygons-audit.json",
+    "triangulationPolicy": "refined"
+  },
+  "passenger200lr2048": {
+    "ac": "source-alternatives/2048/777-200LR.ac",
+    "xml": "source-alternatives/2048/777-200LR-v2.xml",
+    "white": "source-alternatives/2048/AFR2blanc.xml",
+    "textureDirectory": "Liveries-200LR",
+    "repository": "franck-vmd/Boeing-777-Flightgear-2048",
+    "revision": "b64215060a0591ee39b9ecd7558db274014be223",
+    "outputPrefix": "777-200LR-2048",
+    "sourceIdentity": "FlightGear 777-200LR, independent 2048 repository",
+    "realWorldStatus": "Complete left/right gear present in alternate upstream source; visual accuracy requires validation",
+    "unresolvedTextureOverrides": {"window mix exterieur": "Liveries-200LR/windowmix.png"},
+    "windowSeal": null
+  },
+  "passenger200lr-refined": {
+    "ac": "777-200LR.ac",
+    "xml": "777-200LR-v2.xml",
+    "white": "777-200LR-AFR2blanc.xml",
+    "textureDirectory": "Liveries-200LR",
+    "textureVariant": "passenger200lr",
+    "outputPrefix": "777-200LR-refined",
+    "sourceIdentity": "FlightGear Boeing 777-200LR",
+    "realWorldStatus": "777-200LR passenger reference; visual accuracy requires validation",
+    "windowSeal": null,
+    "repairAudit": "777-200LR.polygons-audit.json",
+    "triangulationPolicy": "refined"
+  },
+  "passenger200lr": {
+    "ac": "777-200LR.ac",
+    "xml": "777-200LR-v2.xml",
+    "white": "777-200LR-AFR2blanc.xml",
+    "textureDirectory": "Liveries-200LR",
+    "outputPrefix": "777-200LR",
+    "sourceIdentity": "FlightGear Boeing 777-200LR",
+    "realWorldStatus": "777-200LR passenger reference; visual accuracy requires validation",
+    "unresolvedTextureOverrides": {"window mix exterieur": "Liveries-200LR/windowmix.png"},
+    "windowSeal": null,
+    "triangulationPolicy": "refined"
+  },
+  "cargo": {
+    "ac": "777-200F.ac",
+    "xml": "777-200F-v2.xml",
+    "white": "777-200F-AFR2blanc.xml",
+    "textureDirectory": "Liveries-F",
+    "outputPrefix": "777-200F",
+    "sourceIdentity": "FlightGear Boeing 777-200F",
+    "realWorldStatus": "Boeing 777F is based on the 777-200LR; asset accuracy and default states require validation",
+    "windowSeal": "200F-single-hublot",
+    "sealSkinRegion": [13.25, 14.35, 0.1, 1.1, 2.8]
+  }
+}

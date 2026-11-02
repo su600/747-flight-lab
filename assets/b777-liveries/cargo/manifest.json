@@ -1,0 +1,70 @@
+{
+  "model": "FlightGear Boeing 777-200F",
+  "candidateSHA256": "057e22080958b6b64ad628cc5723af44314b295a524c4b331f02dd974f5cd0ef",
+  "resolution": 2048,
+  "sourceTextures": {
+    "AFR1blanc.png": "7fb825ec74c209244c50ca2dd1f5cb3a21de555dfee35e7662d2291a6ed20e7c",
+    "AFR5blanc.png": "ce34d85dc5270b33ad86575f60225d10a882ee629599b771772fb17c03684d28"
+  },
+  "removedBrandMaskPixelsAt1024": 6398,
+  "disclosure": {
+    "fedex": "Original typeset approximation of real FedEx 777F; not visually certified.",
+    "sf": "Fictional 777F adapting 747 references; service not established."
+  },
+  "designs": {
+    "fedex": {
+      "body": {
+        "paintedTriangles": 773,
+        "paintedPixelWrites": 239227,
+        "sourceTexture": "Liveries-F/AFR1blanc.png",
+        "meshes": [
+          "Fuselage",
+          "Fuselage.004",
+          "entry11l",
+          "hublot"
+        ],
+        "path": "fedex-body.png",
+        "sha256": "0b5962a1497cd31bf75099f4b62506cdbb51ab1bfab0c8dfdc9fc5b072bf5a8b"
+      },
+      "fin": {
+        "paintedTriangles": 696,
+        "paintedPixelWrites": 942549,
+        "sourceTexture": "Liveries-F/AFR5blanc.png",
+        "meshes": [
+          "Tail",
+          "Rudder",
+          "LRudder"
+        ],
+        "path": "fedex-fin.png",
+        "sha256": "deece23f84dd68c47a4ce590e9b0a544b4f5af3f387a565195d6cc7e28a6d063"
+      }
+    },
+    "sf": {
+      "body": {
+        "paintedTriangles": 994,
+        "paintedPixelWrites": 391703,
+        "sourceTexture": "Liveries-F/AFR1blanc.png",
+        "meshes": [
+          "Fuselage",
+          "Fuselage.004",
+          "entry11l",
+          "hublot"
+        ],
+        "path": "sf-body.png",
+        "sha256": "e910e7d1e16721fe1421989dc0db8a7b301422df2edbc601315247491c4312f1"
+      },
+      "fin": {
+        "paintedTriangles": 696,
+        "paintedPixelWrites": 942549,
+        "sourceTexture": "Liveries-F/AFR5blanc.png",
+        "meshes": [
+          "Tail",
+          "Rudder",
+          "LRudder"
+        ],
+        "path": "sf-fin.png",
+        "sha256": "bb3fc59dc21a861ce35dcff83072b3e7225ca8358a7e18975212f809d2a3ef25"
+      }
+    }
+  }
+}

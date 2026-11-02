@@ -73,7 +73,13 @@ def draw_text_centered(draw, xy, text, font, fill, max_width=None, max_height=No
 def draw_tail_mark(paint, offset, text, font):
     """Place readable FedEx lettering on both separately mapped fin sides."""
     patch = Image.new('RGBA', (240, 120), (0, 0, 0, 0))
-    draw_text_centered(ImageDraw.Draw(patch), (120, 60), text, font, (255, 255, 255, 255))
+    draw = ImageDraw.Draw(patch)
+    width = draw.textlength('Fed', font=font) + draw.textlength('Ex', font=font)
+    left = (240 - width) / 2
+    draw.text((left, 22), 'Fed', font=font, fill=(255, 255, 255, 255))
+    draw.text((left + draw.textlength('Fed', font=font), 22), 'Ex', font=font, fill=(*FEDEX_ORANGE, 255))
+    small = ImageFont.truetype(LATIN.path, 20, index=getattr(LATIN, 'index', 0))
+    draw.text((left, 86), 'Express', font=small, fill=(255, 255, 255, 255))
     if offset == 578:
         patch = patch.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
     paint.paste(patch, (offset + 186, 808), patch)
@@ -153,23 +159,20 @@ def restore_details(image, blank, island_mask, remove_main_deck_windows=False):
 
 def draw_fedex_wordmark(draw, center_x, top):
     # Keep the split-color wordmark in the clear belt between cabin-window rows.
-    font = ImageFont.truetype(LATIN.path, 56, index=getattr(LATIN, 'index', 0))
+    font = ImageFont.truetype(LATIN.path, 66, index=getattr(LATIN, 'index', 0))
     a, b = 'Fed', 'Ex'
     width = draw.textlength(a, font=font) + draw.textlength(b, font=font)
     x = center_x - width / 2
     draw.text((x, top), a, font=font, fill=FEDEX_PURPLE)
     draw.text((x + draw.textlength(a, font=font), top), b, font=font, fill=FEDEX_ORANGE)
+    small = ImageFont.truetype(LATIN.path, 20, index=getattr(LATIN, 'index', 0))
+    draw.text((x, top + 60), 'Express', font=small, fill=FEDEX_PURPLE)
 
 
 def paint_fedex_body(image, hull_mask, blank):
+    # Adapt the real 777F's mostly white fuselage rather than inventing a
+    # purple belly or orange cheatline. This 747 combination is illustrative.
     paint = Image.new('RGB', SIZE, WHITE)
-    d = ImageDraw.Draw(paint)
-    for y in (0, 282):
-        # Dark lower fuselage, divided from the white crown by a clear orange
-        # rule. The cargo doors remain visible when BLANK's linework is restored.
-        d.rectangle((0, y + 177, 2357, y + 280), fill=FEDEX_PURPLE)
-        d.rectangle((0, y + 168, 2357, y + 175), fill=FEDEX_ORANGE)
-        d.rectangle((0, y + 176, 2357, y + 180), fill=(223, 208, 235))
     image = Image.composite(paint, image, hull_mask)
     d = ImageDraw.Draw(image)
     draw_fedex_wordmark(d, 880, 78)
@@ -256,15 +259,8 @@ def paint_tail(image, blank, code):
                (offset + 423, 955)]
         if code == 'fedex':
             d.polygon(fin, fill=FEDEX_PURPLE)
-            # Original diagonal orange pinstripe follows the fin sweep.
-            d.polygon([(offset + 24, 934), (offset + 79, 925),
-                       (offset + 418, 650), (offset + 438, 650),
-                       (offset + 112, 935)], fill=FEDEX_ORANGE)
-            d.polygon([(offset + 39, 945), (offset + 112, 942),
-                       (offset + 430, 660), (offset + 444, 660),
-                       (offset + 145, 945)], fill=(255, 255, 255))
-            tail_font = ImageFont.truetype(LATIN.path, 58, index=getattr(LATIN, 'index', 0))
-            draw_tail_mark(paint, offset, 'FX', tail_font)
+            tail_font = ImageFont.truetype(LATIN.path, 48, index=getattr(LATIN, 'index', 0))
+            draw_tail_mark(paint, offset, 'FedEx', tail_font)
         else:
             d.polygon(fin, fill=SF_CHARCOAL)
             # Silver and red slashes echo the real tail-to-fuselage sweep.
@@ -284,8 +280,7 @@ def paint_engine_cowls(image, blank, code):
     d = ImageDraw.Draw(paint)
     for left, right in ((2405, 2700), (2733, 3019)):
         if code == 'fedex':
-            d.rectangle((left, 148, right, 220), fill=FEDEX_PURPLE)
-            d.rectangle((left, 137, right, 145), fill=FEDEX_ORANGE)
+            d.rectangle((left, 25, right, 220), fill=WHITE)
         else:
             d.rectangle((left, 25, right, 220), fill=SF_CHARCOAL)
             d.rectangle((left, 133, right, 139), fill=(165, 168, 170))
@@ -360,7 +355,8 @@ def generate(code, blank, boe, make_logos=True):
         'UV base: this project BLANK.png and BOE.png (FlightGear model assets, GPL-2.0); '
         'all new lettering and graphic shapes were drawn by this generator. No carrier endorsement.'
     )
-    destination = AIRCRAFT / f'{code}.png'
+    # The versioned FedEx URL prevents browsers from retaining the older atlas.
+    destination = AIRCRAFT / ('fedex-v2.png' if code == 'fedex' else 'sf.png')
     image.save(destination, 'PNG', pnginfo=metadata, optimize=True)
     if image.size != SIZE or image.getpixel((4095, 1023)) != BG:
         raise RuntimeError(f'{code}: invalid atlas dimensions or modified UV background')

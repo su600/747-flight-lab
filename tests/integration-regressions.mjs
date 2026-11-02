@@ -53,6 +53,48 @@ const craft=(type,impl)=>({type,livery:'BOE',root:root(),update(){},setLivery:im
 }
 console.log('Selection races: old-craft failure, newer selection, and current-craft failure passed.');
 
+// Fake time models the reported 10.44 MB / 117 KB/s transfer without waiting
+// 89 seconds in CI. The same per-part deadline also covers async parsing.
+{
+ const realSetTimeout=globalThis.setTimeout,realClearTimeout=globalThis.clearTimeout;
+ let now=0,nextId=0;const timers=new Map();
+ globalThis.setTimeout=(fn,delay,...args)=>{const id=++nextId;timers.set(id,{at:now+delay,fn,args,delay});return id;};
+ globalThis.clearTimeout=id=>timers.delete(id);
+ function advance(ms){
+  const target=now+ms;
+  for(;;){let selected=null;for(const [id,timer] of timers)if(timer.at<=target&&(!selected||timer.at<selected.timer.at))selected={id,timer};
+   if(!selected)break;now=selected.timer.at;timers.delete(selected.id);selected.timer.fn(...selected.timer.args);
+  }
+  now=target;
+ }
+ try{
+  const transfer=deferred(),parse=deferred();let aborted=false,parseStarted=false,settled=false;
+  const fetchImpl=(_url,{signal})=>{signal.addEventListener('abort',()=>aborted=true);return Promise.resolve({ok:true,arrayBuffer:()=>transfer.promise});};
+  const loading=loadA380Part({parseAsync:()=>{parseStarted=true;return parse.promise;}},'fuselage',{fetchImpl});
+  loading.then(()=>settled=true,()=>settled=true);
+  assert.equal(timers.size,1);assert.equal([...timers.values()][0].delay,180000,'production part deadline');
+  const simulatedTransferMs=Math.ceil(10441820/117000*1000);assert(simulatedTransferMs>45000&&simulatedTransferMs<180000);
+  advance(45001);await Promise.resolve();assert.equal(aborted,false);assert.equal(settled,false,'45 seconds must not cancel an active slow transfer');
+  advance(simulatedTransferMs-45001);transfer.resolve(new ArrayBuffer(16));await Promise.resolve();await Promise.resolve();assert(parseStarted);
+  advance(30000);await Promise.resolve();assert.equal(aborted,false);assert.equal(settled,false,'decode shares the same finite deadline');
+  const result={scene:new T.Group()};parse.resolve(result);assert.equal(await loading,result);assert.equal(timers.size,0,'successful load clears deadline');
+  // A stalled body is aborted at the deadline even if fetch ignores the signal.
+  const stalled=deferred();let staleAbort=false,staleParsed=false;
+  const expired=loadA380Part({parseAsync:()=>{staleParsed=true;}},'fuselage',{fetchImpl:(_url,{signal})=>{signal.addEventListener('abort',()=>staleAbort=true);return Promise.resolve({ok:true,arrayBuffer:()=>stalled.promise});}});
+  const rejected=assert.rejects(expired,/超时/);await Promise.resolve();advance(179999);assert.equal(staleAbort,false);advance(1);await rejected;assert(staleAbort);
+  stalled.resolve(new ArrayBuffer(16));await Promise.resolve();await Promise.resolve();assert.equal(staleParsed,false,'late bytes must not start parsing');assert.equal(timers.size,0);
+ }finally{globalThis.setTimeout=realSetTimeout;globalThis.clearTimeout=realClearTimeout;}
+}
+// Do not start a second component while the first is still transferring or
+// decoding: this avoids dividing slow bandwidth or decoding several GLBs at once.
+{
+ const transfer=deferred(),parsing=deferred(),urls=[];let parseStarted=false;
+ const aircraft=new A380Aircraft({timeoutMs:1000,fetchImpl:url=>{urls.push(url);return transfer.promise;},loader:{parseAsync:()=>{parseStarted=true;return parsing.promise;}}});
+ const loading=aircraft.load();assert.equal(urls.length,1);assert.match(urls[0],/fuselage\.glb$/);
+ transfer.resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(0)});
+ for(let i=0;i<5&&!parseStarted;i++)await Promise.resolve();assert(parseStarted);assert.equal(urls.length,1);
+ parsing.reject(Error('test decoding failure'));await assert.rejects(loading,/test decoding failure/);assert.equal(urls.length,1);
+}
 // A timed-out transfer must abort; a retry must be able to start a new request.
 {
  let aborted=false,calls=0;

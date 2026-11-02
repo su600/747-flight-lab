@@ -108,7 +108,7 @@ const all=selector=>selector==='[data-livery]'?liveryButtons:selector==='[data-a
 const $=selector=>{if(!elements.has(selector))elements.set(selector,{textContent:'',innerHTML:'',value:'',title:'',disabled:false,hidden:false});return elements.get(selector);};
 let genericAdds=0,genericUpdates=0,wingFixes=0;
 const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,
- TwinAircraft:class{},A380Aircraft:class{},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
+ AccurateB777Candidate:class{},createB777LiveryLoader:()=>()=>{},b777CargoManifest:()=>{},b777PassengerManifest:()=>{},A380Aircraft:class{},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
 vm.runInContext(`
  const world={time:'day'},sim={gear:1,flaps:0,engine:0,onGround:true,door:0,doorTarget:0};
  const scene=new T.Scene(),window={flightLab:{}},airflow={},display={diagnostics:()=>({})},renderer={info:{render:{calls:0,triangles:0}}};let fps=0;const warningList=()=>[];

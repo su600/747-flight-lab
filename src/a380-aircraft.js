@@ -6,7 +6,11 @@ import {addModelPaint} from './model-paint.js';
 
 // FlyByWire A380X, CC BY-NC 4.0. See assets/a380/CREDITS.txt.
 const MODEL_ROOT='/747/assets/a380/';
-const PART_TIMEOUT_MS=45000;
+// The 10.44 MB fuselage can take ~90 s on a 117 KB/s public connection.
+// This per-part deadline includes transfer and decoding, remains finite, and
+// can still be overridden for tests. Parts load serially to bound memory and
+// avoid splitting a slow connection among simultaneous large downloads.
+const PART_TIMEOUT_MS=180000;
 // The converted A380X GLBs have outward vertex normals but predominantly
 // inward triangle winding. With double-sided materials Three flips the normal
 // on exterior back faces, making upward surfaces respond to ground lighting.

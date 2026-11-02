@@ -15,7 +15,7 @@ const images=[],canvases=[];
 globalThis.Image=class {constructor(){images.push(this);} set src(s){this.url=s;} get src(){return this.url;}};
 globalThis.document={createElement(type){
  assert.equal(type,'canvas');const calls=[];
- const ctx={calls,clearRect(...x){calls.push(['clear',...x]);},drawImage(...x){calls.push(['image',...x]);},fillText(...x){calls.push(['text',this.fillStyle,...x]);},fillRect(...x){calls.push(['rect',this.fillStyle,...x]);},beginPath(){calls.push(['begin']);},moveTo(...x){calls.push(['move',...x]);},lineTo(...x){calls.push(['line',...x]);},closePath(){calls.push(['close']);},fill(){calls.push(['fill',this.fillStyle]);}};
+ const ctx={calls,clearRect(...x){calls.push(['clear',...x]);},drawImage(...x){calls.push(['image',...x]);},fillText(...x){calls.push(['text',this.fillStyle,...x]);},fillRect(...x){calls.push(['rect',this.fillStyle,...x]);},measureText(text){return {width:String(text).length*20};},beginPath(){calls.push(['begin']);},moveTo(...x){calls.push(['move',...x]);},lineTo(...x){calls.push(['line',...x]);},arc(...x){calls.push(['arc',...x]);},stroke(){calls.push(['stroke',this.strokeStyle]);},closePath(){calls.push(['close']);},fill(){calls.push(['fill',this.fillStyle]);}};
  const canvas={getContext(){return ctx;},ctx};canvases.push(canvas);return canvas;
 }};
 
@@ -65,8 +65,8 @@ function verifySurface(aircraft,params){
    let hits=0,skinHits=0,maxGap=0;const sideLength=params.length*(is380?.82:.45);
    for(let i=0;i<9;i++)for(let j=0;j<9;j++){
     const u=.15+.7*i/8,v=.15+.7*j/8;
-    const y=kind==='side'?params.sideY+(v-.5)*2.2:params.tailY+(v-.5)*(is380?2.4:3.2);
-    const x=kind==='side'?(is380?4:aircraft.spec.length*.28)+sign*(u-.5)*sideLength:params.tailX+(is380?.8:0)+sign*(u-.5)*(is380?2.4:3.2)-(is380?.65*(y-params.tailY):0);
+    const y=kind==='side'?params.sideY+(v-.5)*2.2:params.tailY+(v-.5)*(is380?3.6:3.2);
+    const x=kind==='side'?(is380?4:aircraft.spec.length*.28)+sign*(u-.5)*sideLength:params.tailX+(is380?.8:0)+sign*(u-.5)*(is380?3.6:3.2)-(is380?.65*(y-params.tailY):0);
     ray.set(new T.Vector3(x,y,sign*10),new T.Vector3(0,0,-sign));
     const skin=ray.intersectObjects(kind==='side'?body:fin,false)[0],paint=ray.intersectObject(decal,false)[0];
     if(skin)skinHits++;
@@ -142,13 +142,13 @@ for(const {aircraft,params} of models){
  assert(stripeUV.get(-15)<stripeUV.get(15),'red sweep oriented tailward');
  if(is380){
   for(const sign of [-1,1]){
-   const decal=root.getObjectByName(`livery-sf-side-${sign>0?'right':'left'}`);assert(decal);
-   let tested=0;for(const x of [10,15,20,23]){
+   const decal=root.getObjectByName(`livery-freight-side-${sign>0?'right':'left'}`);assert(decal);
+   let tested=0;for(const x of [22,24,26,28]){
     ray.set(new T.Vector3(x,params.sideY,sign*10),new T.Vector3(0,0,-sign));
     const skin=ray.intersectObjects(body,false)[0],paint=ray.intersectObject(decal,false)[0];
     if(!skin)continue;assert(paint,'SF forward decal must follow the actual skin');
     const gap=sign*(paint.point.z-skin.point.z);assert(gap>=-.001&&gap<=.03,`SF forward decal has invalid surface gap ${gap}`);
-    assert(paint.uv.x>=0&&paint.uv.x<=18/(params.length*.82),'SF logo must use the correct portion of its fixed-size canvas');tested++;
+    assert(paint.uv.x>=0&&paint.uv.x<=1,'freight logo UV must stay on its canvas');tested++;
    }
    assert(tested>=3,'SF markings must be on the forward fuselage on both sides');
   }
@@ -199,6 +199,13 @@ for(const {aircraft} of models){
  assert(aircraft.type==='a380'?tailPieces.length>20:tailPieces.length===2);const originalTail=tailPieces.map(o=>o.material);
  const engines=[];root.traverse(o=>{if(!o.isMesh)return;if(aircraft.type==='a380'?/^(?:FrontCase0(?:40|42|44|46)|Bucket0(?:28|29|30|31))$/.test(o.name)&&[o.material].flat().some(m=>/^A380_EXTERIOR_ENG_/.test(m.name)):o.material===originalBody&&o.geometry.type==='CylinderGeometry'&&o.geometry.parameters.radiusTop>1.4&&o.geometry.parameters.height>=2)engines.push(o);});
  assert.equal(engines.length,aircraft.type==='a380'?8:4);const originalEngines=engines.map(o=>o.material);
+ const fairings=[];root.traverse(o=>{if(o.isMesh&&/^BELLY[ _]FAIRING/i.test(o.name)&&[o.material].flat().every(m=>m?.name==='A380X_FUSE5'))fairings.push(o);});
+ let bodyMap,engineMap,fairingMap;
+ if(aircraft.type==='a380'){
+  assert(fairings.length>0,'A380 exterior belly fairing');
+  bodyMap=new T.Texture();engineMap=new T.Texture();fairingMap=new T.Texture();
+  originalBody.map=bodyMap;originalEngines[0].map=engineMap;fairings[0].material.map=fairingMap;
+ }
  const windows=[];root.traverse(o=>{if(aircraft.type==='a380'?o.isMesh&&/^Window[ _]Texture[ _]Main[ _]Deck/i.test(o.name)&&[o.material].flat().every(m=>m.name==='A380_PAX_WINDOW'):o.isInstancedMesh&&o.count===84)windows.push(o);});
  assert.equal(windows.length,aircraft.type==='a380'?18:1);assert(windows.every(o=>o.visible));
  // The real lighting module owns the day/night overlays and is synchronised by main.
@@ -207,8 +214,11 @@ for(const {aircraft} of models){
  if(lights)assert(lights.visible);else assert(windows[0].material.emissiveIntensity>0);
  const untouched=[];root.traverse(o=>{if(o.isMesh&&!windows.includes(o)&&o!==lights&&!o.name.startsWith('livery-'))untouched.push([o,o.visible]);});
  const fedex=LIVERIES.find(x=>x.id==='fedex'),sf=LIVERIES.find(x=>x.id==='sf');
- aircraft.paintLivery(fedex);const first=images.at(-1),late=first.onload,sideMap=side.map,tailMap=tail.map;
+ aircraft.paintLivery(LIVERIES[1]);const first=images.at(-1),late=first.onload,imagesBeforeCargo=images.length;
+ aircraft.paintLivery(fedex);const sideMap=side.map,tailMap=tail.map;
  const sideCanvas=sideMap.image,tailCanvas=tailMap.image,stripeCanvas=stripes[0].material.map.image,canvasSize=[sideMap.image.width,sideMap.image.height];
+ const freightSides=['left','right'].map(s=>root.getObjectByName('livery-freight-side-'+s));assert(freightSides.every(Boolean));
+ const freightCanvases=freightSides.map(o=>o.material.map.image);
  assert(stripes.every(o=>!o.visible));assert(caps.every(o=>o.visible));
  assert(windows.every(o=>!o.visible),'freighter cabin windows hidden');
  for(const [mesh,visible] of untouched)assert.equal(mesh.visible,visible,`unexpected visibility change: ${mesh.name}`);
@@ -217,15 +227,25 @@ for(const {aircraft} of models){
  assert.notEqual(body[0].material,originalBody);assert.notEqual(fin[0].material,originalFin);
  assert.equal(body[0].material.color.getHexString(),new T.Color(fedex.colors.base).getHexString());
  assert.equal(fin[0].material.color.getHexString(),new T.Color(fedex.colors.primary).getHexString());
+ if(aircraft.type==='a380'){
+  assert.equal(body[0].material.map,null,'cargo body must not retain passenger-paint texture');
+  assert.equal(engines[0].material.map,null,'cargo nacelle must not retain passenger-paint texture');
+  assert.equal(fairings[0].material.map,null,'cargo fairing must not retain passenger-paint texture');
+ }
  for(const piece of tailPieces)assert.equal(piece.material.color.getHexString(),new T.Color(fedex.colors.primary).getHexString(),'entire fin and rudder recolored');
  if(aircraft.type==='a380')assert.equal(new Set(tailPieces.map(o=>o.material)).size,1,'share one cloned tail material');
- assert(first.src.endsWith('/fedex.png'));assert(sideCanvas.ctx.calls.some(x=>x[0]==='text'&&x[1]===fedex.color&&x[2].includes('CARGO')));
- assert(sideCanvas.ctx.calls.some(x=>x[0]==='rect'&&x[1]===fedex.colors.accent));
- first.onload();assert.equal(tailCanvas.ctx.calls.at(-1)[1],first,'FedEx tail must use its selected logo');
+ assert.equal(images.length,imagesBeforeCargo,'cargo markings must not use a menu-card image');
+ assert(freightSides.every(o=>o.visible));
+ for(const canvas of freightCanvases){
+  assert(canvas.ctx.calls.some(x=>x[0]==='text'&&x[1]===fedex.colors.primary&&x[2]==='Fed'));
+  assert(canvas.ctx.calls.some(x=>x[0]==='text'&&x[1]===fedex.colors.accent&&x[2]==='Ex'));
+ }
+ assert(tailCanvas.ctx.calls.some(x=>x[0]==='text'&&x[2]==='Fed'));
+ const beforeStale=tailCanvas.ctx.calls.length;late();assert.equal(tailCanvas.ctx.calls.length,beforeStale,'old passenger logo cannot overwrite freight');
  // Verified model-specific colors and text can be supplied later, independently
  // of the current, deliberately non-prescriptive SF palette.
- const custom={...sf,modelPaint:{default:{bodyColor:'#b0c0d0',tailColor:'#405060',sideText:'顺丰速运 SF EXPRESS CARGO'},[aircraft.type]:{tailColor:'#102030'}}};
- aircraft.paintLivery(custom);const second=images.at(-1),calls=tailCanvas.ctx.calls.length;
+ const custom={...sf,modelPaint:{default:{bodyColor:'#b0c0d0',tailColor:'#405060',sideLines:['CUSTOM','定制']},[aircraft.type]:{tailColor:'#102030'}}};
+ aircraft.paintLivery(custom);
  assert(stripes.every(o=>o.visible));assert(caps.every(o=>o.visible));
  assert(stripeCanvas.ctx.calls.some(x=>x[0]==='fill'&&x[1]===sf.colors.accent));
  assert(stripeCanvas.ctx.calls.some(x=>x[0]==='rect'&&x[1]===sf.colors.secondary));
@@ -233,34 +253,37 @@ for(const {aircraft} of models){
  assert.equal(body[0].material.color.getHexString(),new T.Color('#b0c0d0').getHexString());
  assert.equal(fin[0].material.color.getHexString(),new T.Color('#102030').getHexString());
  for(const engine of engines)assert.equal(engine.material.color.getHexString(),new T.Color(sf.colors.primary).getHexString(),'SF nacelle tint');
- assert(sideCanvas.ctx.calls.some(x=>x[0]==='text'&&x[2]==='顺丰速运 SF EXPRESS CARGO'));
- assert(second.src.endsWith('/'+sf.logo));late();assert.equal(tailCanvas.ctx.calls.length,calls,'stale image must not repaint');
- second.onload();assert.equal(tailCanvas.ctx.calls.at(-1)[1],second,'tail uses actual selected image');
- assert(sideCanvas.ctx.calls.some(x=>x[0]==='text'&&x[1]===sf.color&&x[2].includes('CARGO')));
- assert.equal(side.map,sideMap);assert.equal(tail.map,tailMap);assert.equal(canvases.length,initialCanvasCount+3,'reuse canvases/textures on switch');
+ assert(freightCanvases.every(canvas=>canvas.ctx.calls.some(x=>x[0]==='text'&&x[2]==='CUSTOM')));
+ assert(freightCanvases.every(canvas=>canvas.ctx.calls.some(x=>x[0]==='text'&&x[2]==='定制')));
+ assert.equal(side.map,sideMap);assert.equal(tail.map,tailMap);assert.equal(canvases.length,initialCanvasCount+6,'reuse passenger and cargo canvases on switch');
  aircraft.paintLivery(sf);
  assert.deepEqual([sideCanvas.width,sideCanvas.height],canvasSize,'switching must not resize an uploaded GPU texture');
- if(aircraft.type==='a380'){assert(root.getObjectByName('livery-sf-side-left').visible&&root.getObjectByName('livery-sf-side-right').visible);assert(!root.getObjectByName('livery-side-left').visible&&!root.getObjectByName('livery-side-right').visible);}
- assert(['AIRLINES','顺丰航空','CARGO'].every(text=>sideCanvas.ctx.calls.some(x=>x[0]==='text'&&x[2]===text)),'SF front lockup');
+ assert(freightSides.every(o=>o.visible));assert(!root.getObjectByName('livery-side-left').visible&&!root.getObjectByName('livery-side-right').visible);
+ for(const canvas of freightCanvases)assert(['AIRLINES','顺丰航空','SF'].every(text=>canvas.ctx.calls.some(x=>x[0]==='text'&&x[2]===text)),'SF front lockup');
+ const leftArc=freightCanvases[0].ctx.calls.filter(x=>x[0]==='arc').at(-1),rightArc=freightCanvases[1].ctx.calls.filter(x=>x[0]==='arc').at(-1);
+ assert(leftArc&&rightArc&&leftArc[1]<rightArc[1],'SF roundel layout must place it toward the nose on both sides');
  assert.equal(fin[0].material.color.getHexString(),new T.Color(sf.colors.primary).getHexString(),'SF black fin');
- aircraft.paintLivery({...sf,modelPaint:{[aircraft.type]:{logo:'boeing.png',tailLogo:'klm.png',color:'#123456',hideWindows:false,stripes:false,sideLines:['CUSTOM','定制']}}});
- const sideImage=images.at(-2),tailImage=images.at(-1),lateSide=sideImage.onload;
- assert(sideImage.src.endsWith('/boeing.png'));assert(tailImage.src.endsWith('/klm.png'));
- tailImage.onload();assert.equal(tailCanvas.ctx.calls.at(-1)[1],tailImage);
- assert(sideCanvas.ctx.calls.some(x=>x[0]==='text'&&x[1]==='#123456'&&x[2]==='定制'));
+ aircraft.paintLivery({...sf,modelPaint:{[aircraft.type]:{color:'#123456',hideWindows:false,stripes:false,sideLines:['CUSTOM','定制']}}});
+ assert(freightCanvases.every(canvas=>canvas.ctx.calls.some(x=>x[0]==='text'&&x[1]==='#123456'&&x[2]==='定制')));
  assert(windows.every(o=>o.visible),'explicit window override');assert(caps.every(o=>!o.visible));assert(stripes.every(o=>!o.visible),'explicit stripe override');
- aircraft.paintLivery(LIVERIES[1]);const afterSwitch=tailCanvas.ctx.calls.length;lateSide();assert.equal(tailCanvas.ctx.calls.length,afterSwitch,'late split-logo load');
+ aircraft.paintLivery(LIVERIES[1]);const afterSwitch=tailCanvas.ctx.calls.length;late();assert.equal(tailCanvas.ctx.calls.length,afterSwitch,'late passenger-logo load');
  const failed=images.at(-1);failed.onerror();aircraft.livery='CCA';updateCabinLights(aircraft,'night');
  assert(windows.every(o=>o.visible),'passenger windows restored');assert(caps.every(o=>!o.visible));assert(stripes.every(o=>!o.visible));
- if(aircraft.type==='a380')assert(root.getObjectByName('livery-side-left').visible&&!root.getObjectByName('livery-sf-side-left').visible);
+ assert(root.getObjectByName('livery-side-left').visible&&freightSides.every(o=>!o.visible));
  if(lights)assert(lights.visible);else assert(windows[0].material.emissiveIntensity>0);
  assert.equal(body[0].material.color.getHexString(),originalBody.color.getHexString());
  assert.equal(fin[0].material.color.getHexString(),originalFin.color.getHexString());
+ if(aircraft.type==='a380'){
+  assert.equal(body[0].material.map,bodyMap,'passenger body map restored');
+  assert.equal(engines[0].material.map,engineMap,'passenger nacelle map restored');
+  assert.equal(fairings[0].material.map,fairingMap,'passenger fairing map restored');
+ }
  engines.forEach((engine,i)=>assert.equal(engine.material.color.getHexString(),originalEngines[i].color.getHexString(),'nacelle restored'));
  tailPieces.forEach((piece,i)=>assert.equal(piece.material.color.getHexString(),originalTail[i].color.getHexString(),'fin and rudder restored'));
  aircraft.paintLivery(LIVERIES[1]);const retry=images.at(-1);retry.onload();assert.equal(tailCanvas.ctx.calls.at(-1)[1],retry);
  aircraft.paintLivery({...LIVERIES[2],modelPaint:{default:{tailLogo:'klm.png'}}});const pendingSide=images.at(-2),pending=images.at(-1),onload=pending.onload,before=tailCanvas.ctx.calls.length;
  side.dispose();onload();assert.equal(tailCanvas.ctx.calls.length,before,'disposed paint must not repaint');assert.equal(pending.src,'');assert.equal(pendingSide.src,'');
  removeCabinLights(aircraft);tail.dispose();stripes[0].material.dispose();sideMap.dispose();tailMap.dispose();stripes[0].material.map.dispose();
+ bodyMap?.dispose();engineMap?.dispose();fairingMap?.dispose();
 }
-console.log(`Paint checks: ${LIVERIES.length} real logo files, configurable model colors/text, cargo windows/day-night lights, independent logo loads, latest selection wins, error/retry and disposal.`);
+console.log(`Paint checks: ${LIVERIES.length} catalog logo files, configurable model colors/text, cargo windows/day-night lights, independent logo loads, latest selection wins, error/retry and disposal.`);

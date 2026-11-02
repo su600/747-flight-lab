@@ -1,10 +1,12 @@
 import * as T from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
+import {liveryForModel} from './livery-for-model.js';
 const ROOT='/747/assets/aircraft/';
 const textures=new Map();
 const textureLoads=new Map();
 const loader=new T.TextureLoader();
+const DEFAULT_LIVERY_TIMEOUT_MS=60000;
 function texture(name){
  if(!textures.has(name)){
   let resolveLoad,rejectLoad;
@@ -71,7 +73,8 @@ export const LIVERIES=[
 ];
 
 export class Aircraft{
- constructor(){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;}
+ static liveryForModel(id,type){return liveryForModel(LIVERIES.find(x=>x.id===id),type);}
+ constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
@@ -135,13 +138,13 @@ export class Aircraft{
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
  }
  async setLivery(id){
-  const livery=LIVERIES.find(x=>x.id===id);if(!livery)return false;
+  const livery=Aircraft.liveryForModel(id,this.type);if(!livery)return false;
   const request=++this.liveryRequest;
   if(this.paintLivery){this.paintLivery(livery);this.livery=id;return true;}
   const name=livery.file||id+'.png',t=texture(name);
   let timer;
   try{
-   await Promise.race([textureLoads.get(name),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('涂装载入超时，请重试')),10000);})]);
+   await Promise.race([textureLoads.get(name),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('涂装载入超时，请重试')),this.liveryTimeoutMs);})]);
   }catch(error){
    if(!t.image&&textures.get(name)===t){textures.delete(name);textureLoads.delete(name);}
    if(request!==this.liveryRequest)return false;
