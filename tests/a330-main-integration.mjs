@@ -3,17 +3,83 @@
 // Run: node tests/a330-main-integration.mjs
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
-import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
 import * as T from 'three';
 import {Aircraft,LIVERIES} from '../src/aircraft.js';
 import {AccurateA330} from '../src/accurate-a330.js';
 
-function domNode(d){return {tagName:d.tag,textContent:d.text,children:d.children.map(domNode)};}
+// Test-only XML subset for the pinned FlightGear files. It builds ordered
+// element/text content, decodes XML entities and rejects malformed input. DTDs
+// are intentionally unsupported: the local assets need neither DTDs nor
+// external entities, and the test must never fetch or expand external data.
+class XmlElement{
+ constructor(tagName,attributes=Object.create(null)){this.tagName=tagName;this.attributes=attributes;this.children=[];this.content=[];}
+ get textContent(){return this.content.map(item=>typeof item==='string'?item:item.textContent).join('');}
+ getAttribute(name){return Object.hasOwn(this.attributes,name)?this.attributes[name]:null;}
+}
+function decodeXml(text){
+ const predefined={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'"};
+ return text.replace(/&([^;]*);|&/g,(reference,name)=>{
+  if(name&&Object.hasOwn(predefined,name))return predefined[name];
+  let value;
+  if(/^#\d+$/.test(name||''))value=Number(name.slice(1));
+  else if(/^#x[\da-f]+$/i.test(name||''))value=parseInt(name.slice(2),16);
+  else throw Error(`Invalid XML entity: ${reference}`);
+  if(!Number.isInteger(value)||!(value===9||value===10||value===13||value>=0x20&&value<=0xd7ff||value>=0xe000&&value<=0xfffd||value>=0x10000&&value<=0x10ffff))throw Error(`Invalid XML character: ${reference}`);
+  return String.fromCodePoint(value);
+ });
+}
+function parseXml(xml){
+ const s=String(xml).replace(/^\uFEFF/,'').replace(/\r\n?/g,'\n');let i=0,root=null;const stack=[];
+ const whitespace=()=>{const start=i;while(/[\t\n ]/.test(s[i]||''))i++;return i>start;};
+ const name=()=>{const match=/^[A-Za-z_:][A-Za-z0-9_.:-]*/.exec(s.slice(i));if(!match)throw Error(`Invalid XML name at ${i}`);i+=match[0].length;return match[0];};
+ const append=text=>{if(stack.length)stack.at(-1).content.push(text);else if(text.trim())throw Error('Text outside XML root');};
+ while(i<s.length){
+  if(s[i]!=='<'){const end=s.indexOf('<',i),stop=end<0?s.length:end,text=s.slice(i,stop);if(text.includes(']]>'))throw Error('Unexpected CDATA terminator');append(decodeXml(text));i=stop;continue;}
+  if(s.startsWith('<!--',i)){const end=s.indexOf('-->',i+4);if(end<0||s.slice(i+4,end).includes('--'))throw Error('Invalid XML comment');i=end+3;continue;}
+  if(s.startsWith('<![CDATA[',i)){const end=s.indexOf(']]>',i+9);if(end<0||!stack.length)throw Error('Invalid XML CDATA');append(s.slice(i+9,end));i=end+3;continue;}
+  if(s.startsWith('<?',i)){const end=s.indexOf('?>',i+2);if(end<0)throw Error('Unclosed XML processing instruction');i=end+2;continue;}
+  if(s.startsWith('<!',i))throw Error('XML declarations and DTDs are unsupported');
+  if(s.startsWith('</',i)){
+   i+=2;const closing=name();whitespace();if(s[i++]!=='>')throw Error('Invalid XML closing tag');
+   if(!stack.length||stack.pop().tagName!==closing)throw Error(`Mismatched XML closing tag: ${closing}`);continue;
+  }
+  i++;const tag=name(),attributes=Object.create(null);let selfClosing=false;
+  for(;;){
+   const spaced=whitespace();
+   if(s.startsWith('/>',i)){i+=2;selfClosing=true;break;}
+   if(s[i]==='>'){i++;break;}
+   if(!spaced)throw Error('XML attributes must be separated by whitespace');
+   const key=name();if(Object.hasOwn(attributes,key))throw Error(`Duplicate XML attribute: ${key}`);
+   whitespace();if(s[i++]!=='=')throw Error(`Missing XML attribute value: ${key}`);whitespace();
+   const quote=s[i++];if(quote!=="'"&&quote!=='"')throw Error(`Unquoted XML attribute: ${key}`);
+   const end=s.indexOf(quote,i);if(end<0)throw Error(`Unclosed XML attribute: ${key}`);
+   const value=s.slice(i,end);if(value.includes('<'))throw Error(`Invalid XML attribute: ${key}`);
+   attributes[key]=decodeXml(value);i=end+1;
+  }
+  const element=new XmlElement(tag,attributes);
+  if(stack.length){stack.at(-1).children.push(element);stack.at(-1).content.push(element);}
+  else{if(root)throw Error('Multiple XML roots');root=element;}
+  if(!selfClosing)stack.push(element);
+ }
+ if(!root||stack.length)throw Error('Missing or unclosed XML root');
+ const findParserError=node=>node.tagName==='parsererror'?node:node.children.map(findParserError).find(Boolean)||null;
+ return {documentElement:root,querySelector:selector=>selector==='parsererror'?findParserError(root):null};
+}
 globalThis.DOMParser=class{parseFromString(xml){
- const py="import sys,json,xml.etree.ElementTree as E\nr=E.fromstring(sys.stdin.read())\ndef cv(e): return {'tag':e.tag,'text':''.join(e.itertext()),'children':[cv(c) for c in e]}\nprint(json.dumps(cv(r)))";
- return {documentElement:domNode(JSON.parse(execFileSync('python3',['-c',py],{input:xml,encoding:'utf8'}))),querySelector:()=>null};
+ try{return parseXml(xml);}catch(error){const node=new XmlElement('parsererror');node.content.push(error.message);return {documentElement:node,querySelector:selector=>selector==='parsererror'?node:null};}
 }};
+// Exercise the parser independently so a permissive stub cannot silently
+// erase or flatten animation nodes while the integration assertions still pass.
+{
+ const parser=new DOMParser(),doc=parser.parseFromString(`<?xml version="1.0"?><root label="a &amp; b > c" quote='&quot;x&quot;'><!-- ignore -->before<item id='&#x31;'>a&amp;b<inner/>c<![CDATA[<&raw>]]>&#65;&#x1F680;</item>after<empty /></root>`,'application/xml');
+ assert.equal(doc.querySelector('parsererror'),null);assert.equal(doc.documentElement.tagName,'root');
+ assert.equal(doc.documentElement.getAttribute('label'),'a & b > c');assert.equal(doc.documentElement.getAttribute('quote'),'"x"');
+ assert.deepEqual(doc.documentElement.children.map(e=>e.tagName),['item','empty']);assert.equal(doc.documentElement.children[0].getAttribute('id'),'1');
+ assert.equal(doc.documentElement.textContent,'beforea&bc<&raw>A🚀after');assert.equal(doc.documentElement.children[0].children[0].tagName,'inner');
+ assert.equal(parser.parseFromString('<x>&lt;&gt;&apos;&amp;&quot;&#9;</x>','application/xml').documentElement.textContent,`<>'&"\t`);
+ for(const invalid of ['<a><b></a>','<a x="1" x="2"/>','<a x=unquoted/>','<a>&unknown;</a>','<a>&unterminated</a>','<a>&#0;</a>','<a><![CDATA[broken</a>','<!DOCTYPE a><a/>','<a/><b/>'])assert(parser.parseFromString(invalid,'application/xml').querySelector('parsererror'),invalid);
+}
 const defer=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 let failModel=false,holdModel=null,failPaint=false,holdPaint=null;
 globalThis.fetch=async url=>{
