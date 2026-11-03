@@ -24,10 +24,10 @@ try{
   exited.then(result=>{clearTimeout(timer);reject(Error(`server exited during startup: ${JSON.stringify(result)} ${stderr}`));});
  });
  const get=path=>request(port,path);
- const manifest=await get('/747/manifest.webmanifest');
+ const manifest=await get('/manifest.webmanifest');
  assert.equal(manifest.status,200);assert.match(manifest.headers['content-type'],/^application\/manifest\+json\b/);
  const data=JSON.parse(manifest.body.toString('utf8'));
- assert.equal(data.name,'747 Flight Lab · 小机长飞行实验室');assert.equal(data.start_url,'/747/');assert.equal(data.scope,'/747/');assert.equal(data.display,'standalone');
+ assert.equal(data.name,'747 Flight Lab · 小机长飞行实验室');assert.equal(data.start_url,'/');assert.equal(data.scope,'/');assert.equal(data.display,'standalone');
  assert(data.icons.some(icon=>icon.sizes==='192x192'));
  assert(data.icons.some(icon=>icon.sizes==='512x512'&&icon.purpose==='any'));
  assert(data.icons.some(icon=>icon.sizes==='512x512'&&icon.purpose==='maskable'));
@@ -36,11 +36,12 @@ try{
   assert.equal(res.status,200,path);assert.deepEqual(res.body.subarray(0,8),Buffer.from([137,80,78,71,13,10,26,10]),path);
   assert.equal(`${res.body.readUInt32BE(16)}x${res.body.readUInt32BE(20)}`,icon.sizes,path);
  }
- const svg=await get('/747/assets/pwa/plane.svg');assert.equal(svg.status,200);assert.match(svg.headers['content-type'],/^image\/svg\+xml/);assert(svg.body.toString().includes('747'));
- const index=await get('/747/');assert.equal(index.status,200);assert.match(index.body.toString(),/rel="manifest"[^>]+manifest\.webmanifest/);assert.match(index.body.toString(),/apple-touch-icon/);assert.match(index.body.toString(),/serviceWorker\.register\('\/747\/sw\.js'/);
- const worker=await get('/747/sw.js');assert.equal(worker.status,200);assert.match(worker.headers['content-type'],/^text\/javascript/);assert.match(worker.body.toString(),/addEventListener\('install'/);assert.match(worker.body.toString(),/addEventListener\('fetch'/);assert.match(worker.body.toString(),/offline\.html/);
- const offline=await get('/747/offline.html');assert.equal(offline.status,200);assert(offline.body.toString().includes('恢复网络'));
- console.log('PWA manifest, 180/192/512 PNG icons, maskable icon, service-worker route and offline fallback passed.');
+ const svg=await get('/assets/pwa/plane.svg');assert.equal(svg.status,200);assert.match(svg.headers['content-type'],/^image\/svg\+xml/);assert(svg.body.toString().includes('747'));
+ const index=await get('/');assert.equal(index.status,200);assert.match(index.body.toString(),/rel="manifest"[^>]+manifest\.webmanifest/);assert.match(index.body.toString(),/apple-touch-icon/);assert.match(index.body.toString(),/<a class="brand" href="\/"/);assert.match(index.body.toString(),/serviceWorker\.register\('\/sw\.js',\{scope:'\/'\}/);
+ const worker=await get('/sw.js');assert.equal(worker.status,200);assert.match(worker.headers['content-type'],/^text\/javascript/);assert.match(worker.body.toString(),/addEventListener\('install'/);assert.match(worker.body.toString(),/addEventListener\('fetch'/);assert.match(worker.body.toString(),/offline\.html/);
+ const offline=await get('/offline.html');assert.equal(offline.status,200);assert(offline.body.toString().includes('恢复网络'));
+ const legacy=await get('/747/');assert.equal(legacy.status,200,'legacy /747/ alias remains available');
+ console.log('Root-domain PWA manifest, 180/192/512 PNG icons, maskable icon, worker, offline fallback, and legacy /747/ alias passed.');
 }finally{
  child.kill('SIGTERM');await exited;
 }

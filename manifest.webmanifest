@@ -1,11 +1,11 @@
 {
-  "id": "/747/",
+  "id": "/",
   "name": "747 Flight Lab · 小机长飞行实验室",
   "short_name": "747 Flight Lab",
   "description": "在虚拟机场观察、涂装和驾驶客机。",
   "lang": "zh-CN",
-  "start_url": "/747/",
-  "scope": "/747/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "any",
   "background_color": "#06111a",
@@ -13,19 +13,19 @@
   "categories": ["education", "entertainment"],
   "icons": [
     {
-      "src": "/747/assets/pwa/icon-192.png",
+      "src": "/assets/pwa/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/747/assets/pwa/icon-512.png",
+      "src": "/assets/pwa/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/747/assets/pwa/icon-maskable-512.png",
+      "src": "/assets/pwa/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

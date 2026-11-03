@@ -1,6 +1,8 @@
-const CACHE_NAME='747-flight-lab-pwa-v1';
+const CACHE_NAME='747-flight-lab-pwa-v2';
 const BASE_URL=new URL('./',self.location.href);
 const BASE_PATH=BASE_URL.pathname;
+// Keep old /747/ links working while the installable app starts at the host root.
+const LEGACY_PATH='/747/';
 const urlFor=path=>new URL(path,BASE_URL).href;
 const OFFLINE_URL=urlFor('offline.html');
 const SHELL_URLS=[
@@ -30,12 +32,18 @@ self.addEventListener('activate',event=>{
  })());
 });
 
+function appRelativePath(path){
+ if(path.startsWith(LEGACY_PATH))return path.slice(LEGACY_PATH.length);
+ if(path.startsWith(BASE_PATH))return path.slice(BASE_PATH.length);
+ return null;
+}
+// The same host also serves /space; keep this root-scoped worker limited to Flight Lab routes.
+function isAppNavigation(path){return path===BASE_PATH||path===`${BASE_PATH}index.html`||path===LEGACY_PATH.slice(0,-1)||path.startsWith(LEGACY_PATH);}
 function isSmallAppResource(url){
- if(url.origin!==self.location.origin||!url.pathname.startsWith(BASE_PATH))return false;
- const relative=url.pathname.slice(BASE_PATH.length);
- return relative.startsWith('src/')||relative.startsWith('node_modules/three/')||
-  relative.startsWith('assets/pwa/')||relative.startsWith('assets/livery-logos/')||
-  relative==='manifest.webmanifest';
+ if(url.origin!==self.location.origin)return false;
+ const relative=appRelativePath(url.pathname);
+ return relative!==null&&(relative.startsWith('src/')||relative.startsWith('node_modules/three/')||
+  relative.startsWith('assets/pwa/')||relative.startsWith('assets/livery-logos/')||relative==='manifest.webmanifest');
 }
 
 async function networkFirst(request){
@@ -53,8 +61,8 @@ self.addEventListener('fetch',event=>{
  const request=event.request;
  if(request.method!=='GET')return;
  const url=new URL(request.url);
- if(url.origin!==self.location.origin||!url.pathname.startsWith(BASE_PATH))return;
- if(request.mode==='navigate'){
+ if(url.origin!==self.location.origin)return;
+ if(request.mode==='navigate'&&isAppNavigation(url.pathname)){
   event.respondWith((async()=>{
    try{
     const response=await fetch(request);
