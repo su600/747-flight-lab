@@ -33,9 +33,12 @@ export const FIN={top:12.33,root:-1.1,
  pt(y,t){return [this.le(y)+(this.te(y)-this.le(y))*t,y];}};
 
 const W='C:/Windows/Fonts/';
-const FONT_FILES=['arial.ttf','arialbd.ttf','ariali.ttf','arialbi.ttf','ARIALNB.TTF','PALAB.TTF','pala.ttf','georgiab.ttf','georgia.ttf','DUBAI-BOLD.TTF','DUBAI-MEDIUM.TTF','msyhbd.ttc','msyh.ttc','simhei.ttf','segoeuib.ttf','framd.ttf','trebucbd.ttf','GILB____.TTF','calibrib.ttf','impact.ttf','FRAHV.TTF']
- .map(f=>W+f).filter(f=>fs.existsSync(f));
-const FONT_OPTS={fontFiles:FONT_FILES,loadSystemFonts:false,defaultFontFamily:'Arial'};
+const FONT_FILES=[
+ ...['arial.ttf','arialbd.ttf','ariali.ttf','arialbi.ttf','ARIALNB.TTF','PALAB.TTF','pala.ttf','georgiab.ttf','georgia.ttf','DUBAI-BOLD.TTF','DUBAI-MEDIUM.TTF','msyhbd.ttc','msyh.ttc','simhei.ttf','segoeuib.ttf','framd.ttf','trebucbd.ttf','GILB____.TTF','calibrib.ttf','impact.ttf','FRAHV.TTF'].map(f=>W+f),
+ '/usr/share/fonts/dejavu/DejaVuSans.ttf','/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
+].filter(f=>fs.existsSync(f));
+const FONT_FAMILY=FONT_FILES.some(f=>/arial\.ttf$/i.test(f))?'Arial':'DejaVu Sans';
+const FONT_OPTS={fontFiles:FONT_FILES,loadSystemFonts:false,defaultFontFamily:FONT_FAMILY};
 
 const measureCache=new Map();
 function measure(text,font,weight,italic){
@@ -58,6 +61,12 @@ export async function prepareDerivedLogos(){
   const {data,info}=await read(src),c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
   for(let i=0;i<data.length;i+=4){data[i]=c[0];data[i+1]=c[1];data[i+2]=c[2];}
   await put(key,data,info);
+ }
+ {// Isolate and recolor Lufthansa's crane mark without the surrounding roundel.
+  const {data,info}=await sharp(path.join(REPO,'assets/livery-logos/lufthansa.png'))
+   .extract({left:48,top:190,width:418,height:176}).resize(940,170,{fit:'fill'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+  for(let i=0;i<data.length;i+=4){data[i]=255;data[i+1]=255;data[i+2]=255;}
+  await put('lufthansa-crane-white.png',data,info);
  }
  {// Kapok flower only: drop the blue tail-shaped background of the logo.
   const {data,info}=await read('china-southern.png');

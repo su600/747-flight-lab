@@ -26,6 +26,9 @@ for(const l of LIVERIES){
 }
 assert.deepEqual(Object.keys(A380_REALITY).sort().join(),['AF1_2026','AF1_CLASSIC','BAW','BOE','CCA','CEA','CHH','CSN','DLH','DLH100','KLM','UAE','fedex','sf'].sort().join());
 assert.deepEqual(Object.entries(A380_REALITY).filter(([,v])=>v.status==='real').map(([k])=>k).sort(),['BAW','BOE','CSN','DLH','DLH100','UAE'],'only operators with a real A380 are marked real');
+assert.match(A380_REALITY.DLH100.note,/D-AIMH.*47 米.*鹤标.*“100”及“1926 \| 2026”/);
+assert.equal(A380_STYLE.DLH100.nacelle,'#f4f5f6','D-AIMH anniversary engines remain white');
+assert.equal(A380_STYLE.DLH100.stabilizer,'#f4f5f6','D-AIMH anniversary horizontal stabilizers remain white');
 
 const aircraft=new Aircraft();aircraft.type='a380';
 const model=new T.Group();model.rotation.y=Math.PI/2;aircraft.root.add(model);

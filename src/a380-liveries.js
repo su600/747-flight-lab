@@ -14,7 +14,7 @@ export const A380_STYLE={
  BAW:style({nacelle:'#1f2a6b',winglet:'#1f2a6b'}),
  KLM:style({stabilizer:'#00a1de'}),
  DLH:style(),
- DLH100:style({stabilizer:'#0b1f4d',nacelle:'#0b1f4d',winglet:'#0b1f4d'}),
+ DLH100:style(),
  AF1_CLASSIC:style({nacelle:'#6aaed6'}),
  AF1_2026:style({nacelle:'#0b1f44',winglet:'#0b1f44'}),
  fedex:style({freight:true,stabilizer:'#4d148c'}),

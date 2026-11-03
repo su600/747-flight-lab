@@ -48,17 +48,22 @@ export const ART={
   s.imageFacing('lufthansa.png',cx,cy,6.9,6.9);
   s.text('Lufthansa',22.7,-5.2,{cap:1.8,font:'Arial',fill:NAVY,width:12.2});
  }},
- DLH100:{real:false,draw(s){
-  const NAVY='#0b1f4d';
-  fillBase(s,'#f1f2f4');
-  // Dark lower fuselage and nose, white crown, as on the anniversary scheme.
-  s.poly([...xs(37,-37.5).map(x=>[x,interp([[37,-1.2],[30,-4.4],[18,-5.6],[-5,-5.9],[-25,-5.2],[-37.5,-3.0]])(x)]),[-38.5,-12],[38,-12]],NAVY);
+ DLH100:{real:true,draw(s){
+  const NAVY='#05164d',WHITE='#f1f2f4';
+  fillBase(s,NAVY);
+  // D-AIMH has a navy upper fuselage and nose, pale underside, and a 47 m
+  // white crane sweeping across both decks. The crane image is deliberately
+  // stretched to the long, low proportions of the aircraft's real XXL mark.
+  bellyBand(s,'#e1e3e6',x=>interp([[37,.15],[30,.35],[23,.8],[12,1.35],[0,1.95],[-14,2.0],[-25,1.55],[-33,1.0],[-37.5,.6]])(x));
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,NAVY));
   const [cx,cy]=FIN.pt(4.9,.5);
-  s.circle(cx,cy,2.65,'#ffffff');s.circle(cx,cy,2.38,NAVY);
+  s.circle(cx,cy,2.65,WHITE);s.circle(cx,cy,2.38,NAVY);
   s.imageFacing('lufthansa-white.png',cx,cy,6.9,6.9);
-  s.text('Lufthansa',20,-4.6,{cap:1.5,font:'Arial',fill:'#ffffff',width:10});
-  s.text('1926 / 2026',-6,-7.3,{cap:1.3,font:'Arial',fill:'#8fa0c4',width:13});
+  s.imageFacing('lufthansa-crane-white.png',-8.2,-4.6,47,8.5,{opacity:.97});
+  s.text('100',-16,-4.4,{cap:4.7,font:'Arial',fill:'#b6bfce',width:12.5,opacity:.62});
+  s.text('1926 | 2026',-23.5,-6.6,{cap:.82,font:'Arial',fill:'#8f9bb0',width:9.5,opacity:.95});
+  s.imageFacing('lufthansa-white.png',33.5,-4.8,1.65,1.65);
+  s.text('Lufthansa',25.5,-5.7,{cap:1.0,font:'Arial',fill:WHITE,width:7.6});
  }},
  // ------------------------------------------------------------------- British Airways
  BAW:{real:true,draw(s){
