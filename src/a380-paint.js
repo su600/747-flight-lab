@@ -120,13 +120,13 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
   }
   baked.forEach(g=>g.dispose());
  }
- // The inverse root transform is the only per-frame input of the shader. Any
- // projected mesh may refresh it: all of them are always rendered (no culling).
- const anchor=body.find(o=>o.geometry.attributes.position.count>5000)||body[0];
- const previousBeforeRender=anchor?.onBeforeRender;
- if(anchor)anchor.onBeforeRender=function(...args){uniforms.uLiveryInverseRoot.value.copy(root.matrixWorld).invert();previousBeforeRender?.apply(this,args);};
- // Cap meshes render after the anchor in the same frame; refresh once at install time too.
- uniforms.uLiveryInverseRoot.value.copy(root.matrixWorld).invert();
+ // The inverse root transform is the only per-frame input of the shader. It must
+ // match the aircraft pose of the current frame for every part. Refreshing it from
+ // one part's onBeforeRender left parts drawn earlier in the frame on last frame's
+ // pose, so the livery shimmered while the aircraft moved. sync() runs once per
+ // frame from the aircraft update, before any part is drawn.
+ function sync(){root.updateWorldMatrix(true,false);uniforms.uLiveryInverseRoot.value.copy(root.matrixWorld).invert();}
+ sync();
 
  const atlases=new Map();let current=null,version=0,disposed=false;
  function atlasFor(id){
@@ -173,5 +173,5 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
   for(const entry of atlases.values()){entry.port?.dispose();entry.starboard?.dispose();}atlases.clear();
   for(const m of [...projected.values(),...flat.values()])m.dispose();blank.dispose();
  }
- return {apply,dispose,uniforms,caps,windows,projected,flat,flatByRole,get current(){return current;}};
+ return {apply,dispose,sync,uniforms,caps,windows,projected,flat,flatByRole,get current(){return current;}};
 }
