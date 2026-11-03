@@ -109,19 +109,60 @@ export class World{
   // Rubber deposits in the touchdown zones.
   for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),.078);}
   for(let x=-1890;x<1900;x+=60){this.lamp(x,.3,-32,0xffe8bd);this.lamp(x,.3,32,0xffe8bd);if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);}
+  // Centerline, threshold, and approach lights make the runway readable at night.
+  for(let x=-1800;x<=1800;x+=30)this.lamp(x,.2,0,0xf6f2dc);
+  for(let x=-1800;x<=1800;x+=60)this.lamp(x,.16,-130,0x36c982);
+  for(const end of [-1,1]){
+   for(let z=-20;z<=20;z+=4)this.lamp(end*1834,.24,z,0x38d482);
+   for(let i=1;i<=12;i++)this.lamp(end*(1880+i*35),.32,0,0xf6f2dc);
+  }
   for(let x=-1890;x<1900;x+=180){this.box(x,.55,-46,5,1.1,.22,mat('#272f25'));this.label('A  →',x,.7,-45.83,4,1,false,'#f2cf6a');}
   for(let x=-1380;x<790;x+=65){this.ground(x,-380,.05,410,mat('#8b968d'),.052);}
   for(let z=-570;z<-175;z+=55)this.ground(-300,z,2180,.045,mat('#8b968d'),.052);
   // Gate guidance, parking boxes, and safe movement boundaries.
   for(let i=0;i<9;i++){const x=-1200+i*230;this.ground(x,-370,.35,170,yellow,.08);this.ground(x,-286,38,.45,yellow,.08);this.ground(x-48,-350,.35,180,red,.08);this.ground(x+48,-350,.35,180,red,.08);const n=this.label(String(i+1).padStart(2,'0'),x,.09,-288,12,9,true,'#d8b34c');n.rotation.z=Math.PI;}
-  const terminalMetal=mat('#deddd1',.4,.35),glass=mat('#4e777e',.21,.65),dark=mat('#293e45',.5,.25);glass.envMapIntensity=1.3;this.glass=glass;
-  this.box(-300,14,-603,1900,28,80,glass,true);this.box(-300,29,-602,1940,4,105,terminalMetal,true);this.box(-300,2,-600,1920,4,90,dark);
-  for(let x=-1240;x<=650;x+=22)this.box(x,15,-561,.65,27,.6,terminalMetal);
-  for(const y of [8,17,25])this.box(-300,y,-560,1900,.5,.6,terminalMetal);
-  this.label('STAR BAY  /  星湾国际机场',-370,23,-559,135,14,false,'#e4ebde');
-  for(let i=0;i<9;i++){const x=-1200+i*230;this.box(x,7,-510,9,6,105,glass,true);this.box(x,11,-510,11,1,106,terminalMetal,true);this.box(x,6,-455,13,8,10,dark,true);this.box(x,3,-495,1,6,1,terminalMetal);this.label('G'+(i+1),x,9,-449,7,3,false,'#ffda7e','#243941');}
-  // Control tower, radar and airport hangars.
-  this.box(900,27,-580,15,54,15,mat('#d6d7cc'),true);const cab=new T.Mesh(new T.CylinderGeometry(16,11,10,8),glass);cab.position.set(900,59,-580);cab.castShadow=true;scene.add(cab);this.box(900,65,-580,34,2,32,terminalMetal,true);this.box(900,74,-580,.4,17,.4,dark);this.radar=this.box(900,80,-580,9,2,.5,dark);
+  const terminalMetal=mat('#dfe2dc',.4,.28),glass=mat('#497179',.23,.52),atriumGlass=mat('#315f6b',.2,.48),atriumRoof=mat('#c3d0cb',.38,.22),dark=mat('#293e45',.52,.25),terminalBase=mat('#4c5554',.82,.05),towerBody=mat('#d3d7d0',.7,.06);glass.envMapIntensity=atriumGlass.envMapIntensity=1.3;this.glass=glass;
+  // Layered terminal wings and a raised central atrium replace the old single glass wall.
+  this.box(-300,3,-603,1940,6,116,terminalBase,true);
+  for(const [x,w] of [[-925,650],[-300,620],[325,650]]){this.box(x,15,-603,w,22,84,glass,true);this.box(x,27,-603,w+14,3,112,terminalMetal,true);}
+  this.box(-300,42,-603,420,30,84,atriumGlass,true);this.box(-300,58,-603,460,3,122,atriumRoof,true);
+  this.box(-300,59.8,-603,280,.45,72,glass);
+  // Facade mullions use instancing so the extra architecture adds one draw call per tier.
+  const facadeFrames=new T.InstancedMesh(boxGeo(.65,20,.7),terminalMetal,87),frameTransform=new T.Object3D();
+  for(let i=0;i<87;i++){frameTransform.position.set(-1230+i*22,15,-559);frameTransform.updateMatrix();facadeFrames.setMatrixAt(i,frameTransform.matrix);}
+  facadeFrames.castShadow=false;scene.add(facadeFrames);
+  const atriumFrames=new T.InstancedMesh(boxGeo(.7,26,.7),terminalMetal,22);
+  for(let i=0;i<22;i++){frameTransform.position.set(-500+i*20,42,-559);frameTransform.updateMatrix();atriumFrames.setMatrixAt(i,frameTransform.matrix);}
+  atriumFrames.castShadow=false;scene.add(atriumFrames);
+  for(const y of [7,12,25,28])this.box(-300,y,-558,1900,.5,.7,terminalMetal);
+  this.box(-300,37,-556,360,9,1.5,dark,true);
+  this.label('STAR BAY INTERNATIONAL',-300,39,-555.1,336,5,false,'#f3eddd');
+  this.label('星湾国际机场 · TERMINAL 1',-300,34.8,-555.1,300,3.2,false,'#d7e2dc');
+  for(let i=0;i<9;i++){const x=-1200+i*230;this.box(x,7,-510,9,6,105,glass,true);this.box(x,11,-510,11,1.2,110,terminalMetal,true);this.box(x,6,-455,13,8,10,dark,true);this.box(x,3,-495,1,6,1,terminalMetal);this.box(x,3,-478,1.2,6,1.2,terminalBase,true);this.label('G'+(i+1),x,9,-449,7,3,false,'#ffda7e','#243941');}
+  // Instanced yellow lead-in lanes and white stand edges guide traffic without dozens of draw calls.
+  const apronGuides=new T.InstancedMesh(UNIT_PLANE,yellow,18),apronEdges=new T.InstancedMesh(UNIT_PLANE,white,18),mark=new T.Object3D();
+  for(let i=0;i<9;i++){
+   const x=-1200+i*230;
+   mark.rotation.set(-Math.PI/2,0,0);mark.position.set(x,.083,-245);mark.scale.set(.5,210,1);mark.updateMatrix();apronGuides.setMatrixAt(i,mark.matrix);
+   mark.position.set(x,.084,-352);mark.scale.set(62,.6,1);mark.updateMatrix();apronGuides.setMatrixAt(9+i,mark.matrix);
+   for(const [j,side] of [-1,1].entries()){mark.position.set(x+side*35,.084,-385);mark.scale.set(.45,64,1);mark.updateMatrix();apronEdges.setMatrixAt(i*2+j,mark.matrix);}
+  }
+  apronGuides.instanceMatrix.needsUpdate=true;apronGuides.renderOrder=83;apronGuides.castShadow=false;apronGuides.receiveShadow=false;
+  apronEdges.instanceMatrix.needsUpdate=true;apronEdges.renderOrder=84;apronEdges.castShadow=false;apronEdges.receiveShadow=false;scene.add(apronGuides,apronEdges);
+  // Tapered control-tower shaft, octagonal glazed cab, roof deck, and rotating radar.
+  const towerX=0,towerZ=-520;
+  // A distinct apron-side control tower with an octagonal glazed cab and rotating radar.
+  this.ground(towerX,towerZ,72,72,concrete,.04);this.box(towerX,3,towerZ,28,6,28,terminalMetal,true);
+  const towerShaft=new T.Mesh(new T.CylinderGeometry(5.5,8.5,48,10),towerBody);towerShaft.position.set(towerX,30,towerZ);towerShaft.castShadow=true;towerShaft.receiveShadow=true;scene.add(towerShaft);
+  const cab=new T.Mesh(new T.CylinderGeometry(10.5,9,8,12,1,true),glass);cab.position.set(towerX,59,towerZ);cab.castShadow=true;scene.add(cab);
+  const cabDeck=new T.Mesh(new T.CylinderGeometry(12,12,.8,12),terminalMetal),cabRoof=new T.Mesh(new T.CylinderGeometry(12.5,12.5,1.2,12),terminalMetal);cabDeck.position.set(towerX,54.8,towerZ);cabRoof.position.set(towerX,63.6,towerZ);cabDeck.castShadow=cabRoof.castShadow=true;scene.add(cabDeck,cabRoof);
+  const cabFrames=new T.InstancedMesh(boxGeo(.45,7,.55),terminalMetal,12),cabFrame=new T.Object3D();
+  for(let i=0;i<12;i++){const a=i*Math.PI*2/12;cabFrame.position.set(towerX+Math.cos(a)*9.65,59,towerZ+Math.sin(a)*9.65);cabFrame.rotation.y=-a;cabFrame.updateMatrix();cabFrames.setMatrixAt(i,cabFrame.matrix);}
+  cabFrames.instanceMatrix.needsUpdate=true;cabFrames.castShadow=false;scene.add(cabFrames);
+  this.label('ATC',towerX,40,towerZ+8.5,8,3,false,'#f3eddd','#374951');
+  this.box(towerX,69,towerZ,.6,10,.6,dark,true);this.radar=this.box(towerX,75,towerZ,14,.7,1.2,dark);
+  this.box(towerX,78,towerZ,.5,5,.5,dark,true);this.box(towerX,81,towerZ,1.4,1.4,1.4,mat('#d34a40',.5,.05));
+  // Airport hangars.
   for(let i=0;i<3;i++){this.box(1120+i*210,18,-560,170,36,130,mat('#c8cabe'),true);this.box(1120+i*210,14,-493,140,25,1,mat('#607477'));this.label('HANGAR '+(i+1),1120+i*210,31,-492,85,6,false,'#35515c');}
   for(const x of [-1300,-800,-300,200,700]){this.box(x,15,-225,.5,30,.5,dark,true);this.box(x,30,-225,9,.4,2,dark);}
   this.vehicles=[];for(let i=0;i<8;i++){const g=new T.Group(),color=i%3===0?0xe2b449:0xe7e9dd;const body=new T.Mesh(new T.BoxGeometry(7,2,2.5),mat(color));body.position.y=1.5;g.add(body);const windshield=new T.Mesh(new T.BoxGeometry(1.2,1,2.4),glass);windshield.position.set(2,2.4,0);g.add(windshield);for(const x of [-2,2])for(const z of [-1.3,1.3]){const wheel=new T.Mesh(new T.CylinderGeometry(.55,.55,.3,12),dark);wheel.rotation.x=Math.PI/2;wheel.position.set(x,.55,z);g.add(wheel);}g.position.set(-1200+i*230,0,-430-rnd()*25);scene.add(g);this.vehicles.push(g);}

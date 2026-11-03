@@ -343,7 +343,7 @@ function updateCamera(dt){
   lookDir.applyAxisAngle(lookRight,lookPitch).applyAxisAngle(_yAxis,lookYaw).applyQuaternion(plane.root.quaternion);
   camPos.applyQuaternion(plane.root.quaternion).add(planePos);targetPos.copy(camPos).add(lookDir);
  }
- if(camMode==='tower'){camPos.set(900,68,-570);targetPos.copy(planePos);camera.fov=clamp(clamp(2200/camPos.distanceTo(planePos),2.8,43)*towerZoom,2.8,85);}
+ if(camMode==='tower'){camPos.set(0,68,-500);targetPos.copy(planePos);camera.fov=clamp(clamp(2200/camPos.distanceTo(planePos),2.8,43)*towerZoom,2.8,85);}
  else camera.fov=camMode==='cockpit'||camMode==='wing'?viewFov:43;
  if(camMode!=='cockpit')camPos.y=Math.max(camPos.y,1.2);
  // Light buffet shake when the wing is close to the stall, a real cue in the cockpit.
