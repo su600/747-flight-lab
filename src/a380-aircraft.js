@@ -125,6 +125,59 @@ const SOURCE_RIGHT_FLAP_SKINS=new Set(['Cylinder233','Cylinder234','Cylinder235'
 export function isSourceRightFlapSkin(mesh){
  return mesh.isSkinnedMesh&&SOURCE_RIGHT_FLAP_SKINS.has(mesh.name)&&mesh.parent?.name==='WING_ARMATURE_RH';
 }
+// Passenger door panels are copies of the fuselage skin with the same livery
+// material. They sit about 6 mm behind the skin on flat parts, and up to 2.6 cm in
+// front of it where the skin bulges. Phones often have 16-bit depth buffers (about
+// 2 cm of precision at 100 m), so the door and the skin win the depth test in turn
+// and the outline shimmers in every livery. Push each door vertex out along its
+// normal until the skin in front of it is at least DOOR_CLEARANCE behind.
+const DOOR_CLEARANCE=.03,DOOR_LATERAL_REACH=.04,DOOR_SEARCH_MARGIN=.25,DOOR_MAX_AHEAD=.2;
+export const isDoorPanel=o=>/^(PAX|Pax)_DOOR_/.test(o.name)&&!/HANDLE/i.test(o.name);
+// Door handles stand off the door, so they are door parts, not skin.
+const isSkinMesh=o=>o.isMesh&&!o.isSkinnedMesh&&!/(PAX|Pax)_DOOR/.test(o.name)&&[o.material].flat().some(m=>/^A380X_FUSE[1235]$/.test(m?.name));
+export function clearDoorPanelsFromSkin(model,origin){
+ model.updateMatrixWorld(true);
+ const doors=[],skins=[];
+ model.traverse(o=>{if(isDoorPanel(o)&&o.geometry.getAttribute('normal'))doors.push(o);else if(isSkinMesh(o))skins.push(o);});
+ const cache=new Map(),v=new T.Vector3();
+ const worldPoints=mesh=>{
+  if(cache.has(mesh))return cache.get(mesh);
+  const position=mesh.geometry.getAttribute('position'),out=new Float32Array(position.count*3);
+  for(let i=0;i<position.count;i++){v.fromBufferAttribute(position,i).applyMatrix4(mesh.matrixWorld);out.set([v.x,v.y,v.z],i*3);}
+  const box=new T.Box3().setFromArray(out);cache.set(mesh,{out,box});return cache.get(mesh);
+ };
+ const n=new T.Vector3(),p=new T.Vector3(),outward=new T.Vector3();
+ for(const door of doors){
+  const geometry=door.geometry;if(geometry.userData.clearedFromSkin)continue;
+  const position=geometry.getAttribute('position'),normal=geometry.getAttribute('normal');
+  const box=new T.Box3().setFromObject(door).expandByScalar(DOOR_SEARCH_MARGIN);
+  const near=[];
+  for(const skin of skins){
+   const cached=worldPoints(skin);if(!box.intersectsBox(cached.box))continue;
+   const pts=cached.out;
+   for(let k=0;k<pts.length;k+=3){if(box.containsPoint(p.set(pts[k],pts[k+1],pts[k+2])))near.push(pts[k],pts[k+1],pts[k+2]);}
+  }
+  const scale=door.matrixWorld.getMaxScaleOnAxis();
+  for(let i=0;i<position.count;i++){
+   p.fromBufferAttribute(position,i).applyMatrix4(door.matrixWorld);
+   n.fromBufferAttribute(normal,i).transformDirection(door.matrixWorld);
+   // Only outward-facing door surfaces are visible; inner faces are culled.
+   if(n.dot(outward.subVectors(p,origin))<=0)continue;
+   let ahead=-Infinity;
+   for(let k=0;k<near.length;k+=3){
+    const dx=near[k]-p.x,dy=near[k+1]-p.y,dz=near[k+2]-p.z;
+    const along=dx*n.x+dy*n.y+dz*n.z;
+    const lateral2=dx*dx+dy*dy+dz*dz-along*along;
+    if(lateral2<DOOR_LATERAL_REACH*DOOR_LATERAL_REACH&&along<DOOR_MAX_AHEAD&&along>ahead)ahead=along;
+   }
+   if(ahead===-Infinity)continue;
+   const lift=Math.max(0,ahead+DOOR_CLEARANCE)/scale;
+   if(lift>0)position.setXYZ(i,position.getX(i)+normal.getX(i)*lift,position.getY(i)+normal.getY(i)*lift,position.getZ(i)+normal.getZ(i)*lift);
+  }
+  position.needsUpdate=true;geometry.computeBoundingSphere();geometry.computeBoundingBox();geometry.userData.clearedFromSkin=true;
+ }
+ return doors.length;
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -183,6 +236,7 @@ export class A380Aircraft extends Aircraft {
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
    this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
+   clearDoorPanelsFromSkin(model,this.root.getWorldPosition(new T.Vector3()));
    this.paint=installA380Paint(this,{sideY:-4.2,loadTexture:this.loadOptions.loadTexture,timeoutMs:this.liveryTimeoutMs});
    this.paintLivery=livery=>this.setLivery(livery.id);
    for(const [pos,color] of [[[-16,0,-39.8],0xff3333],[[-16,0,39.8],0x33ff99],[[0,5,0],0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.fromArray(pos);this.root.add(m);this.lights.push(m);}
