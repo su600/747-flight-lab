@@ -5,7 +5,7 @@ import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 // Close the actual window-shaped boundaries of the A380 skin, rather than
 // floating rectangles over it. Boundary vertices retain the source UVs and
 // meet the hull exactly; the caps are visible only for windowless liveries.
-function closeA380Windows(source,geometry,matrix,sideY,excluded=[],minVertices=5000){
+export function closeA380Windows(source,geometry,matrix,sideY,excluded=[],minVertices=5000){
  const position=geometry.attributes.position,uv=source.geometry.attributes.uv,index=geometry.index;
  if(!index||!uv||position.count<minVertices)return null;
  const keys=new Array(position.count),vertices=new Map(),edges=new Map(),v=new T.Vector3();

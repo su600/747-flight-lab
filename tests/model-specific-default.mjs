@@ -10,6 +10,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft,LIVERIES} from '../src/aircraft.js';
 import {addModelPaint} from '../src/model-paint.js';
 import {TwinAircraft} from '../src/twin-aircraft.js';
+import {realityFor} from '../src/livery-reality.js';
 
 const catalog=JSON.stringify(LIVERIES),boe=LIVERIES.find(l=>l.id==='BOE');
 for(const type of ['b747','b777','a380','a330']){
@@ -42,18 +43,9 @@ async function geometryOnlyGLB(name){
  out.write('glTF');out.writeUInt32LE(2,4);out.writeUInt32LE(out.length,8);out.writeUInt32LE(n,12);out.write('JSON',16);text.copy(out,20);bin.copy(out,20+n);
  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(out.buffer.slice(out.byteOffset,out.byteOffset+out.byteLength),'');
 }
-async function a380Fixture(){
- const aircraft=new Aircraft();aircraft.type='a380';const model=new T.Group();model.rotation.y=Math.PI/2;aircraft.root.add(model);
- for(const name of ['fuselage','wings','nose','wing-left','wing-right','body-left','body-right']){
-  const gltf=await geometryOnlyGLB(name);model.add(gltf.scene);const invisible=[];
-  gltf.scene.traverse(o=>{if(o.isMesh&&[o.material].flat().every(m=>m.userData.viewerInvisible||/^Material\.00[12]$/.test(m.name)))invisible.push(o);});invisible.forEach(o=>o.removeFromParent());
- }
- aircraft.root.updateMatrixWorld(true);let box=new T.Box3().setFromObject(aircraft.root,true),size=box.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
- aircraft.root.updateMatrixWorld(true);box.setFromObject(aircraft.root,true);model.position.sub(box.getCenter(new T.Vector3()));aircraft.root.updateMatrixWorld(true);
- addModelPaint(aircraft,{sideZ:3.55,sideY:-4.2,tailX:-31,tailY:7.5,length:39});return aircraft;
-}
-const a380=await a380Fixture(),b777=await new TwinAircraft('b777').load();
-for(const plane of [a380,b777]){
+// The A380 atlas painter is covered by tests/a380-paint.mjs.
+const b777=await new TwinAircraft('b777').load();
+for(const plane of [b777]){
  const side=plane.root.getObjectByName('livery-side-right'),tail=plane.root.getObjectByName('livery-tail-right');
  assert(side&&tail,`${plane.type} projected decals`);
  await plane.setLivery('BOE');assert.equal(plane.livery,'BOE');
@@ -100,12 +92,12 @@ function button(id){
 const elements=new Map(),liveriesEl={set innerHTML(html){this.html=html;buttons=[...html.matchAll(/<button\b[^>]*data-livery="([^"]+)"/g)].map(m=>button(m[1]));},get innerHTML(){return this.html;}};
 const $=s=>{if(s==='#liveries')return liveriesEl;if(!elements.has(s))elements.set(s,{textContent:'',value:'',hidden:false});return elements.get(s);};
 const all=s=>s==='[data-livery]'?buttons:[];
-const context=vm.createContext({Aircraft,LIVERIES,$,all,console});
+const context=vm.createContext({Aircraft,LIVERIES,$,all,console,realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'}});
 vm.runInContext(`
  const AIRCRAFT_INFO={b747:{name:'747'},a380:{name:'380'},a330:{name:'330'},b777:{name:'777'}};
  let plane,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';const sim={},window={flightLab:{}},scene={add(){},remove(){}};
  let candidates={};const getAircraft=async type=>candidates[type];
- const showAircraft=()=>{},syncCabinTime=()=>{},setEmitters=()=>{},notify=()=>{};
+ const showAircraft=()=>{},syncCabinTime=()=>{},setEmitters=()=>{},notify=()=>{},beginLoad=()=>({update(){},done(){}});
  ${source.slice(showStart,showEnd)}
  ${source.slice(selectStart,selectEnd)}
  function bind(){${source.slice(bindStart,bindEnd)}}
@@ -126,7 +118,7 @@ for(const type of ['a380','a330','b777','b747']){
 }
 sf.focus();sf.key('Enter');await new Promise(r=>setImmediate(r));assert.equal(context.test.state().plane.livery,'sf');assert.equal(sf.attributes['aria-pressed'],'true');
 assert(await context.test.selectAircraft('a380'));assert.strictEqual(focused,sf);assert.equal(sf.attributes['aria-pressed'],'true');assert.equal(house.attributes['aria-pressed'],'false');assert.equal(house.fields.small.textContent,'AIRBUS HOUSE');assert.equal(context.test.state().desiredLivery,'sf');assert.match($('#liveryDetails').textContent,/假想/);
-house.focus();house.key(' ');await new Promise(r=>setImmediate(r));assert.equal(context.test.state().plane.livery,'BOE');assert.equal(house.attributes['aria-pressed'],'true');assert.equal($('#liveryName').textContent,'空客原厂 · 示意');assert.match($('#liveryDetails').textContent,/示意/);
+house.focus();house.key(' ');await new Promise(r=>setImmediate(r));assert.equal(context.test.state().plane.livery,'BOE');assert.equal(house.attributes['aria-pressed'],'true');assert.equal($('#liveryName').textContent,'空客原厂 · 示意');assert.match($('#liveryDetails').textContent,/厂商涂装/);
 // Exercise the real global shortcut handler as well: without its focus guard,
 // Space is prevented before the browser can activate the focused button.
 const ignoreStart=source.indexOf(' const ignore=()=>'),keyEnd=source.indexOf("\n addEventListener('keyup'",ignoreStart);assert(ignoreStart>=0&&keyEnd>ignoreStart);

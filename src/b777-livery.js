@@ -1,5 +1,5 @@
-// FlightGear 777 candidate atlas adapter. FedEx is an independently typeset
-// 777F approximation; SF is a fictional 777F adaptation of its 747 styling.
+// FlightGear 777 candidate atlas adapter. FedEx follows the real 777F scheme; SF has no real 777F and is a
+// fictional adaptation of its 747 styling. Atlases are baked by tests/b777_livery_build.py.
 // Upstream model/UV attribution and GPL-2.0: assets/accurate-b777/CREDITS.txt.
 import {Texture} from 'three';
 import {LIVERIES} from './aircraft.js';
@@ -8,8 +8,8 @@ import {CARGO_LIVERIES} from './cargo-liveries.js';
 const cargoIds = new Set(CARGO_LIVERIES.map(x => x.id));
 export const B777_LIVERY_IDS = Object.freeze(LIVERIES.map(x => x.id));
 export const B777_CARGO_LIVERY_INFO = Object.freeze({
- fedex:Object.freeze({model:'777-200F',fictional:false,disclosure:'参考 FedEx 777F 的原创近似绘制；未通过实机或浏览器视觉认证。'}),
- sf:Object.freeze({model:'777-200F',fictional:true,disclosure:'假想 777F：参考顺丰 747 风格，不声称该机型实际服役。'}),
+ fedex:Object.freeze({model:'777-200F',fictional:false,disclosure:'FedEx 777F 实机涂装：白色机身、紫色后下机身与垂尾；原创矢量绘制，注册号与细节不保证与特定实机一致。'}),
+ sf:Object.freeze({model:'777-200F',fictional:true,disclosure:'真机无此涂装：顺丰航空没有 777 货机（机队为 737/747/757/767），此为按顺丰 747 货机风格的假想适配。'}),
 });
 const CARGO_ATLAS_ROOT = '/747/assets/b777-liveries/cargo/';
 export function b777CargoManifest({id,variant}) {
@@ -18,7 +18,10 @@ export function b777CargoManifest({id,variant}) {
  return {id,variant,maps:[
   {sourceTexture:'Liveries-F/AFR1blanc.png',url:`${CARGO_ATLAS_ROOT}${id}-body.webp`},
   {sourceTexture:'Liveries-F/AFR5blanc.png',url:`${CARGO_ATLAS_ROOT}${id}-fin.webp`},
- ],tints:id==='sf'?['moteur1','moteur2','moteur3','moteur4','Reversers1','Reversers2','Reversers3','Reversers4'].map(fgName=>({fgName,sourceTexture:'Liveries-F/AFR8LAT.png',color:'#282a2d'})):[]};
+  {sourceTexture:'Liveries-F/AFR4blanc.png',url:`${CARGO_ATLAS_ROOT}${id}-doors.webp`},
+  {sourceTexture:'Liveries-F/AFR3.png',url:`${CARGO_ATLAS_ROOT}${id}-belly.webp`},
+  {sourceTexture:'Liveries-F/AFR8LAT.png',url:`${CARGO_ATLAS_ROOT}${id}-eng.webp`},
+ ],tints:[]};
 }
 const cancelledError = () => Object.assign(Error('B777 texture load cancelled'), {name:'AbortError'});
 
@@ -205,18 +208,27 @@ export function createB777LiveryController(scene, {variant, manifestFor=b777Carg
       if (!found) throw Error(`B777 tint target not found: ${fgName}`);
      }
      const loaded = new Map();
-     for (const item of mappings) {
-      const lease = await loadTexture({...item, id, variant, signal:controller.signal});
-      // Never dispose a known source map (or a duplicate lease) even if a
-      // broken provider claims ownership of it. Other late leases are ours.
-      const shared = lease?.texture && (staged.leases.some(x => x.texture === lease.texture) ||
+     // Fetch every atlas concurrently; leases that finish are staged even when a sibling fails so release() frees them.
+     const settled = await Promise.allSettled(mappings.map(item => loadTexture({...item, id, variant, signal:controller.signal})));
+     // Never take ownership of a known source map or of a texture already staged by an earlier lease.
+     for (const r of settled) {
+      const lease = r.status === 'fulfilled' ? r.value : null;
+      if (typeof lease?.dispose !== 'function') continue;
+      if (lease.texture && (staged.leases.some(x => x.texture === lease.texture) || records.some(rec => rec.list.some(m => m?.map === lease.texture)))) continue;
+      staged.leases.push(lease);
+     }
+     const failure = settled.find(r => r.status === 'rejected');
+     if (failure) throw failure.reason;
+     if (reason) return false;
+     mappings.forEach((item, i) => {
+      const lease = settled[i].value;
+      // Never dispose a known source map (or a duplicate lease) even if a broken provider claims ownership of it.
+      const shared = lease?.texture && (settled.some((x, j) => j !== i && x.value?.texture === lease.texture) ||
        records.some(r => r.list.some(m => m?.map === lease.texture)));
       if (shared) throw Error('B777 texture provider returned a shared map');
-      if (typeof lease?.dispose === 'function') staged.leases.push(lease);
-      if (reason) return false;
       if (!lease?.texture?.isTexture || typeof lease.dispose !== 'function') throw Error('B777 texture lease required');
       loaded.set(item.sourceTexture, lease.texture);
-     }
+     });
      const materialCopies = new Map(), textureCopies = new Map(), replacements = new Map();
      for (const r of records) {
       let changed = false;

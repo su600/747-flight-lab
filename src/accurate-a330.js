@@ -11,9 +11,11 @@ const AC_FOLDER='../accurate-a330/Models/';
 const EXPECTED_TEXTURES=['323_blank.png','303_blank.png','landing-gears.png','pw_extra.png','windshield_pane.png','windshield.png','wings_main.png','wings_tail.png','ge_extra.png','ge_fan.png','pw_inside.png'];
 const UPSTREAM_LIVERIES={CCA:'A333RR/CCA',CEA:'A333RR/CES',CSN:'A333RR/CSN',DLH:'A333RR/DLH',KLM:'A333GE/KLM'};
 const CARGO_IDS=new Set(['fedex','sf']);
+// Bumped whenever generate_liveries.py output changes; assets are served with a one-day cache.
+const LIVERY_VERSION='side-profile-2';
 // The versioned SF URL avoids a cached pre-fix atlas being combined with the
 // new overlay. The original sf.png is retained for already-open old sessions.
-const liveryPath=id=>UPSTREAM_LIVERIES[id]?`${ROOT}Liveries/${UPSTREAM_LIVERIES[id]}.png`:id==='sf'?`${ASSET_ROOT}derived/liveries/sf-v2/sf.png`:id==='fedex'?`${ASSET_ROOT}derived/liveries/fedex-v2.png`:`${ASSET_ROOT}derived/liveries/${id}.png${id==='BOE'?'?v=airbus-house-1':''}`;
+const liveryPath=id=>UPSTREAM_LIVERIES[id]?`${ROOT}Liveries/${UPSTREAM_LIVERIES[id]}.png`:id==='sf'?`${ASSET_ROOT}derived/liveries/sf-v2/sf.png?v=${LIVERY_VERSION}`:id==='fedex'?`${ASSET_ROOT}derived/liveries/fedex-v2.png?v=${LIVERY_VERSION}`:`${ASSET_ROOT}derived/liveries/${id}.png?v=${LIVERY_VERSION}`;
 
 // Own livery maps have an explicit deadline and are discarded on cancellation.
 // A late TextureLoader callback is disposed as well; shared parseAC maps are
@@ -351,7 +353,7 @@ export class AccurateA330Research extends Aircraft{
   try{
    next=await requestLiveryTexture(this,liveryPath(id),this.textureTimeoutMs);
    if(request!==this.liveryRequest||this.disposed){next.dispose();return false;}
-   if(id==='sf')marks=await requestLiveryTexture(this,`${ASSET_ROOT}derived/liveries/sf-v2/sf-marks.png`,this.textureTimeoutMs);
+   if(id==='sf')marks=await requestLiveryTexture(this,`${ASSET_ROOT}derived/liveries/sf-v2/sf-marks.png?v=${LIVERY_VERSION}`,this.textureTimeoutMs);
   }catch(error){next?.dispose();if(request!==this.liveryRequest||this.disposed)return false;throw error;}
   if(request!==this.liveryRequest||this.disposed){next.dispose();marks?.dispose();return false;}
   // Commit only after the actual image is decoded and validated. parseAC

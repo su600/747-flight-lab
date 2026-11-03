@@ -15,13 +15,24 @@ const LANDMARK_SITES=[
 const nearLandmark=(x,z)=>LANDMARK_SITES.some(s=>(x-s.x)**2+(z-s.z)**2<s.clearance*s.clearance);
 const boxGeo=(w,h,d)=>{const key=w+'|'+h+'|'+d;let g=boxCache.get(key);if(!g){g=new T.BoxGeometry(w,h,d);boxCache.set(key,g);}return g;};
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
-function noiseTexture(base,scale=1){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,512,512);for(let i=0;i<70000;i++){const g=Math.floor(rnd()*255);x.fillStyle=`rgba(${g},${g},${g},.065)`;x.fillRect(rnd()*512,rnd()*512,1+rnd()*2,1+rnd()*2);}const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
+// Scatter grey specks straight into the pixel buffer. Thousands of per-speck fillRect calls with
+// string colours dominated start-up; this keeps the same random sequence at a fraction of the cost.
+function speckle(ctx,S,count,alpha,wMax,hMax,gBase=0,gRange=255){
+ const img=ctx.getImageData(0,0,S,S),d=img.data;
+ for(let i=0;i<count;i++){
+  const g=Math.floor(gBase+rnd()*gRange),px=rnd()*S,py=rnd()*S,w=1+rnd()*wMax,h=1+rnd()*hMax;
+  const x0=Math.max(0,Math.floor(px)),x1=Math.min(S,Math.ceil(px+w)),y0=Math.max(0,Math.floor(py)),y1=Math.min(S,Math.ceil(py+h)),keep=1-alpha,add=g*alpha;
+  for(let y=y0;y<y1;y++)for(let k=(y*S+x0)*4,end=(y*S+x1)*4;k<end;k+=4){d[k]=d[k]*keep+add;d[k+1]=d[k+1]*keep+add;d[k+2]=d[k+2]*keep+add;}
+ }
+ ctx.putImageData(img,0,0);
+}
+function noiseTexture(base,scale=1){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,512,512);speckle(x,512,70000,.065,2,2);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
 const canvasTex=(c,srgb=true)=>{const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;return t;};
 // Rolling patches of meadow plus faint mowing stripes, so the ground no longer reads as one flat colour.
 function fieldTexture(){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#7f9568';x.fillRect(0,0,S,S);
  const tones=['#8aa06b','#738c5f','#90a06a','#6d8660','#9aa570'];
  for(let i=0;i<46;i++){const px=rnd()*S,py=rnd()*S,r=60+rnd()*180,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,tones[i%tones.length]+'aa');g.addColorStop(1,tones[i%tones.length]+'00');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}
- for(let i=0;i<90000;i++){const g=Math.floor(rnd()*255);x.fillStyle=`rgba(${g},${g},${g},.05)`;x.fillRect(rnd()*S,rnd()*S,1+rnd()*2,1+rnd()*3);}
+ speckle(x,S,90000,.05,2,3);
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
 // One window-grid texture serves both the colour map and the night-time glow of the distant city.
 function facadeTexture(lit){const c=document.createElement('canvas');c.width=128;c.height=256;const x=c.getContext('2d');x.fillStyle=lit?'#000':'#e4e9e8';x.fillRect(0,0,128,256);
@@ -37,13 +48,13 @@ function cumulusTexture(){const W=256,H=160,c=document.createElement('canvas');c
 // Weathered pavement: broad stains, tyre-polished lanes, expansion joints and fine cracks.
 function pavementTexture(base,scale=1,{joints=0,stains=18}={}){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,S,S);
  for(let i=0;i<stains;i++){const px=rnd()*S,py=rnd()*S,r=70+rnd()*220,g=x.createRadialGradient(px,py,0,px,py,r),d=rnd()<.5?'0,0,0':'255,255,255';g.addColorStop(0,`rgba(${d},.09)`);g.addColorStop(1,`rgba(${d},0)`);x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}
- for(let i=0;i<120000;i++){const g=Math.floor(rnd()*255);x.fillStyle=`rgba(${g},${g},${g},.07)`;x.fillRect(rnd()*S,rnd()*S,1+rnd()*2,1+rnd()*2);}
+ speckle(x,S,120000,.07,2,2);
  x.strokeStyle='rgba(10,12,12,.28)';x.lineWidth=1;for(let i=0;i<26;i++){let px=rnd()*S,py=rnd()*S;x.beginPath();x.moveTo(px,py);for(let k=0;k<8;k++){px+=(rnd()-.5)*46;py+=(rnd()-.35)*34;x.lineTo(px,py);}x.stroke();}
  if(joints){x.strokeStyle='rgba(20,22,22,.34)';x.lineWidth=2;for(let k=0;k<=joints;k++){const q=k*S/joints;x.beginPath();x.moveTo(q,0);x.lineTo(q,S);x.stroke();x.beginPath();x.moveTo(0,q);x.lineTo(S,q);x.stroke();}}
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=16;return t;}
 // Greyscale lumps for a gentle bump on grass, so the low sun grazes real relief.
 function grassBumpTexture(){const S=512,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#808080';x.fillRect(0,0,S,S);
- for(let i=0;i<90000;i++){const g=Math.floor(90+rnd()*80);x.fillStyle=`rgb(${g},${g},${g})`;x.fillRect(rnd()*S,rnd()*S,1+rnd()*2,1+rnd()*4);}
+ speckle(x,S,90000,1,2,4,90,80);
  const t=new T.CanvasTexture(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
 // Tileable ripples encoded as a normal map; the sea slides this slowly past the viewer.
 function waterNormalTexture(){const S=256,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d'),img=x.createImageData(S,S);

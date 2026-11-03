@@ -392,3 +392,19 @@ dialog .primary-btn{margin-top:14px}
  .cell-actions{grid-column:auto;padding:8px;grid-template-columns:repeat(4,1fr);border-top:0}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ---------- Aircraft download bar ---------- */
+#loadBar{position:fixed;z-index:60;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);pointer-events:none}
+#loadBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan-d),var(--cyan));box-shadow:0 0 12px rgba(85,217,255,.7);transition:width .25s var(--ease)}
+#loadBar.busy i{background:linear-gradient(90deg,var(--cyan-d),var(--cyan),var(--cyan-d));background-size:200% 100%;animation:loadbusy 1s linear infinite}
+@keyframes loadbusy{to{background-position:-200% 0}}
+
+/* ---------- Livery authenticity tags ---------- */
+.reality-tag{flex:none;font:600 10px/1 var(--ui);font-style:normal;letter-spacing:.06em;padding:4px 7px;border-radius:999px;border:1px solid var(--line-2);color:var(--t3)}
+.reality-tag.real{color:var(--green);border-color:rgba(126,240,176,.45);background:rgba(126,240,176,.1)}
+.reality-tag.family{color:var(--amber);border-color:rgba(255,178,62,.45);background:rgba(255,178,62,.1)}
+.reality-tag.none{border-style:dashed}
+#liveryDetails{padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);font-size:12px;line-height:1.65;color:var(--t2)}
+#liveryDetails.reality-real{border-color:rgba(126,240,176,.4)}
+#liveryDetails.reality-family{border-color:rgba(255,178,62,.4)}
+#liveryDetails.reality-none{border-style:dashed}

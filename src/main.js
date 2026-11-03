@@ -1,10 +1,8 @@
 import * as T from 'three';
 import {Aircraft,LIVERIES} from './aircraft.js';
-import {AccurateB777Candidate} from './accurate-b777.js';
-import {createB777LiveryLoader,b777CargoManifest} from './b777-livery.js';
-import {b777PassengerManifest} from './b777-passenger-liveries.js';
-import {AccurateA330} from './accurate-a330.js';
-import {A380Aircraft} from './a380-aircraft.js';
+import {realityFor} from './livery-reality.js';
+import {preloadAircraft,scheduleIdlePrefetch,downloadSizeMB,installPreloadedFetch} from './preload.js';
+installPreloadedFetch();
 import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
 import {World} from './world.js';
 import {Flight,clamp,THRUST_DETENTS} from './flight.js';
@@ -35,6 +33,7 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeig
 const world=new World(scene,renderer),sim=new Flight();
 let plane=new Aircraft(),cockpit=null,airflow=null;
 const aircraftCache=new Map();let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
+const REALITY_TAGS={real:'真机',family:'同系列',none:'无真机'};
 const AIRCRAFT_INFO={
  b747:{name:'BOEING 747–400',gear:'18 个轮子，5 组支撑',engines:4,engine:'GE CF6 · N1 %'},
  a380:{name:'AIRBUS A380–800',gear:'22 个轮子，5 组支撑',engines:4,engine:'TRENT 900 · N1 %',description:'全长双层客舱和四台发动机。外形采用 FlyByWire A380X 模型，非商业用途。'},
@@ -135,20 +134,50 @@ throttleEl.addEventListener('keydown',e=>{
  else if(e.code==='Home'){e.preventDefault();setThrottle(0);}
  else if(e.code==='End'){e.preventDefault();setThrottle(1);}
 });
-// Cache each complete model for the session, including in-flight loads. This bounds GPU
-// allocations to four models and avoids disposing geometry shared by the parked 747s.
-function syncCabinTime(craft){if(typeof craft.setCabinTime==='function')craft.setCabinTime(world.time);else updateCabinLights(craft,world.time);}
-const b777LiveryLoader=createB777LiveryLoader({timeoutMs:180000,manifestFor:request=>request.variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request)});
+// Model-specific code (GLTF decoding, decals, livery atlases) is only fetched when that aircraft is first requested.
 const b777VisualMappings=[
  ...['left','right'].flatMap(side=>['in','out'].map(part=>({state:'aileron',property:`fcs/${side}-${part}-aileron/final-deg`,gain:side==='left'?-20:20,min:-1,max:1}))),
  ...['left','right'].map(side=>({state:'elevator',property:`fcs/${side}-elevator/final-deg`,gain:20,min:-1,max:1})),
  {state:'rudder',property:'fcs/rudder/final-deg',gain:25,min:-1,max:1},
  ...[0,1].map(i=>({state:'engine',property:`engines/engine[${i}]/rpm`,gain:80,min:0,max:1})),
 ];
-function getAircraft(type){
+let b777LiveryLoader;
+async function modelFactory(type){
+ if(type==='a380'){const {A380Aircraft}=await import('./a380-aircraft.js');return new A380Aircraft();}
+ if(type==='a330'){const {AccurateA330}=await import('./accurate-a330.js');return new AccurateA330();}
+ const [{AccurateB777Candidate},{createB777LiveryLoader,b777CargoManifest},{b777PassengerManifest}]=await Promise.all([import('./accurate-b777.js'),import('./b777-livery.js'),import('./b777-passenger-liveries.js')]);
+ b777LiveryLoader??=createB777LiveryLoader({timeoutMs:180000,manifestFor:request=>request.variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request)});
+ return new AccurateB777Candidate({initialLivery:desiredLivery,liveryLoader:b777LiveryLoader,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
+}
+// Thin loading bar plus a status line; a newer request owns the display, so a superseded load never clears it.
+let loadToken=0,loadHideTimer;
+function beginLoad(type){
+ const token=++loadToken,bar=$('#loadBar'),fill=bar.firstElementChild,status=$('#aircraftStatus'),name=AIRCRAFT_INFO[type].name,size=downloadSizeMB(type,{livery:desiredLivery});
+ clearTimeout(loadHideTimer);bar.hidden=false;bar.classList.remove('busy');fill.style.width='2%';
+ status.textContent=aircraftCache.has(type)?`正在切换到 ${name}…`:`正在载入 ${name}…（约 ${Math.round(size)} MB，之后会缓存）`;
+ return {
+  update({fraction}){
+   if(token!==loadToken)return;
+   const pct=Math.round(fraction*100);
+   if(fraction>=1){bar.classList.add('busy');fill.style.width='100%';status.textContent=`${name} 已下载，正在构建模型…`;}
+   else{fill.style.width=Math.max(2,pct)+'%';status.textContent=`正在载入 ${name}… ${pct}%`;}
+  },
+  done(){
+   if(token!==loadToken)return;
+   bar.classList.remove('busy');fill.style.width='100%';
+   loadHideTimer=setTimeout(()=>{if(token===loadToken)bar.hidden=true;},380);
+  },
+ };
+}
+// Cache each complete model for the session, including in-flight loads. This bounds GPU
+// allocations to four models and avoids disposing geometry shared by the parked 747s.
+function syncCabinTime(craft){if(typeof craft.setCabinTime==='function')craft.setCabinTime(world.time);else updateCabinLights(craft,world.time);}
+function getAircraft(type,onProgress){
  if(!aircraftCache.has(type)){
   const p=(async()=>{
-   const craft=type==='a380'?new A380Aircraft():type==='a330'?new AccurateA330():new AccurateB777Candidate({initialLivery:desiredLivery,liveryLoader:b777LiveryLoader,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
+   // Download first (reported as progress); the loader below then reads from the HTTP cache.
+   await preloadAircraft(type,{livery:desiredLivery,priority:'high',onProgress});
+   const craft=await modelFactory(type);
    let loaded=false;
    try{await craft.load();loaded=true;fixAircraftWingShading(craft);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
    // Both externally loaded aircraft already clean up a failed load; only
@@ -169,10 +198,13 @@ function showLivery(){
    const house=Aircraft.liveryForModel('BOE',plane.type);
    x.querySelector('b').textContent=house.name;x.querySelector('small').textContent=house.en;x.querySelector('img').src='/747/assets/livery-logos/'+house.logo;
   }
+  const tag=x.querySelector('.reality-tag');
+  if(tag){const r=realityFor(plane.type,x.dataset.livery);tag.textContent=REALITY_TAGS[r.status];tag.className='reality-tag '+r.status;tag.title=r.label+(r.note?'：'+r.note:'');}
  });
- const details=$('#liveryDetails'),freight=['fedex','sf'].includes(plane.livery);
- details.hidden=plane.type!=='a330'&&plane.type!=='b777'&&!(plane.type==='a380'&&(plane.livery==='BOE'||freight))&&!(plane.type==='b747'&&plane.livery==='fedex');
- details.textContent=plane.type==='a380'?(freight?'A380 货运涂装为假想适配，并非特定实机。':'A380 空客原厂风格为原创示意，非特定实机的精确涂装。'):plane.type==='b777'?(plane.livery==='sf'?'顺丰 777F 为假想适配；涂装参考顺丰货机风格。':'777 涂装为按机型制作的近似演绎，不代表特定实机。'):plane.type==='b747'?'747 FedEx 涂装为参考货机风格的示意适配。':plane.liveryInfo?.disclosure||'A330-303 外形；所有 14 款涂装均为移植或近似。';
+ // Say plainly whether a real aircraft ever wore this paint on this type.
+ const details=$('#liveryDetails'),reality=realityFor(plane.type,plane.livery);
+ details.hidden=false;details.className='fine-print reality-'+reality.status;
+ details.textContent=`【${reality.label}】${reality.note}`+(plane.cargoMode&&plane.liveryInfo?.disclosure?' '+plane.liveryInfo.disclosure:'');
 }
 function showAircraft(){
  const info=AIRCRAFT_INFO[plane.type],isA330=plane.type==='a330',cargo=isA330&&plane.cargoMode,is777Cargo=plane.type==='b777'&&plane.cargoMode;
@@ -184,7 +216,7 @@ function showAircraft(){
  if(door.disabled)sim.doorTarget=0;
  all('[data-aircraft]').forEach(b=>{const active=b.dataset.aircraft===plane.type;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  all('.engine-meter').forEach((el,i)=>el.hidden=i>=info.engines);
- $('#aboutDetails').innerHTML=plane.type==='b747'?originalAbout:isA330?`<div class="about-number">A330<span>–303</span></div><p>${info.description}</p><div class="spec-grid"><div><strong>63.7<small> m</small></strong><span>参考机长</span></div><div><strong>60.3<small> m</small></strong><span>参考翼展</span></div><div><strong>16.8<small> m</small></strong><span>约高</span></div><div><strong>2<small> 台</small></strong><span>GE CF6-80E1</span></div></div><p class="hint">${cargo?'当前为 A330-300 货运外观示意，并非 A330-200F；主货舱门与涂装均为近似。':'14 款涂装均为移植或近似，不保证机号及发动机与实机一致。'}参考尺寸不等于网格工程校核；飞行力学和驾驶舱沿用 747 简化版本，动画不代表真实系统时序。</p><a class="source-link" href="/747/assets/accurate-a330/NOTICE" target="_blank">A330 模型来源、署名与 GPL 许可 ↗</a>`:`<div class="about-number">${plane.type==='a380'?'A380':'777'}</div><p>${info.description}</p><p class="hint">飞行力学沿用 747 简化模型，驾驶舱沿用 747 示意座舱，部件运动并非真实系统时序。</p>`;
+ $('#aboutDetails').innerHTML=plane.type==='b747'?originalAbout:isA330?`<div class="about-number">A330<span>–303</span></div><p>${info.description}</p><div class="spec-grid"><div><strong>63.7<small> m</small></strong><span>参考机长</span></div><div><strong>60.3<small> m</small></strong><span>参考翼展</span></div><div><strong>16.8<small> m</small></strong><span>约高</span></div><div><strong>2<small> 台</small></strong><span>GE CF6-80E1</span></div></div><p class="hint">${cargo?'当前为 A330-300 货运外观示意，并非 A330-200F；主货舱门与涂装均为近似。':'涂装是否有真机见涂装面板的标签，不保证机号及发动机与实机一致。'}参考尺寸不等于网格工程校核；飞行力学和驾驶舱沿用 747 简化版本，动画不代表真实系统时序。</p><a class="source-link" href="/747/assets/accurate-a330/NOTICE" target="_blank">A330 模型来源、署名与 GPL 许可 ↗</a>`:`<div class="about-number">${plane.type==='a380'?'A380':'777'}</div><p>${info.description}</p><p class="hint">飞行力学沿用 747 简化模型，驾驶舱沿用 747 示意座舱，部件运动并非真实系统时序。</p>`;
 }
 function setEmitters(craft){
  airflow.plane=craft;
@@ -209,9 +241,10 @@ async function selectAircraft(type){
  if(!AIRCRAFT_INFO[type])return false;
  const request=++aircraftRequest;
  if(type===plane.type){$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;return true;}
- $('#aircraftSelect').value=type;$('#aircraftStatus').textContent='正在载入 '+AIRCRAFT_INFO[type].name+'…';
+ $('#aircraftSelect').value=type;
+ const load=beginLoad(type);
  try{
-  const next=await getAircraft(type);if(request!==aircraftRequest)return false;
+  const next=await getAircraft(type,load.update);if(request!==aircraftRequest)return false;
   // Reconcile changes made to the livery while the model was loading.
   let selected,applied,retries=0;do{
    selected=desiredLivery;
@@ -224,6 +257,7 @@ async function selectAircraft(type){
   if(window.flightLab)window.flightLab.plane=plane;
   $('#aircraftStatus').textContent='已切换 · 飞行状态保持不变';showAircraft();showLivery();return true;
  }catch(error){if(request===aircraftRequest){$('#aircraftStatus').textContent='载入失败，请重试';$('#aircraftSelect').value=plane.type;notify(error.message||'机型载入失败');}return false;}
+ finally{load.done();}
 }
 async function selectLivery(id){
  if(!LIVERIES.some(l=>l.id===id))return false;
@@ -268,12 +302,12 @@ function bindUI(){
  $('#takeControl').onclick=manualControl;$('#runwayStart').onclick=()=>{go('manual');sim.flapTarget=20;sim.park=true;setCam('chase');syncThrottleUI();notify('从跑道开始：襟翼 20°，松开停留刹车，再把推力杆推到 TO');};
  $('#assist').onclick=()=>{sim.assist=!sim.assist;$('#assist').classList.toggle('active',sim.assist);};
  all('[data-time]').forEach(b=>b.onclick=()=>{world.setTime(b.dataset.time);syncCabinTime(plane);document.body.dataset.time=b.dataset.time;all('[data-time]').forEach(x=>x.classList.toggle('active',x===b));});
- all('[data-aircraft]').forEach(b=>b.onclick=()=>selectAircraft(b.dataset.aircraft));$('#aircraftSelect').onchange=e=>selectAircraft(e.target.value);
+ all('[data-aircraft]').forEach(b=>{b.onclick=()=>selectAircraft(b.dataset.aircraft);const warm=()=>{if(b.dataset.aircraft!=='b747')preloadAircraft(b.dataset.aircraft,{livery:desiredLivery,priority:'high'});};b.addEventListener('pointerenter',warm);b.addEventListener('focus',warm);b.addEventListener('touchstart',warm,{passive:true});});$('#aircraftSelect').onchange=e=>selectAircraft(e.target.value);
  $('#quality').onchange=e=>{const low=e.target.value==='low';display.setQuality(low);renderer.shadowMap.enabled=!low;airflow?.setQuality(low);};
  $('#sound').onclick=()=>{initAudio();sound.enabled=!sound.enabled;sound.ctx.resume();$('#sound').classList.toggle('on',sound.enabled);$('#sound').ariaLabel=sound.enabled?'关闭声音':'开启声音';notify(sound.enabled?'发动机声音已开启':'声音已关闭');};
  $('#help').onclick=()=>$('#helpDialog').showModal();all('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).close());
  $('#fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{notify('请使用浏览器的全屏按钮');}};
- $('#liveries').innerHTML=LIVERIES.map((l,i)=>`<button class="livery-card ${i===0?'active':''}" data-livery="${l.id}" aria-pressed="${i===0}"><span class="livery-swatch" aria-hidden="true"><img src="/747/assets/livery-logos/${l.logo}" alt="" decoding="async"></span><span><b>${l.name}</b><small>${l.en}</small></span><span class="check" aria-hidden="true">${i===0?'✓':''}</span></button>`).join('');
+ $('#liveries').innerHTML=LIVERIES.map((l,i)=>`<button class="livery-card ${i===0?'active':''}" data-livery="${l.id}" aria-pressed="${i===0}"><span class="livery-swatch" aria-hidden="true"><img src="/747/assets/livery-logos/${l.logo}" alt="" decoding="async"></span><span><b>${l.name}</b><small>${l.en}</small></span><em class="reality-tag none"></em><span class="check" aria-hidden="true">${i===0?'✓':''}</span></button>`).join('');
  all('[data-livery]').forEach(b=>b.onclick=()=>selectLivery(b.dataset.livery));
  // Space/Enter on a focused livery button must retain native button activation,
  // rather than being intercepted by the simulator's pause shortcut.
@@ -368,19 +402,22 @@ function resize(){cancelCameraGestures();display.requestResize();if(camMode==='o
 addEventListener('resize',resize);
 let running=true;
 async function start(){
- try{await plane.load();fixAircraftWingShading(plane);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;$('#loadingText').textContent='装载驾驶舱、操纵杆和仪表…';
- try{cockpit=await new Cockpit().loadInterior(plane.native.scale,$('#attitude'));scene.add(cockpit.root);}catch(e){console.warn('驾驶舱使用简化视角',e);cockpit=null;}
+ try{await plane.load();fixAircraftWingShading(plane);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
  // Parked aircraft share geometry and textures, with animations fixed at their current neutral state.
  for(const [x,z] of [[-1200,-390],[-510,-390],[180,-390],[640,-390]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=-Math.PI/2;world.softShadow(x+6,z+2,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;});}
  addCabinLights(plane);syncCabinTime(plane);
- bindUI();resize();setCam('orbit');$('#loading').remove();
- window.flightLab={sim,plane,world,airflow,camera,renderer,display,go,setCam,focusPart,setThrottle,selectAircraft,selectLivery,cameraView(){return{mode:camMode,azimuth:orbitAngle,elevation:orbitHeight,distance:orbitDistance,focus:focus.toArray(),lookYaw,lookPitch,viewFov,towerZoom};},advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
+ bindUI();showLivery();resize();setCam('orbit');$('#loading').remove();if(!/[?&]prefetch=0/.test(location.search))setTimeout(()=>scheduleIdlePrefetch(['a330','b777','a380'],{livery:()=>desiredLivery}),3000);
+ window.flightLab={sim,plane,world,airflow,camera,renderer,display,go,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit(angle,height,distance,at){orbitOverview=false;orbitAngle=angle;orbitHeight=height;orbitDistance=distance;if(at)focus.fromArray(at);firstCamera=true;},cameraView(){return{mode:camMode,azimuth:orbitAngle,elevation:orbitHeight,distance:orbitDistance,focus:focus.toArray(),lookYaw,lookPitch,viewFov,towerZoom};},advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
  let last=performance.now(),uiTime=0;display.onResume=()=>{last=performance.now();};
  function frame(now){if(!running)return;requestAnimationFrame(frame);if(!display.beginFrame()){last=now;return;}let realDt=Math.min((now-last)/1000,.05);last=now;const input=readInput(realDt);const dt=realDt*rate;const n=Math.max(1,Math.ceil(dt*120));for(let i=0;i<n;i++)sim.step(dt/n,input);
  plane.root.position.set(sim.x,plane.contact+sim.altitude+(sim.onGround?Math.max(0,Math.sin(radians(sim.pitch))*4):0),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));plane.root.visible=camMode!=='cockpit';plane.update(sim,sim.paused?0:dt);if(cockpit){cockpit.root.visible=camMode==='cockpit';if(cockpit.root.visible){cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);cockpit.draw(sim);}}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,camMode,world.time);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera(realDt);renderer.render(scene,camera);display.presented(now);updateAudio();
  uiTime+=realDt;if(uiTime>.09){updateUI();uiTime=0;}if(sim.failed&&!$('#retryDialog').open){$('#retryReason').textContent=sim.message;$('#retryDialog').showModal();}
  elapsed+=realDt;frameCount++;if(elapsed>1){fps=Math.round(frameCount/elapsed);elapsed=0;frameCount=0;}
  }requestAnimationFrame(frame);
+ // The cockpit is only needed for the cockpit camera; build it after the first frame instead of holding up start-up.
+ const cockpitScale=plane.native.scale.clone();
+ const loadCockpit=()=>new Cockpit().loadInterior(cockpitScale,$('#attitude')).then(c=>{cockpit=c;scene.add(c.root);if(camMode==='cockpit')$('#cockpitOverlay').hidden=true;}).catch(e=>{console.warn('驾驶舱使用简化视角',e);cockpit=null;});
+ if(window.requestIdleCallback)requestIdleCallback(loadCockpit,{timeout:1500});else setTimeout(loadCockpit,300);
  }catch(e){console.error(e);$('#loadingText').textContent='载入遇到了问题：'+e.message+'。请刷新重试。';}
 }
 start();

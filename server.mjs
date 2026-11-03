@@ -40,7 +40,7 @@ const server=http.createServer(async(req,res)=>{
   const stat=await fs.promises.stat(target);
   if(!stat.isFile()){res.writeHead(404).end('Not found');return;}
   const ext=path.extname(target),etag=`W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
-  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':longCache(pathname)?'public, max-age=86400':'no-cache',Vary:'Accept-Encoding'};
+  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':longCache(pathname)?'public, max-age=86400':'no-cache',Vary:'Accept-Encoding','X-Raw-Length':stat.size};
   const gzip=(ext==='.glb'||(compressible.has(ext)&&stat.size>1024))&&acceptsGzip(req.headers['accept-encoding']);
   if(gzip)headers['Content-Encoding']='gzip';
   // The weak ETag identifies equivalent raw/gzip representations; Vary separates CDN variants.

@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft} from '../src/aircraft.js';
 import {AccurateB777Candidate,createB777CandidateGeometryLoader,B777_SOURCE,b777CandidatePaintSlots} from '../src/accurate-b777.js';
 import {createB777LiveryController,createB777LiveryLoader} from '../src/b777-livery.js';
@@ -30,7 +31,7 @@ const fetchFn=async url=>{
  return {ok:true,status:200,text:async()=>file.toString('utf8'),arrayBuffer:async()=>file.buffer.slice(file.byteOffset,file.byteOffset+file.byteLength)};
 };
 let textureDisposes=0;
-const loaderFactory=()=>new GLTFLoader().register(()=>({name:'B777_CPU_TEXTURE_STUB',loadTexture(){
+const loaderFactory=()=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).register(()=>({name:'B777_CPU_TEXTURE_STUB',loadTexture(){
  const t=new T.Texture({width:1,height:1});t.addEventListener('dispose',()=>textureDisposes++);return Promise.resolve(t);
 }}));
 // Unresolved source overrides are reported; failed embedded texture decoding remains a hard error.

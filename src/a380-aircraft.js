@@ -2,7 +2,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft} from './aircraft.js';
-import {addModelPaint} from './model-paint.js';
+import {installA380Paint} from './a380-paint.js';
+import {A380_STYLE} from './a380-liveries.js';
 
 // FlyByWire A380X, CC BY-NC 4.0. See assets/a380/CREDITS.txt.
 const MODEL_ROOT='/747/assets/a380/';
@@ -92,7 +93,8 @@ export class A380Aircraft extends Aircraft {
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
    this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
-   addModelPaint(this,{sideZ:3.55,sideY:-4.2,tailX:-31,tailY:7.5,length:39});
+   this.paint=installA380Paint(this,{sideY:-4.2,loadTexture:this.loadOptions.loadTexture,timeoutMs:this.liveryTimeoutMs});
+   this.paintLivery=livery=>this.setLivery(livery.id);
    for(const [pos,color] of [[[-16,0,-39.8],0xff3333],[[-16,0,39.8],0x33ff99],[[0,5,0],0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.fromArray(pos);this.root.add(m);this.lights.push(m);}
    return this;
   }catch(error){this.dispose();throw error;}
@@ -105,6 +107,14 @@ export class A380Aircraft extends Aircraft {
   for(const b of this.bindings){let v=b.control==='engine'?this.fanPhase:b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;}
   for(const mixer of this.mixers)mixer.update(0);
  }
+ // Textures load asynchronously; a newer request supersedes an older one.
+ async setLivery(id){
+  const livery=Aircraft.liveryForModel(id,this.type);if(!livery)return false;
+  const request=++this.liveryRequest;
+  const applied=await this.paint.apply(id,A380_STYLE[id]||A380_STYLE.BOE);
+  if(!applied||request!==this.liveryRequest)return false;
+  this.livery=id;return true;
+ }
  // Only called on failed loads. Successfully loaded models are cached for the session.
- dispose(){for(const mixer of this.mixers)mixer.stopAllAction();disposeObjects([this.root,...this.discarded]);this.discarded=[];this.root.removeFromParent();}
+ dispose(){this.paint?.dispose();for(const mixer of this.mixers)mixer.stopAllAction();disposeObjects([this.root,...this.discarded]);this.discarded=[];this.root.removeFromParent();}
 }

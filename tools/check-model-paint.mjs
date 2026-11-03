@@ -1,5 +1,5 @@
 // Run: node tools/check-model-paint.mjs
-// Uses the real twin meshes and A380 GLBs, without a browser/GPU or network.
+// Uses the real twin meshes (legacy decal painter), without a browser/GPU or network.
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';
@@ -28,19 +28,6 @@ async function geometryOnlyGLB(name){
  const text=Buffer.from(JSON.stringify(json)), n=(text.length+3)&~3, bin=data.subarray(20+size);
  const out=Buffer.alloc(20+n+bin.length,0x20);out.write('glTF');out.writeUInt32LE(2,4);out.writeUInt32LE(out.length,8);out.writeUInt32LE(n,12);out.write('JSON',16);text.copy(out,20);bin.copy(out,20+n);
  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(out.buffer.slice(out.byteOffset,out.byteOffset+out.byteLength),'');
-}
-async function a380(){
- const root=new T.Group(),model=new T.Group();model.rotation.y=Math.PI/2;root.add(model);
- for(const name of ['fuselage','wings','nose','wing-left','wing-right','body-left','body-right']){
-  const gltf=await geometryOnlyGLB(name);model.add(gltf.scene);const invisible=[];
-  gltf.scene.traverse(o=>{if(o.isMesh&&[o.material].flat().every(m=>m.userData.viewerInvisible||/^Material\.00[12]$/.test(m.name)))invisible.push(o);});invisible.forEach(o=>o.removeFromParent());
- }
- root.updateMatrixWorld(true);let box=new T.Box3().setFromObject(root,true),size=box.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
- root.updateMatrixWorld(true);box.setFromObject(root,true);model.position.sub(box.getCenter(new T.Vector3()));root.updateMatrixWorld(true);
- const aircraft={root,type:'a380'},params={sideZ:3.55,sideY:-4.2,tailX:-31,tailY:7.5,length:39};
- // Projection must not bake an existing root world transform into the decals.
- root.position.set(13,2,-9);root.rotation.y=.37;root.updateMatrixWorld(true);addModelPaint(aircraft,params);
- root.position.set(0,0,0);root.rotation.y=0;root.updateMatrixWorld(true);return {aircraft,params};
 }
 function sources(aircraft){
  const body=[],fin=[];aircraft.root.traverse(o=>{
@@ -101,7 +88,8 @@ function verifySurface(aircraft,params){
  }
  console.log(`${aircraft.type}: ${counts.join(', ')}`);
 }
-const start=performance.now(),models=[await a380()];
+// The A380 uses the atlas painter; see tests/a380-paint.mjs.
+const start=performance.now(),models=[];
 for(const type of ['a330','b777']){
  const aircraft=await new TwinAircraft(type).load(),s=aircraft.spec;
  models.push({aircraft,params:{sideZ:s.radius+.08,sideY:-.3,tailX:-s.length*.43,tailY:s.tail*.64,length:s.length*.63}});

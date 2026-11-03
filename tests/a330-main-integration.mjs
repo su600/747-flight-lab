@@ -1,6 +1,7 @@
 // CPU-only integration check of main.js coordinators with the real A330 AC,
 // animations, UVs and textures. No browser, renderer, GPU, network or deployment.
 // Run: node tests/a330-main-integration.mjs
+import {realityFor} from '../src/livery-reality.js';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
@@ -91,7 +92,7 @@ T.TextureLoader.prototype.load=function(url,onLoad,_progress,onError){
  const texture=new T.Texture();texture.image={width:2048,height:1024};
  const own=url.includes('/accurate-a330/derived/liveries/')||url.includes('/accurate-a330/Models/Liveries/');
  if(own&&failPaint){queueMicrotask(()=>onError?.(Error('test paint failure')));}
- else if(own&&holdPaint&&url.endsWith('/sf.png'))holdPaint.complete=()=>onLoad(texture);
+ else if(own&&holdPaint&&url.includes('/sf-v2/sf.png'))holdPaint.complete=()=>onLoad(texture);
  else queueMicrotask(()=>onLoad?.(texture));
  return texture;
 };
@@ -108,7 +109,7 @@ const all=selector=>selector==='[data-livery]'?liveryButtons:selector==='[data-a
 const $=selector=>{if(!elements.has(selector))elements.set(selector,{textContent:'',innerHTML:'',value:'',title:'',disabled:false,hidden:false});return elements.get(selector);};
 let genericAdds=0,genericUpdates=0,wingFixes=0;
 const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,
- AccurateB777Candidate:class{},createB777LiveryLoader:()=>()=>{},b777CargoManifest:()=>{},b777PassengerManifest:()=>{},A380Aircraft:class{},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
+ realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},beginLoad:()=>({update(){},done(){}}),preloadAircraft:async()=>{},modelFactory:async type=>{if(type==='a330')return new AccurateA330();throw Error('unexpected model '+type);},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
 vm.runInContext(`
  const world={time:'day'},sim={gear:1,flaps:0,engine:0,onGround:true,door:0,doorTarget:0};
  const scene=new T.Scene(),window={flightLab:{}},airflow={},display={diagnostics:()=>({})},renderer={info:{render:{calls:0,triangles:0}}};let fps=0;const warningList=()=>[];

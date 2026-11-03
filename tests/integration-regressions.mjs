@@ -20,7 +20,7 @@ vm.runInContext(`
  const els=new Map();const $=s=>{if(!els.has(s))els.set(s,{textContent:'',value:''});return els.get(s);};
  const scene={add(){},remove(){}};let candidates={};let notices=[];
  const getAircraft=async type=>candidates[type];
- const syncCabinTime=()=>{},setEmitters=()=>{},showAircraft=()=>{},showLivery=()=>{},notify=message=>notices.push(message);
+ const syncCabinTime=()=>{},setEmitters=()=>{},showAircraft=()=>{},showLivery=()=>{},notify=message=>notices.push(message),beginLoad=()=>({update(){},done(){}});
  ${main.slice(start,end)}
  globalThis.test={selectAircraft,selectLivery,setup(p,cs){plane=p;candidates=cs;aircraftRequest=liveryVersion=0;desiredLivery='BOE';notices=[];},state(){return {plane,desiredLivery,notices}}};
 `,context);

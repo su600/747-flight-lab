@@ -3,6 +3,7 @@
 // approximations, not certified aircraft data.
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft, LIVERIES} from './aircraft.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 
@@ -290,7 +291,7 @@ function candidateGroundMetrics(scene){
 // Concrete per-variant GLB adapter. No 300F substitution; each uses its own
 // XML, scene, window targets, animation graph and provisional ground metrics.
 export function createB777CandidateGeometryLoader({baseURL='/747/assets/accurate-b777/',fetchFn=globalThis.fetch,
- loaderFactory=()=>new GLTFLoader(),parseXML=xml=>new DOMParser().parseFromString(xml,'application/xml'),decodeImage=decodeCandidateImage,
+ loaderFactory=()=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),parseXML=xml=>new DOMParser().parseFromString(xml,'application/xml'),decodeImage=decodeCandidateImage,
  allowUnresolvedTextures=true}={}){
  if(typeof fetchFn!=='function'||typeof loaderFactory!=='function'||typeof parseXML!=='function'||typeof decodeImage!=='function'||typeof allowUnresolvedTextures!=='boolean')throw Error('Invalid B777 candidate loader options');
  return async ({variant,signal})=>{

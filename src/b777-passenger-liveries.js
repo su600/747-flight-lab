@@ -14,6 +14,10 @@ export function manifestFor({id,variant}={}) {
  return {id,variant,maps:[
   {sourceTexture:'Liveries-200LR/AFR1blanc.png',url:`${ROOT}${id}-body.webp`},
   {sourceTexture:'Liveries-200LR/AFR5blanc.png',url:`${ROOT}${id}-fin.webp`},
+  // door skins, belly fairing/gear doors and engine cowls carry the same paint as the fuselage
+  {sourceTexture:'Liveries-200LR/AFR4blanc.png',url:`${ROOT}${id}-doors.webp`},
+  {sourceTexture:'Liveries-200LR/AFR3.png',url:`${ROOT}${id}-belly.webp`},
+  {sourceTexture:'Liveries-200LR/AFR8LAT.png',url:`${ROOT}${id}-eng.webp`},
  ]};
 }
 export const b777PassengerManifest=manifestFor;
