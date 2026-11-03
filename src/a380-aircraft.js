@@ -178,6 +178,32 @@ export function clearDoorPanelsFromSkin(model,origin){
  }
  return doors.length;
 }
+// The left wing has no skin bound only to slat bones, but the right wing has three
+// outboard skins (Cylinder255/256/257) that are. The flap animation moves those slat
+// bones, so on landing these pieces lifted 1.5 m off the wing while the wing stayed
+// put. Bake each such skin at its rest pose into a static mesh under
+// WING_ARMATURE_RH, so it moves with the wing like the rest of the wing does.
+const SLAT_BONE=/^WING_SLAT_\d+R$/;
+export function bakeSlatOnlyRightSkins(model){
+ const targets=[];
+ model.traverse(o=>{
+  if(!o.isSkinnedMesh||o.parent?.name!=='WING_ARMATURE_RH')return;
+  const index=o.geometry.getAttribute('skinIndex'),weight=o.geometry.getAttribute('skinWeight'),influenced=new Set();
+  for(let v=0;v<index.count;v++)for(let c=0;c<4;c++)if(weight.getComponent(v,c)>0)influenced.add(o.skeleton.bones[index.getComponent(v,c)].name);
+  if(influenced.size&&[...influenced].every(name=>SLAT_BONE.test(name)))targets.push(o);
+ });
+ for(const skin of targets){
+  skin.skeleton.update();
+  const source=skin.geometry.getAttribute('position'),baked=new Float32Array(source.count*3),v=new T.Vector3();
+  for(let i=0;i<source.count;i++){skin.getVertexPosition(i,v);baked[i*3]=v.x;baked[i*3+1]=v.y;baked[i*3+2]=v.z;}
+  const geometry=skin.geometry.clone();geometry.setAttribute('position',new T.BufferAttribute(baked,3));geometry.deleteAttribute('skinIndex');geometry.deleteAttribute('skinWeight');
+  geometry.computeBoundingSphere();geometry.computeBoundingBox();
+  const mesh=new T.Mesh(geometry,skin.material);mesh.name=skin.name;mesh.matrix.copy(skin.matrix);mesh.matrix.decompose(mesh.position,mesh.quaternion,mesh.scale);
+  mesh.castShadow=skin.castShadow;mesh.receiveShadow=skin.receiveShadow;mesh.frustumCulled=false;mesh.userData={...skin.userData,bakedStatic:true};
+  const parent=skin.parent;skin.removeFromParent();parent.add(mesh);
+ }
+ return targets.length;
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -232,6 +258,7 @@ export class A380Aircraft extends Aircraft {
     }
    }
    addMissingRightFlaps(model);
+   bakeSlatOnlyRightSkins(model);
    this.update({gear:1,flaps:0,engine:0},0);this.root.updateMatrixWorld(true);
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
