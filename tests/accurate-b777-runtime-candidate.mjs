@@ -23,19 +23,26 @@ const fetchFn=async url=>{
  const file=readFileSync(dir+name);
  const hashes={
   'source-alternatives/2048/777-200LR-v2.xml':'6bf3619544cadf4252c9f8e326fcd101168478d059e6565dcd1bc1cd35da974a',
-  '777-200LR-2048.candidate.glb':'eddb2ea2e615931145b22838921bf12ac90f78b302a4d301f4d7e9439fa574e9',
+  '777-200LR-2048.candidate.glb':'884f9ed9277080d5c08fb12d26c0447e42a97491044e6095be41034f5916848d',
   '777-200F-v2.xml':'49d9d98c49179de7c6979bbdbdfbaa4485c85429b55021e14ac2caeeda978e45',
-  '777-200F-refined.candidate.glb':'33dabdc6d8b80b9f869f74c4cbc2764b7dafd910c4a38f90594984a9bbc0ce17',
+  '777-200F-refined.candidate.glb':'0db396d09aeea164ca56ba77863d26e559f49abb64cd56ba7260694dfbc9be54',
  };
  assert.equal(createHash('sha256').update(file).digest('hex'),hashes[name],`source hash ${name}`);
  return {ok:true,status:200,text:async()=>file.toString('utf8'),arrayBuffer:async()=>file.buffer.slice(file.byteOffset,file.byteOffset+file.byteLength)};
 };
-let textureDisposes=0;
+let textureDisposes=0,imageDisposes=0;
+// The checked-in candidate GLBs use EXT_texture_webp. Stub only the browser
+// capability probe and bitmap close lifecycle; no pixels are decoded in this CPU test.
+if(typeof globalThis.Image==='undefined')globalThis.Image=class{
+ constructor(){this.width=1;this.height=1;}
+ set src(_){queueMicrotask(()=>this.onload?.());}
+};
+const decodeCpuImage=async()=>({width:1,height:1,close(){imageDisposes++;}});
 const loaderFactory=()=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).register(()=>({name:'B777_CPU_TEXTURE_STUB',loadTexture(){
  const t=new T.Texture({width:1,height:1});t.addEventListener('dispose',()=>textureDisposes++);return Promise.resolve(t);
 }}));
 // Unresolved source overrides are reported; failed embedded texture decoding remains a hard error.
-const geometryLoader=createB777CandidateGeometryLoader({baseURL:dir,fetchFn,parseXML,loaderFactory});
+const geometryLoader=createB777CandidateGeometryLoader({baseURL:dir,fetchFn,parseXML,loaderFactory,decodeImage:decodeCpuImage});
 await assert.rejects(geometryLoader({variant:'wrong'}),/Unknown B777 candidate/);assert.deepEqual(fetches,[]);
 await assert.rejects(geometryLoader({variant}),/HTTP 503/);
 const bundle=await geometryLoader({variant,source:B777_SOURCE[variant]});
@@ -94,7 +101,7 @@ bundle.update({'gear/gear[0]/position-norm':1,'gear/gear[1]/position-norm':1,'ge
 // Use the separate cargo paint controller and real local atlas files, but no
 // image decode/GPU. Switching controller paints on the real candidate scene.
 let paintLeases=0;const loadTexture=async({url})=>{
- const name=url.split('/').at(-1);assert.match(name,/^(?:fedex|sf)-(?:body|fin)\.webp$/);
+ const name=url.split('/').at(-1);assert.match(name,/^(?:fedex|sf)-(?:body|fin|doors|belly|eng)\.webp$/);
  const webp=readFileSync(new URL('../assets/b777-liveries/cargo/'+name,import.meta.url));assert.equal(webp.toString('ascii',0,4),'RIFF');assert.equal(webp.toString('ascii',8,12),'WEBP');
  const texture=new T.Texture({width:2048,height:2048});let disposed=false;
  return {texture,dispose(){if(!disposed){disposed=true;paintLeases++;texture.dispose();}}};
@@ -104,7 +111,7 @@ if(variant==='cargo'){
  const painter=createB777LiveryController(bundle.scene,{variant,loadTexture});
  assert.equal(await painter.setLivery('fedex'),true);const fedex=fuselage.material;assert.notEqual(fedex,original);
  assert.equal(await painter.setLivery('sf'),true);assert.notEqual(fuselage.material,fedex);assert.ok(byName('hublot').visible);
- painter.dispose();assert.equal(fuselage.material,original);assert.equal(paintLeases,4);
+ painter.dispose();assert.equal(fuselage.material,original);assert.equal(paintLeases,10);
 }
 let mesh;bundle.scene.traverse(o=>{if(!mesh&&o.isMesh&&o.material?.map)mesh=o;});assert.ok(mesh);
 let geoDisposes=0,materialDisposes=0;mesh.geometry.addEventListener('dispose',()=>geoDisposes++);mesh.material.addEventListener('dispose',()=>materialDisposes++);
@@ -138,6 +145,6 @@ const summary={variant,dimensions:bundle.dimensions.toArray(),contact:bundle.con
  partial:bundle.animationReport.partial.length,unbound:bundle.animationReport.unbound.length,
  ambiguousAxes:bundle.animationReport.ambiguousAxes.length,groupMissing:bundle.animationReport.groupMissing.length,
  unresolvedTextures:bundle.animationReport.unresolvedTextures,skipped:bundle.animationReport.skipped.length,missingCore:plane.animationCoverage.missing};
-plane.dispose();plane.dispose();assert.equal(disposedLease,1);assert.equal(geoDisposes,1);assert.equal(materialDisposes,1);assert.ok(textureDisposes>0);
+plane.dispose();plane.dispose();assert.equal(disposedLease,1);assert.equal(geoDisposes,1);assert.equal(materialDisposes,1);assert.ok(imageDisposes>0,'candidate image resources were not closed');
 if(windowMesh){assert.equal(lamp.parent,null);assert.equal(windowMesh.material,originalGlass);assert.equal(glassMatDisposals,1);assert.equal(lampDisposals,1);}
 console.log(JSON.stringify({summary,textureDisposes,note:'CPU stub textures, candidate only; appearance/FG equivalence not validated'},null,2));
