@@ -5,7 +5,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft,LIVERIES} from '../src/aircraft.js';
-import {installA380Paint,A380_ATLAS} from '../src/a380-paint.js';
+import {installA380Paint,A380_ATLAS,A380_ATLAS_VERSION} from '../src/a380-paint.js';
 import {A380_STYLE} from '../src/a380-liveries.js';
 import {A380_REALITY} from '../src/reality-a380.js';
 
@@ -40,6 +40,8 @@ aircraft.root.updateMatrixWorld(true);let box=new T.Box3().setFromObject(aircraf
 aircraft.root.updateMatrixWorld(true);box.setFromObject(aircraft.root,true);model.position.sub(box.getCenter(new T.Vector3()));aircraft.root.updateMatrixWorld(true);
 
 const loads=[],gates=new Map();
+const fileName=url=>new URL(url,'http://localhost').pathname.split('/').pop();
+const version=url=>new URL(url,'http://localhost').searchParams.get('v');
 const loadTexture=url=>new Promise(resolve=>{const t=new T.Texture();t.url=url;loads.push(url);gates.set(url,()=>resolve(t));});
 const paint=installA380Paint(aircraft,{loadTexture,timeoutMs:200});
 
@@ -64,10 +66,11 @@ assert.deepEqual(shader.uniforms.uLiveryAtlas.value.toArray().map(v=>+v.toFixed(
 
 // A newer selection supersedes an older one; both sides load; styles apply.
 const first=paint.apply('UAE',A380_STYLE.UAE),second=paint.apply('BAW',A380_STYLE.BAW);
-assert.deepEqual(loads.slice(0,4).map(u=>u.split('/').pop()),['UAE-port.webp','UAE-starboard.webp','BAW-port.webp','BAW-starboard.webp']);
+assert.deepEqual(loads.slice(0,4).map(fileName),['UAE-port.webp','UAE-starboard.webp','BAW-port.webp','BAW-starboard.webp']);
+assert(loads.slice(0,4).every(u=>version(u)===A380_ATLAS_VERSION),'A380 atlas URLs are versioned to bypass stale browser caches');
 for(const u of loads)gates.get(u)();
 assert.equal(await first,false,'older request must not apply');assert.equal(await second,true);assert.equal(paint.current,'BAW');
-assert.equal(paint.uniforms.uLiveryPort.value.url.split('/').pop(),'BAW-port.webp');
+assert.equal(fileName(paint.uniforms.uLiveryPort.value.url),'BAW-port.webp');
 assert.equal(paint.flatByRole.nacelle[0].color.getHexString(),'1f2a6b','BA navy nacelles');
 // Freight closes the cabin windows and shows the caps; an airliner reopens them.
 const f=paint.apply('fedex',A380_STYLE.fedex);for(const u of loads.slice(4))gates.get(u)?.();assert.equal(await f,true);
@@ -78,5 +81,9 @@ assert(paint.caps.every(c=>!c.visible)&&paint.windows.every(([o])=>o.visible),'p
 // A stalled download fails with a retryable error and does not poison later requests.
 await assert.rejects(paint.apply('CSN',A380_STYLE.CSN),/超时/);
 const retry=paint.apply('CSN',A380_STYLE.CSN);for(const u of loads.slice(8))gates.get(u)?.();assert.equal(await retry,true);
+const beforeDLH100=loads.length,anniversary=paint.apply('DLH100',A380_STYLE.DLH100);for(const u of loads.slice(beforeDLH100))gates.get(u)?.();assert.equal(await anniversary,true);
+assert.equal(paint.current,'DLH100');assert.deepEqual(loads.slice(beforeDLH100).map(fileName),['DLH100-port.webp','DLH100-starboard.webp']);
+assert(loads.slice(beforeDLH100).every(u=>version(u)===A380_ATLAS_VERSION),'DLH100 uses the current atlas version');
+assert.equal(paint.uniforms.uLiveryPort.value.url,loads[beforeDLH100]);
 paint.dispose();
 console.log(`A380 paint: ${projectedMeshes} projected skin meshes, ${total} window caps, ${LIVERIES.length} liveries with atlas files, status table consistent.`);

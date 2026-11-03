@@ -8,6 +8,8 @@ import {closeA380Windows} from './model-paint.js';
 // or per-frame work beyond one matrix upload.
 export const A380_ATLAS={x0:-37.5,x1:37.0,y0:-9.8,y1:12.6};
 const ROOT='/747/assets/a380-liveries/';
+// Bump when generated atlases change: the server gives /assets/* a 24-hour browser cache.
+export const A380_ATLAS_VERSION='20261103';
 const FIN_BASE_Y=-1.4;
 
 const BODY_MATERIAL=/^A380X_FUSE[1235]$/;
@@ -130,7 +132,7 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
  function atlasFor(id){
   if(!atlases.has(id)){
    const entry={};
-   entry.promise=Promise.all([loadTexture(`${ROOT}${id}-port.webp`),loadTexture(`${ROOT}${id}-starboard.webp`)]).then(([port,starboard])=>{
+   entry.promise=Promise.all([loadTexture(`${ROOT}${id}-port.webp?v=${A380_ATLAS_VERSION}`),loadTexture(`${ROOT}${id}-starboard.webp?v=${A380_ATLAS_VERSION}`)]).then(([port,starboard])=>{
     entry.port=port;entry.starboard=starboard;return entry;
    },error=>{atlases.delete(id);throw error;});
    entry.promise.catch(()=>{});
