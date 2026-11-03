@@ -51,15 +51,15 @@ export const ART={
  DLH100:{real:true,draw(s){
   const NAVY='#05164d',WHITE='#f1f2f4';
   fillBase(s,NAVY);
-  // D-AIMH has a navy upper fuselage and nose, pale underside, and a 47 m
-  // white crane sweeping across both decks. The crane image is deliberately
-  // stretched to the long, low proportions of the aircraft's real XXL mark.
+  // D-AIMH has a navy upper fuselage and nose, pale underside, and a white crane
+  // sweeping across both decks.
   bellyBand(s,'#e1e3e6',x=>interp([[37,.15],[30,.35],[23,.8],[12,1.35],[0,1.95],[-14,2.0],[-25,1.55],[-33,1.0],[-37.5,.6]])(x));
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,NAVY));
   const [cx,cy]=FIN.pt(4.9,.5);
   s.circle(cx,cy,2.65,WHITE);s.circle(cx,cy,2.38,NAVY);
   s.imageFacing('lufthansa-white.png',cx,cy,6.9,6.9);
-  s.imageFacing('lufthansa-crane-white.png',-8.2,-4.6,47,8.5,{opacity:.97});
+  // The crane keeps its original 2.375:1 proportions (418x176 px) at 8.5 m high.
+  s.imageFacing('lufthansa-crane-white.png',-1.5,-3.4,20.2,8.5,{opacity:.97});
   s.text('100',-16,-4.4,{cap:4.7,font:'Arial',fill:'#b6bfce',width:12.5,opacity:.62});
   s.text('1926 | 2026',-23.5,-6.6,{cap:.82,font:'Arial',fill:'#8f9bb0',width:9.5,opacity:.95});
   s.imageFacing('lufthansa-white.png',33.5,-4.8,1.65,1.65);

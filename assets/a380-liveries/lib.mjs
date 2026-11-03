@@ -64,7 +64,7 @@ export async function prepareDerivedLogos(){
  }
  {// Isolate and recolor Lufthansa's crane mark without the surrounding roundel.
   const {data,info}=await sharp(path.join(REPO,'assets/livery-logos/lufthansa.png'))
-   .extract({left:48,top:190,width:418,height:176}).resize(940,170,{fit:'fill'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+   .extract({left:48,top:190,width:418,height:176}).resize(940,396,{fit:'fill'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   for(let i=0;i<data.length;i+=4){data[i]=255;data[i+1]=255;data[i+2]=255;}
   await put('lufthansa-crane-white.png',data,info);
  }
