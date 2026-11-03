@@ -134,6 +134,15 @@ def seal(d, cx, cy, r):
         star(d, cx+r*dx, cy-r*.51, r*.032, cream)
 
 
+def stars_and_bars(d, cx, cy, r):
+    """Simplified U.S. military roundel introduced on the 2026 VC-25B scheme."""
+    rect(d, (cx-2*r, cy-r*.24, cx+2*r, cy+r*.24), WHITE)
+    rect(d, (cx-1.9*r, cy-r*.11, cx-.65*r, cy+r*.11), RED)
+    rect(d, (cx+.65*r, cy-r*.11, cx+1.9*r, cy+r*.11), RED)
+    ellipse(d, (cx-r, cy-r, cx+r, cy+r), NAVY, WHITE, 1)
+    star(d, cx, cy, r*.48, WHITE)
+
+
 def flag(d, left, top, width, height, wave=0, slant=0):
     """Hand-drawn US flag with hoist/canton at the leading (left) end.
 
@@ -211,6 +220,9 @@ def paint_body(im, kind):
             text_fit(im, "UNITED STATES OF AMERICA", title, SERIF, NAVY+(255,), 52, tracking=1.5)
             # Same fore-aft position on both sides, kept away from the cabin doors.
             seal(d, 230 if side == 0 else 2128, dy+207, 27)
+            if kind == "2026":
+                # The official 2026 scheme adds a Stars-and-Bars roundel aft of the cabin title.
+                stars_and_bars(d, 2070 if side == 0 else 288, dy+201, 14)
     # Engine UV patches belong to the fuselage atlas, not the separate engine map.
     for x0, x1 in ((2408,2680),(2735,3018)):
         if kind == "classic":

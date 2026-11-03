@@ -146,17 +146,17 @@ const b777VisualMappings=[
  ...[0,1].map(i=>({state:'engine',property:`engines/engine[${i}]/rpm`,gain:80,min:0,max:1})),
 ];
 let b777LiveryLoader;
-async function modelFactory(type){
+async function modelFactory(type,initialLivery=desiredLivery){
  if(type==='a380'){const {A380Aircraft}=await import('./a380-aircraft.js');return new A380Aircraft();}
  if(type==='a330'){const {AccurateA330}=await import('./accurate-a330.js');return new AccurateA330();}
  const [{AccurateB777Candidate},{createB777LiveryLoader,b777CargoManifest},{b777PassengerManifest}]=await Promise.all([import('./accurate-b777.js'),import('./b777-livery.js'),import('./b777-passenger-liveries.js')]);
  b777LiveryLoader??=createB777LiveryLoader({timeoutMs:180000,manifestFor:request=>request.variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request)});
- return new AccurateB777Candidate({initialLivery:desiredLivery,liveryLoader:b777LiveryLoader,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
+ return new AccurateB777Candidate({initialLivery,liveryLoader:b777LiveryLoader,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
 }
 // Thin loading bar plus a status line; a newer request owns the display, so a superseded load never clears it.
 let loadToken=0,loadHideTimer;
-function beginLoad(type){
- const token=++loadToken,bar=$('#loadBar'),fill=bar.firstElementChild,status=$('#aircraftStatus'),name=AIRCRAFT_INFO[type].name,size=downloadSizeMB(type,{livery:desiredLivery});
+function beginLoad(type,livery=desiredLivery){
+ const token=++loadToken,bar=$('#loadBar'),fill=bar.firstElementChild,status=$('#aircraftStatus'),name=AIRCRAFT_INFO[type].name,size=downloadSizeMB(type,{livery});
  clearTimeout(loadHideTimer);bar.hidden=false;bar.classList.remove('busy');fill.style.width='2%';
  status.textContent=aircraftCache.has(type)?`正在切换到 ${name}…`:`正在载入 ${name}…（约 ${Math.round(size)} MB，之后会缓存）`;
  return {
@@ -176,12 +176,12 @@ function beginLoad(type){
 // Cache each complete model for the session, including in-flight loads. This bounds GPU
 // allocations to four models and avoids disposing geometry shared by the parked 747s.
 function syncCabinTime(craft){if(typeof craft.setCabinTime==='function')craft.setCabinTime(world.time);else updateCabinLights(craft,world.time);}
-function getAircraft(type,onProgress){
+function getAircraft(type,onProgress,livery=desiredLivery){
  if(!aircraftCache.has(type)){
   const p=(async()=>{
    // Download first (reported as progress); the loader below then reads from the HTTP cache.
-   await preloadAircraft(type,{livery:desiredLivery,priority:'high',onProgress});
-   const craft=await modelFactory(type);
+   await preloadAircraft(type,{livery,priority:'high',onProgress});
+   const craft=await modelFactory(type,livery);
    let loaded=false;
    try{await craft.load();loaded=true;fixAircraftWingShading(craft);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
    // Both externally loaded aircraft already clean up a failed load; only
@@ -197,7 +197,8 @@ function showLivery(){
  // Update the existing button rather than rebuilding the list: focus, keyboard
  // activation, listeners and the persistent selected ID survive a model switch.
  all('[data-livery]').forEach(x=>{
-  const active=x.dataset.livery===plane.livery;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));x.querySelector('.check').textContent=active?'✓':'';
+  const supported=!!Aircraft.liveryForModel(x.dataset.livery,plane.type);x.hidden=!supported;x.disabled=!supported;
+  const active=supported&&x.dataset.livery===plane.livery;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));x.querySelector('.check').textContent=active?'✓':'';
   if(x.dataset.livery==='BOE'){
    const house=Aircraft.liveryForModel('BOE',plane.type);
    x.querySelector('b').textContent=house.name;x.querySelector('small').textContent=house.en;x.querySelector('img').src='/747/assets/livery-logos/'+house.logo;
@@ -245,15 +246,18 @@ async function selectAircraft(type){
  if(!AIRCRAFT_INFO[type])return false;
  const request=++aircraftRequest;
  if(type===plane.type){$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;return true;}
+ const initialLivery=Aircraft.liveryForModel(desiredLivery,type)?desiredLivery:'BOE';
  $('#aircraftSelect').value=type;
- const load=beginLoad(type);
+ const load=beginLoad(type,initialLivery);
  try{
-  const next=await getAircraft(type,load.update);if(request!==aircraftRequest)return false;
+  const next=await getAircraft(type,load.update,initialLivery);if(request!==aircraftRequest)return false;
   // Reconcile changes made to the livery while the model was loading.
   let selected,applied,retries=0;do{
-   selected=desiredLivery;
-   try{applied=await next.setLivery(selected);}catch(error){if(request!==aircraftRequest)return false;if(selected!==desiredLivery)continue;throw error;}
+   const requestedLivery=desiredLivery;
+   selected=Aircraft.liveryForModel(requestedLivery,type)?requestedLivery:initialLivery;
+   try{applied=await next.setLivery(selected);}catch(error){if(request!==aircraftRequest)return false;if(requestedLivery!==desiredLivery)continue;throw error;}
    if(request!==aircraftRequest)return false;
+   if(requestedLivery===desiredLivery&&selected!==desiredLivery){desiredLivery=selected;liveryVersion++;}
    if(!applied&&selected===desiredLivery&&++retries>2)throw Error('涂装切换未完成，请重试');
   }while(!applied||selected!==desiredLivery);
   next.root.position.copy(plane.root.position);next.root.quaternion.copy(plane.root.quaternion);next.root.visible=plane.root.visible;
@@ -265,6 +269,7 @@ async function selectAircraft(type){
 }
 async function selectLivery(id){
  if(!LIVERIES.some(l=>l.id===id))return false;
+ if(!Aircraft.liveryForModel(id,plane.type)){notify('当前机型不支持这款涂装');return false;}
  const version=++liveryVersion;desiredLivery=id;
  while(version===liveryVersion){
   const target=plane,selection=aircraftRequest;

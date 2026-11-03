@@ -8,10 +8,14 @@ const A380_HOUSE_PAINT={
  cargo:false,hideWindows:false,stripes:false,
 };
 
-// Return the original catalog entry unchanged for every other ID/type. In
-// particular, freight metadata must never inherit passenger-default paint.
+// Air Force One schemes belong to the 747 model family only. Other aircraft
+// must not offer them as fictitious liveries. BOE remains the manufacturer
+// default adaptation for Airbus models; every other supported entry stays intact.
+const AF1_747_ONLY=new Set(['AF1_CLASSIC','AF1_2026']);
 export function liveryForModel(livery,type){
- if(!livery||livery.id!=='BOE'||(type!=='a380'&&type!=='a330'))return livery;
+ if(!livery)return livery;
+ if(AF1_747_ONLY.has(livery.id)&&type!=='b747')return null;
+ if(livery.id!=='BOE'||(type!=='a380'&&type!=='a330'))return livery;
  return {...livery,...AIRBUS_HOUSE,modelPaint:{...livery.modelPaint,
   ...(type==='a380'?{a380:{...livery.modelPaint?.a380,...A380_HOUSE_PAINT}}:{}),
  }};

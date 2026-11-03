@@ -20,6 +20,10 @@ for(const type of ['b747','b777','a380','a330']){
  assert.equal(effective.logo,type.startsWith('a')?'airbus-house.png':'boeing.png');
  for(const cargo of ['fedex','sf'])assert.strictEqual(Aircraft.liveryForModel(cargo,type),LIVERIES.find(l=>l.id===cargo));
 }
+for(const id of ['AF1_CLASSIC','AF1_2026']){
+ assert.equal(Aircraft.liveryForModel(id,'b747'),LIVERIES.find(l=>l.id===id),`${id} remains available for 747`);
+ for(const type of ['a330','a380','b777'])assert.equal(Aircraft.liveryForModel(id,type),null,`${id} must not be supported on ${type}`);
+}
 assert.equal(Aircraft.liveryForModel('bogus','a380'),undefined);
 assert.equal(JSON.stringify(LIVERIES),catalog,'resolver must not mutate shared catalog');
 const logo=await readFile(new URL('../assets/livery-logos/airbus-house.png',import.meta.url));
@@ -108,17 +112,27 @@ const craft=type=>({type,livery:'BOE',root:root(),update(){},async setLivery(id)
 const candidates=Object.fromEntries(['b747','b777','a380','a330'].map(type=>[type,craft(type)]));
 context.test.setup(candidates.b747,candidates);context.test.bind();context.test.showLivery();
 assert.match(liveriesEl.html,/<button\b/);const house=buttons.find(b=>b.dataset.livery==='BOE'),sf=buttons.find(b=>b.dataset.livery==='sf');
+const af1Classic=buttons.find(b=>b.dataset.livery==='AF1_CLASSIC'),af1New=buttons.find(b=>b.dataset.livery==='AF1_2026');
 assert.equal(house.fields.small.textContent,'BOEING HOUSE');assert.equal(house.attributes['aria-pressed'],'true');
+assert.equal(af1Classic.hidden,false);assert.equal(af1New.hidden,false,'AF1 schemes remain visible on 747');
 house.focus();
 for(const type of ['a380','a330','b777','b747']){
  assert(await context.test.selectAircraft(type));assert.strictEqual(focused,house);assert.strictEqual(buttons.find(b=>b.dataset.livery==='BOE'),house);
  assert.equal(house.fields.small.textContent,type.startsWith('a')?'AIRBUS HOUSE':'BOEING HOUSE');
  assert(house.fields.img.src.endsWith(type.startsWith('a')?'/airbus-house.png':'/boeing.png'));
  assert.equal(house.attributes['aria-pressed'],'true');assert.equal(context.test.state().plane.livery,'BOE');
+ assert.equal(af1Classic.hidden,type!=='b747');assert.equal(af1New.hidden,type!=='b747');
+ assert.equal(af1Classic.disabled,type!=='b747');assert.equal(af1New.disabled,type!=='b747');
 }
 sf.focus();sf.key('Enter');await new Promise(r=>setImmediate(r));assert.equal(context.test.state().plane.livery,'sf');assert.equal(sf.attributes['aria-pressed'],'true');
 assert(await context.test.selectAircraft('a380'));assert.strictEqual(focused,sf);assert.equal(sf.attributes['aria-pressed'],'true');assert.equal(house.attributes['aria-pressed'],'false');assert.equal(house.fields.small.textContent,'AIRBUS HOUSE');assert.equal(context.test.state().desiredLivery,'sf');assert.match($('#liveryDetails').textContent,/假想/);
 house.focus();house.key(' ');await new Promise(r=>setImmediate(r));assert.equal(context.test.state().plane.livery,'BOE');assert.equal(house.attributes['aria-pressed'],'true');assert.equal($('#liveryName').textContent,'空客原厂 · 示意');assert.match($('#liveryDetails').textContent,/厂商涂装/);
+assert.equal(await context.test.selectLivery('AF1_CLASSIC'),false,'A380 must reject Air Force One schemes');
+await context.test.selectAircraft('b747');await context.test.selectLivery('AF1_CLASSIC');
+assert.equal(context.test.state().plane.livery,'AF1_CLASSIC');assert.equal(af1Classic.hidden,false);
+await context.test.selectAircraft('a380');
+assert.equal(context.test.state().plane.livery,'BOE','switching off 747 falls back from AF1 to Airbus house paint');
+assert.equal(context.test.state().desiredLivery,'BOE');assert.equal(af1Classic.hidden,true);assert.equal(af1New.hidden,true);
 // Exercise the real global shortcut handler as well: without its focus guard,
 // Space is prevented before the browser can activate the focused button.
 const ignoreStart=source.indexOf(' const ignore=()=>'),keyEnd=source.indexOf("\n addEventListener('keyup'",ignoreStart);assert(ignoreStart>=0&&keyEnd>ignoreStart);

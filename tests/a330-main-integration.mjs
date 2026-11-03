@@ -137,6 +137,10 @@ assert(a.dimensions.x>62&&a.dimensions.x<64&&a.dimensions.z>59&&a.dimensions.z<6
 assert.equal($('#engineLabel').textContent,'GE CF6-80E1 · N1 %');assert.equal($('#gearDescription').textContent,'10 个轮子，3 组支撑');assert($('#aboutDetails').innerHTML.includes('FlightGear A330-303'));assert($('#door').disabled);
 assert.equal(api.state().airflow.engines.length,2);assert.equal(api.state().airflow.engines[0].z,-9.41);assert.equal(api.state().airflow.mainGear.length,4);
 for(const entry of LIVERIES){
+ if(['AF1_CLASSIC','AF1_2026'].includes(entry.id)){
+  const before=a.livery;assert.equal(await api.selectLivery(entry.id),false,`${entry.id} is 747-only`);assert.equal(a.livery,before);
+  continue;
+ }
  assert.equal(await api.selectLivery(entry.id),true,entry.id);const cargo=['fedex','sf'].includes(entry.id);
  assert.equal(a.livery,entry.id);assert.equal(a.cargoMode,cargo);assert.equal(a.cabinWindowLights.visible,!cargo);assert.equal($('#door').disabled,!cargo);
  assert.equal(a.liveryInfo.approximate,true);assert.equal($('#liveryDetails').hidden,false);assert($('#liveryDetails').textContent.length>10);

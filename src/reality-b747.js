@@ -15,7 +15,7 @@ export const B747_REALITY={
  DLH:{status:'real',note:'汉莎 747-400（D-ABV*、D-ABT*）2018 年前的黄圈蓝尾、灰色机腹涂装。'},
  DLH100:{status:'family',note:'百年纪念涂装现实中涂在 747-8I 上，747-400 并无此涂装。'},
  AF1_CLASSIC:{status:'family',note:'空军一号 VC-25A 为 747-200B 改装，浅蓝白涂装；747-400 并非专机。'},
- AF1_2026:{status:'family',note:'新版红白蓝专机涂装目前只用于 747-8I（VC-25B 过渡机），747-400 并无此涂装。'},
+ AF1_2026:{status:'family',note:'白红金深蓝与星条圆徽用于 747-8I VC-25B；747-400 仅作同系列适配。'},
  fedex:{status:'family',note:'联邦快递飞过 747-100F/-200F，没有自有 747-400F；涂装为原创近似绘制。'},
  sf:{status:'real',note:'顺丰航空有 747-400F/ERF 货机（如 B-2423）；涂装为原创近似绘制。'},
 };

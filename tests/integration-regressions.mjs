@@ -6,17 +6,18 @@ import vm from 'node:vm';
 import * as T from 'three';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {A380Aircraft,loadA380Part} from '../src/a380-aircraft.js';
+import {Aircraft} from '../src/aircraft.js';
 
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const start=main.indexOf('async function selectAircraft(type){'),end=main.indexOf('// ---- UI',start);
 assert(start>=0&&end>start,'selector implementations must be present');
 // Execute the actual selection functions with controlled craft/network promises.
-const context=vm.createContext({console});
+const context=vm.createContext({console,Aircraft});
 vm.runInContext(`
  let plane,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
  const AIRCRAFT_INFO={b747:{name:'747'},a330:{name:'330'}};
- const LIVERIES=[{id:'BOE'},{id:'CCA'},{id:'CSN'}],sim={},window={flightLab:{}};
+ const LIVERIES=[{id:'BOE'},{id:'CCA'},{id:'CSN'},{id:'AF1_CLASSIC'},{id:'AF1_2026'}],sim={},window={flightLab:{}};
  const els=new Map();const $=s=>{if(!els.has(s))els.set(s,{textContent:'',value:''});return els.get(s);};
  const scene={add(){},remove(){}};let candidates={};let notices=[];
  const getAircraft=async type=>candidates[type];
@@ -26,6 +27,16 @@ vm.runInContext(`
 `,context);
 const root=()=>({position:{copy(){}},quaternion:{copy(){}},visible:true});
 const craft=(type,impl)=>({type,livery:'BOE',root:root(),update(){},setLivery:impl});
+{
+ const old=craft('b747',async function(id){this.livery=id;return true;}),next=craft('a330',async function(id){this.livery=id;return true;});
+ context.test.setup(old,{a330:next});
+ assert.equal(await context.test.selectLivery('AF1_CLASSIC'),true);assert.equal(old.livery,'AF1_CLASSIC');
+ assert.equal(await context.test.selectAircraft('a330'),true);
+ assert.equal(next.livery,'BOE','switching to a model without AF1 falls back to its supported default');
+ assert.equal(context.test.state().desiredLivery,'BOE');
+ assert.equal(await context.test.selectLivery('AF1_2026'),false,'A330 rejects AF1 selection');
+ assert.equal(next.livery,'BOE');
+}
 {
  const slow=deferred();const old=craft('b747',()=>slow.promise),next=craft('a330',async function(id){this.livery=id;return true;});
  context.test.setup(old,{a330:next});const paint=context.test.selectLivery('CCA');
