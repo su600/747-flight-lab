@@ -117,6 +117,36 @@ export function pinSpoilerSkinToNeighbours(mesh){
  geometry.setAttribute('skinWeight',new T.Float32BufferAttribute(newWeight,4));
  return true;
 }
+// The source file has the right-hand flap skins (Cylinder233/234/235) bound to
+// WING_SLAT_*R bones, so they never move with the flaps. right-hand flap surfaces
+// are rebuilt from the left side (bound to the flap bones), so these originals
+// are removed to stop them from z-fighting with the moving copies.
+const SOURCE_RIGHT_FLAP_SKINS=new Set(['Cylinder233','Cylinder234','Cylinder235']);
+export function isSourceRightFlapSkin(mesh){
+ return mesh.isSkinnedMesh&&SOURCE_RIGHT_FLAP_SKINS.has(mesh.name)&&mesh.parent?.name==='WING_ARMATURE_RH';
+}
+// Passenger door panels are flush copies of the fuselage skin (same material, the
+// curved skin lies about 6 mm in front of them). Phones often have only 16 bits of
+// depth, about 2 cm of precision at 100 m, so the panel and the skin win the depth
+// test in turn and the cabin shimmers, day and night. The panels add no detail
+// beyond the skin texture, so they are hidden rather than lifted. The scene nodes
+// stay in place because the cabin light code uses them to find door positions.
+export function isHiddenDoorPanel(mesh){
+ return /^(PAX|Pax)_DOOR_/.test(mesh.name)&&!/HANDLE/i.test(mesh.name);
+}
+// Door handles stand off the skin; lift them outward along their normals, so they
+// stay clear of the depth precision of 16-bit phone buffers.
+export function liftFlushSurface(mesh){
+ if(!/HANDLE/i.test(mesh.name)||!/PAX_DOOR|Pax_DOOR/i.test(mesh.name))return false;
+ const geometry=mesh.geometry,normal=geometry.getAttribute('normal'),position=geometry.getAttribute('position');
+ if(!normal||!position||geometry.userData.flushLifted)return false;
+ const distance=.07;
+ for(let i=0;i<position.count;i++){
+  position.setXYZ(i,position.getX(i)+normal.getX(i)*distance,position.getY(i)+normal.getY(i)*distance,position.getZ(i)+normal.getZ(i)*distance);
+ }
+ position.needsUpdate=true;geometry.computeBoundingSphere();geometry.computeBoundingBox();geometry.userData.flushLifted=true;
+ return true;
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -143,8 +173,9 @@ export class A380Aircraft extends Aircraft {
     const gltf=await loadA380Part(loader,part,{timeoutMs:this.loadOptions.timeoutMs,fetchImpl:this.loadOptions.fetchImpl});model.add(gltf.scene);
     const invisible=[];gltf.scene.traverse(o=>{
      if(!o.isMesh)return;const mats=[o.material].flat();
-     if(!fixedGeometry.has(o.geometry)){if(o.isSkinnedMesh)pinSpoilerSkinToNeighbours(o);alignWindingToNormals(o.geometry);fixedGeometry.add(o.geometry);}
-     if(mats.every(m=>m.userData.viewerInvisible||/^Material\.00[12]$/.test(m.name))){invisible.push(o);return;}
+     if(!fixedGeometry.has(o.geometry)){if(o.isSkinnedMesh)pinSpoilerSkinToNeighbours(o);alignWindingToNormals(o.geometry);if(!o.isSkinnedMesh)liftFlushSurface(o);fixedGeometry.add(o.geometry);}
+     if(mats.every(m=>m.userData.viewerInvisible||/^Material\.00[12]$/.test(m.name))||isSourceRightFlapSkin(o)){invisible.push(o);return;}
+     if(isHiddenDoorPanel(o))o.visible=false;
      o.castShadow=o.receiveShadow=true;o.frustumCulled=false;
      // Lambert ignores scene.environment and leaves the unlit side almost black.
      // Standard uses the world's day/dusk/night environment for natural indirect
