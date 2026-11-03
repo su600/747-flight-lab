@@ -68,6 +68,28 @@ function addMissingRightFlaps(model){
   const bindMatrix=mirrorX.clone().multiply(source.bindMatrix).multiply(mirrorX);model.updateMatrixWorld(true);surface.bind(skeleton,bindMatrix);
  }
 }
+// simplify() keeps only each material's base-colour map. Normal, emissive,
+// occlusion and metal/roughness maps were decoded and then thrown away, which
+// was about half of the embedded texture bytes. Drop those references from the
+// JSON chunk before parsing so the loader never fetches or decodes them. The
+// binary chunk, geometry and base-colour maps are left untouched.
+export function keepBaseColorMapsOnly(buffer){
+ const view=new DataView(buffer);
+ if(buffer.byteLength<20||view.getUint32(0,true)!==0x46546C67||view.getUint32(16,true)!==0x4E4F534A)return buffer;
+ const jsonLength=view.getUint32(12,true),binStart=20+jsonLength;
+ const json=JSON.parse(new TextDecoder().decode(new Uint8Array(buffer,20,jsonLength)));
+ for(const material of json.materials||[]){
+  delete material.normalTexture;delete material.emissiveTexture;delete material.occlusionTexture;
+  if(material.pbrMetallicRoughness)delete material.pbrMetallicRoughness.metallicRoughnessTexture;
+ }
+ const text=new TextEncoder().encode(JSON.stringify(json));
+ const padded=(text.length+3)&~3,rest=new Uint8Array(buffer,binStart);
+ const out=new Uint8Array(20+padded+rest.length),outView=new DataView(out.buffer);
+ outView.setUint32(0,0x46546C67,true);outView.setUint32(4,2,true);outView.setUint32(8,out.length,true);
+ outView.setUint32(12,padded,true);outView.setUint32(16,0x4E4F534A,true);
+ out.set(text,20);out.fill(0x20,20+text.length,20+padded);out.set(rest,20+padded);
+ return out.buffer;
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -77,7 +99,7 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
   if(controller.signal.aborted)throw Error('A380 '+part+' 载入已取消');
   if(!response.ok)throw Error('A380 '+part+' 载入失败 (HTTP '+response.status+')');
   const data=await response.arrayBuffer();if(controller.signal.aborted)throw Error('A380 '+part+' 载入已取消');
-  return loader.parseAsync(data,MODEL_ROOT);
+  return loader.parseAsync(keepBaseColorMapsOnly(data),MODEL_ROOT);
  })();
  work.then(gltf=>{if(expired)disposeObjects(gltf.scenes?.length?gltf.scenes:[gltf.scene]);},()=>{});
  const deadline=new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;controller.abort();reject(Error('A380 '+part+' 载入超时，请重试'));},timeoutMs);});
