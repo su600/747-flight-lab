@@ -108,7 +108,7 @@ const aircraftButtons=['b747','a380','a330','b777'].map(id=>({dataset:{aircraft:
 const all=selector=>selector==='[data-livery]'?liveryButtons:selector==='[data-aircraft]'?aircraftButtons:selector==='.engine-meter'?[{},{},{},{}]:[];
 const $=selector=>{if(!elements.has(selector))elements.set(selector,{textContent:'',innerHTML:'',value:'',title:'',disabled:false,hidden:false});return elements.get(selector);};
 let genericAdds=0,genericUpdates=0,wingFixes=0;
-const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,
+const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,tailSamples:()=>[],makePitchLimit:()=>()=>40,
  realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},beginLoad:()=>({update(){},done(){}}),preloadAircraft:async()=>{},modelFactory:async type=>{if(type==='a330')return new AccurateA330();throw Error('unexpected model '+type);},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
 vm.runInContext(`
  const world={time:'day'},sim={gear:1,flaps:0,engine:0,onGround:true,door:0,doorTarget:0};

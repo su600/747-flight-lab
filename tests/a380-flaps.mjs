@@ -33,19 +33,20 @@ try{
   const left=aircraft.root.getObjectByName(`FLAPS_SURFACE_LH_${section}`),right=aircraft.root.getObjectByName(`FLAPS_SURFACE_RH_${section}`);
   assert(left?.isSkinnedMesh,`left flap surface ${section} exists`);assert(right?.isSkinnedMesh,`right flap surface ${section} exists`);
   assert.equal(right.parent.name,'WING_ARMATURE_RH');assert.equal(right.userData.mirroredFrom,left.name);
+  assert.notEqual(right.geometry,left.geometry,`${section}: right flap gets mirrored geometry`);
+  assert.notEqual(right.skeleton,left.skeleton,`${section}: right flap uses a right-side skeleton`);
   const leftPositions=left.geometry.getAttribute('position'),rightPositions=right.geometry.getAttribute('position');
   for(let vertex=0;vertex<leftPositions.count;vertex++){
-   assert(Math.abs(rightPositions.getX(vertex)+leftPositions.getX(vertex))<1e-6,`${section}: right panel is mirrored across the centerline`);
-   assert(Math.abs(rightPositions.getY(vertex)-leftPositions.getY(vertex))<1e-6&&Math.abs(rightPositions.getZ(vertex)-leftPositions.getZ(vertex))<1e-6,`${section}: mirrored panel keeps the flap profile`);
-  }
-  const indices=right.geometry.getAttribute('skinIndex'),weights=right.geometry.getAttribute('skinWeight');
-  for(let vertex=0;vertex<indices.count;vertex++)for(let component=0;component<indices.itemSize;component++){
-   if(weights.getComponent(vertex,component)<=0)continue;
-   const bone=right.skeleton.bones[indices.getComponent(vertex,component)];
-   assert(bone&&bone.name.endsWith('R'),`${section}: skin weight must target the right rig (${bone?.name})`);
+   assert(Math.abs(rightPositions.getX(vertex)+leftPositions.getX(vertex))<1e-6,`${section}: right panel mirrors across X`);
+   assert(Math.abs(rightPositions.getY(vertex)-leftPositions.getY(vertex))<1e-6&&Math.abs(rightPositions.getZ(vertex)-leftPositions.getZ(vertex))<1e-6,`${section}: mirrored panel retains its profile`);
   }
  }
  assert(aircraft.bindings.some(b=>b.control==='flaps'&&b.action.getClip().name==='r_flap_percent_key'),'right flap animation is loaded');
+ // Flap track fairings follow the flaps only: no spoiler clip may keyframe them.
+ const fairingSpoilers=aircraft.bindings.filter(b=>b.control==='spoiler'&&b.action.getClip().tracks.some(t=>/WING_MFTF/i.test(t.name)));
+ assert.equal(fairingSpoilers.length,0,'spoiler clips must not drive flap track fairings');
+ const fairingFlaps=aircraft.bindings.filter(b=>b.control==='flaps'&&b.action.getClip().tracks.some(t=>/WING_MFTF/i.test(t.name)));
+ assert(fairingFlaps.length>=2,'flap clips drive the track fairings on both wings');
  assert(aircraft.bindings.some(b=>b.control==='flaps'&&b.action.getClip().name==='l_flap_percent_key'),'left flap animation is preserved');
  const left=aircraft.root.getObjectByName('FLAPS_SURFACE_LH_OUT'),right=aircraft.root.getObjectByName('FLAPS_SURFACE_RH_OUT');
  function drivenVertex(mesh,boneName){
@@ -57,15 +58,23 @@ try{
  function vertexWorld(mesh,index){
   aircraft.root.updateMatrixWorld(true);mesh.skeleton.update();
   const point=new T.Vector3().fromBufferAttribute(mesh.geometry.getAttribute('position'),index);
-  mesh.applyBoneTransform(index,point);return mesh.localToWorld(point);
+  mesh.applyBoneTransform(index,point);return {local:point.clone(),world:mesh.localToWorld(point)};
  }
  const leftIndex=drivenVertex(left,'WING_FLAP_11L'),rightIndex=drivenVertex(right,'WING_FLAP_11R');
  aircraft.update({gear:1,flaps:0,engine:0},0);const leftClean=vertexWorld(left,leftIndex),rightClean=vertexWorld(right,rightIndex);
  aircraft.update({gear:1,flaps:30,engine:0},0);const leftDown=vertexWorld(left,leftIndex),rightDown=vertexWorld(right,rightIndex);
- assert(leftDown.distanceTo(leftClean)>.1,'left flap surface responds to flap input');
- assert(rightDown.distanceTo(rightClean)>.1,'right flap surface responds to flap input');
- const leftTravel=leftDown.y-leftClean.y,rightTravel=rightDown.y-rightClean.y;
+ assert(leftDown.world.distanceTo(leftClean.world)>.1,'left flap surface responds to flap input');
+ assert(rightDown.world.distanceTo(rightClean.world)>.1,'right flap surface responds to flap input');
+ const leftTravel=leftDown.world.y-leftClean.world.y,rightTravel=rightDown.world.y-rightClean.world.y,center=left.parent.getWorldPosition(new T.Vector3());
+ for(const [a,b,state] of [[leftClean.world,rightClean.world,'clean'],[leftDown.world,rightDown.world,'deployed']]){
+  assert(Math.abs(a.x-b.x)<.05&&Math.abs(a.y-b.y)<.05,`${state}: mirrored flap panels align along the aircraft body`);
+  assert(Math.abs((a.z+b.z)/2-center.z)<.05,`${state}: mirrored flap panels stay attached across the centerline: ${JSON.stringify({a:a.toArray(),b:b.toArray(),center:center.toArray()})}`);
+ }
  assert(Math.abs(leftTravel-rightTravel)<.05,'left and right flap vertical travel is symmetric');
+ for(let frame=0;frame<8;frame++){
+  aircraft.update({gear:1,flaps:30,engine:0},1/60);const stable=vertexWorld(right,rightIndex).world;
+  assert(stable.distanceTo(rightDown.world)<1e-5,`right flap pose jittered on held frame ${frame}`);
+ }
  aircraft.dispose();
- console.log('A380 right flap regression passed: RH surfaces are present, driven by the right rig, and travel symmetrically.');
+ console.log('A380 right flap regression passed: RH panels mirror the LH rig and travel symmetrically.');
 }catch(error){aircraft.dispose();throw error;}

@@ -112,12 +112,14 @@ def neutral_islands(blank, boxes):
     return ImageChops.multiply(mask, zones)
 
 
-def main_deck_window_pixels(blank):
-    """Return only original main-deck window pixels, not a row-wide band.
+def passenger_window_pixels(blank):
+    """Return only original passenger-window pixels, on both decks, not a row-wide band.
 
-    Use aircraft-lighting.js as the authoritative set of 747 UV centers. The
-    small per-window footprints follow the measured 10x13 px shapes in BLANK;
-    doors and other linework between those footprints remain untouched.
+    Use aircraft-lighting.js as the authoritative set of 747 UV centers. Rows
+    150/430 are the main deck; rows 60/338 are the upper deck (二层). Freight
+    atlases must remove every row. The small per-window footprints follow the
+    measured 10x13 px shapes in BLANK; doors and other linework between those
+    footprints remain untouched.
     """
     source = (ROOT / 'src' / 'aircraft-lighting.js').read_text(encoding='utf-8')
     match = re.search(r'const WINDOW_ROWS=(\[.*?\]);', source, re.S)
@@ -128,8 +130,6 @@ def main_deck_window_pixels(blank):
     draw = ImageDraw.Draw(zones)
     count = 0
     for y, centers in rows:
-        if y not in (150, 430):
-            continue
         for x in centers:
             # Measured non-white window pixels occupy about x-5..x+5,
             # y-4..y+7. Add one pixel for antialiasing without masking the row.
@@ -153,7 +153,7 @@ def restore_details(image, blank, island_mask, remove_main_deck_windows=False):
     darkness = blank.convert('L').point(lambda p: max(0, min(255, (250 - p) * 4)))
     detail = ImageChops.multiply(ImageChops.multiply(grayscale, darkness), island_mask)
     if remove_main_deck_windows:
-        detail = ImageChops.multiply(detail, ImageChops.invert(main_deck_window_pixels(blank)))
+        detail = ImageChops.multiply(detail, ImageChops.invert(passenger_window_pixels(blank)))
     return Image.composite(blank, image, detail)
 
 

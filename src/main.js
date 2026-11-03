@@ -5,7 +5,8 @@ import {preloadAircraft,scheduleIdlePrefetch,downloadSizeMB,installPreloadedFetc
 installPreloadedFetch();
 import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
 import {World} from './world.js';
-import {Flight,clamp,THRUST_DETENTS} from './flight.js';
+import {Flight,clamp,THRUST_DETENTS,groundLift} from './flight.js';
+import {tailSamples,makePitchLimit} from './tail-clearance.js';
 import {Cockpit} from './cockpit.js';
 import {StableDisplay} from './display.js';
 import {Airflow} from './airflow.js';
@@ -261,7 +262,7 @@ async function selectAircraft(type){
    if(!applied&&selected===desiredLivery&&++retries>2)throw Error('涂装切换未完成，请重试');
   }while(!applied||selected!==desiredLivery);
   next.root.position.copy(plane.root.position);next.root.quaternion.copy(plane.root.quaternion);next.root.visible=plane.root.visible;
-  next.update(sim,0);syncCabinTime(next);scene.remove(plane.root);plane=next;scene.add(plane.root);setEmitters(plane);
+  next.update(sim,0);syncCabinTime(next);scene.remove(plane.root);plane=next;scene.add(plane.root);setEmitters(plane);sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);
   if(window.flightLab)window.flightLab.plane=plane;
   $('#aircraftStatus').textContent='已切换 · 飞行状态保持不变';showAircraft();showLivery();return true;
  }catch(error){if(request===aircraftRequest){$('#aircraftStatus').textContent='载入失败，请重试';$('#aircraftSelect').value=plane.type;notify(error.message||'机型载入失败');}return false;}
@@ -418,7 +419,7 @@ function resize(){cancelCameraGestures();display.requestResize();if(camMode==='o
 addEventListener('resize',resize);
 let running=true;
 async function start(){
- try{await plane.load();fixAircraftWingShading(plane);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
+ try{await plane.load();fixAircraftWingShading(plane);sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
  // Parked aircraft share geometry and textures, with animations fixed at their current neutral state.
  for(const [x,z] of [[-1200,-390],[-510,-390],[180,-390],[640,-390]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=-Math.PI/2;world.softShadow(x+6,z+2,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=$('#quality')?.value!=='low';parkedAircraft.push(p);}
  addCabinLights(plane);syncCabinTime(plane);
@@ -428,7 +429,7 @@ async function start(){
  window.flightLab={sim,plane,world,airflow,camera,renderer,display,go,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit(angle,height,distance,at){orbitOverview=false;orbitAngle=angle;orbitHeight=height;orbitDistance=distance;if(at)focus.fromArray(at);firstCamera=true;},cameraView(){return{mode:camMode,azimuth:orbitAngle,elevation:orbitHeight,distance:orbitDistance,focus:focus.toArray(),lookYaw,lookPitch,viewFov,towerZoom};},advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
  let last=performance.now(),uiTime=0;display.onResume=()=>{last=performance.now();};
  function frame(now){if(!running)return;requestAnimationFrame(frame);if(!display.beginFrame()){last=now;return;}let realDt=Math.min((now-last)/1000,.05);last=now;const input=readInput(realDt);const dt=realDt*rate;const n=Math.max(1,Math.ceil(dt*120));for(let i=0;i<n;i++)sim.step(dt/n,input);
- plane.root.position.set(sim.x,plane.contact+sim.altitude+(sim.onGround?Math.max(0,Math.sin(radians(sim.pitch))*4):0),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));plane.root.visible=camMode!=='cockpit';plane.update(sim,sim.paused?0:dt);if(cockpit){cockpit.root.visible=camMode==='cockpit';if(cockpit.root.visible){cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);cockpit.draw(sim);}}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,camMode,world.time);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera(realDt);renderer.render(scene,camera);display.captureAfterRender();display.presented(now);updateAudio();
+ plane.root.position.set(sim.x,plane.contact+sim.altitude+groundLift(sim.pitch,sim.altitude),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));plane.root.visible=camMode!=='cockpit';plane.update(sim,sim.paused?0:dt);if(cockpit){cockpit.root.visible=camMode==='cockpit';if(cockpit.root.visible){cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);cockpit.draw(sim);}}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,camMode,world.time);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera(realDt);renderer.render(scene,camera);display.captureAfterRender();display.presented(now);updateAudio();
  uiTime+=realDt;if(uiTime>.09){updateUI();uiTime=0;}if(sim.failed&&!$('#retryDialog').open){$('#retryReason').textContent=sim.message;$('#retryDialog').showModal();}
  elapsed+=realDt;frameCount++;if(elapsed>1){fps=Math.round(frameCount/elapsed);elapsed=0;frameCount=0;}
  }requestAnimationFrame(frame);

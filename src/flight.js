@@ -21,6 +21,13 @@ const D2R=Math.PI/180,R2D=180/Math.PI;
 const KNOT=.514444;
 
 export const RUNWAY={start:-1900,end:1900,width:60,touch:-1550};
+
+// Nose-up ground lift used by the renderer and the tail-clearance limit. It keeps
+// wheels on the surface at rotation and fades out over the first two metres of
+// altitude, so ground and air use one continuous formula.
+export function groundLift(pitchDeg,altitude){
+ return Math.max(0,Math.sin(pitchDeg*D2R)*4)*(1-clamp(altitude/2,0,1));
+}
 export const FLAP_DETENTS=[0,5,10,20,25,30];
 export const THRUST_DETENTS=[
  {id:'idle',label:'慢车',en:'IDLE',value:0},
@@ -91,7 +98,7 @@ function flapDrag(flaps){
 }
 
 export class Flight{
- constructor(){this.assist=true;this.reset('inspect');}
+ constructor(){this.assist=true;this.pitchLimit=null;this.reset('inspect');}
  reset(mode='inspect'){
   this.mode=mode;
   this.mass=mode==='land'?AIRCRAFT.landingMass:AIRCRAFT.mass;
@@ -184,9 +191,19 @@ export class Flight{
   if(this.mode==='inspect'){this.updateAirData();return;}
   if(this.onGround)this.integrateGround(dt,pilot,aero);
   else this.integrateAirborne(dt,pilot,aero);
+  this.applyPitchLimit();
   this.updateAirData();
   this.updateWarnings();
   this.updatePhase();
+ }
+ // The tail must not pass the runway. pitchLimit(altitude) comes from the model's
+ // tail geometry; without it, fall back to the simulator's original caps.
+ applyPitchLimit(){
+  const cap=this.pitchLimit?this.pitchLimit(this.altitude):(this.onGround?11.4:(this.assist?26:40));
+  if(this.pitch>cap){
+   this.pitch=cap;if(this.pitchRate>0)this.pitchRate=0;
+   if(this.onGround&&this.speed>25)this.tailStrike=true;
+  }
  }
  updateSystems(dt){
   const n1Target=.22+.78*this.throttle;

@@ -96,7 +96,8 @@ function button(id){
 const elements=new Map(),liveriesEl={set innerHTML(html){this.html=html;buttons=[...html.matchAll(/<button\b[^>]*data-livery="([^"]+)"/g)].map(m=>button(m[1]));},get innerHTML(){return this.html;}};
 const $=s=>{if(s==='#liveries')return liveriesEl;if(!elements.has(s))elements.set(s,{textContent:'',value:'',hidden:false});return elements.get(s);};
 const all=s=>s==='[data-livery]'?buttons:[];
-const context=vm.createContext({Aircraft,LIVERIES,$,all,console,realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'}});
+// Geometry helpers are stubs here: this test checks the picker, not tail geometry (see tests/tail-clearance.mjs).
+const context=vm.createContext({Aircraft,LIVERIES,$,all,console,realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},tailSamples:()=>[],makePitchLimit:()=>()=>40});
 vm.runInContext(`
  const AIRCRAFT_INFO={b747:{name:'747'},a380:{name:'380'},a330:{name:'330'},b777:{name:'777'}};
  let plane,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';const sim={},window={flightLab:{}},scene={add(){},remove(){}};

@@ -13,7 +13,7 @@ const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const start=main.indexOf('async function selectAircraft(type){'),end=main.indexOf('// ---- UI',start);
 assert(start>=0&&end>start,'selector implementations must be present');
 // Execute the actual selection functions with controlled craft/network promises.
-const context=vm.createContext({console,Aircraft});
+const context=vm.createContext({console,Aircraft,tailSamples:()=>[],makePitchLimit:()=>()=>40});
 vm.runInContext(`
  let plane,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
  const AIRCRAFT_INFO={b747:{name:'747'},a330:{name:'330'}};
