@@ -40,6 +40,39 @@ function disposeObjects(roots){
  for(const t of textures){if(t.source?.data)images.add(t.source.data);t.dispose();}
  geos.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());images.forEach(image=>image.close?.());
 }
+// The source wings GLB has left flap skins and right flap bones/animations, but
+// omits the matching right flap surfaces. Mirror the left panels and retarget
+// their skin weights to the existing right skeleton.
+function mirrorFlapGeometryForRight(source,skeletonFrom,skeletonTo){
+ const geometry=source.clone();geometry.applyMatrix4(new T.Matrix4().makeScale(-1,1,1));
+ const index=geometry.index;if(!index)throw Error('A380 flap surface must use indexed geometry');
+ for(let i=0;i+2<index.count;i+=3){const second=index.getX(i+1);index.setX(i+1,index.getX(i+2));index.setX(i+2,second);}
+ index.needsUpdate=true;
+ const skinIndex=geometry.getAttribute('skinIndex'),skinWeight=geometry.getAttribute('skinWeight');
+ if(!skinIndex||!skinWeight)throw Error('A380 flap surface is missing skin weights');
+ const rightBones=new Map(skeletonTo.bones.map((bone,i)=>[bone.name,i]));
+ for(let vertex=0;vertex<skinIndex.count;vertex++)for(let component=0;component<skinIndex.itemSize;component++){
+  if(skinWeight.getComponent(vertex,component)<=0)continue;
+  const sourceBone=skeletonFrom.bones[skinIndex.getComponent(vertex,component)];
+  if(!sourceBone)throw Error('A380 flap surface references an unknown left bone');
+  const targetName=sourceBone.name.replace(/L$/,'R'),targetIndex=rightBones.get(targetName);
+  if(targetIndex===undefined)throw Error(`Missing right-side flap bone ${targetName}`);
+  skinIndex.array[vertex*skinIndex.itemSize+component]=targetIndex;
+ }
+ skinIndex.needsUpdate=true;geometry.computeBoundingBox();geometry.computeBoundingSphere();return geometry;
+}
+function addMissingRightFlaps(model){
+ const left=model.getObjectByName('WING_ARMATURE_LH'),right=model.getObjectByName('WING_ARMATURE_RH');
+ let rightReference;right?.traverse(o=>{if(!rightReference&&o.isSkinnedMesh&&o.skeleton?.bones.some(b=>b.name==='WING_FLAP_11R'))rightReference=o;});
+ if(!left||!right||!rightReference)return;
+ for(const section of ['IN','MID','OUT']){
+  const name=`FLAPS_SURFACE_RH_${section}`;if(model.getObjectByName(name))continue;
+  const source=model.getObjectByName(`FLAPS_SURFACE_LH_${section}`);if(!source?.isSkinnedMesh||source.parent!==left)continue;
+  const surface=source.clone(false);surface.name=name;surface.geometry=mirrorFlapGeometryForRight(source.geometry,source.skeleton,rightReference.skeleton);surface.skeleton=rightReference.skeleton;
+  surface.userData={...surface.userData,mirroredFrom:source.name};surface.frustumCulled=false;right.add(surface);
+  model.updateMatrixWorld(true);surface.bind(rightReference.skeleton,rightReference.bindMatrix);
+ }
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -89,6 +122,7 @@ export class A380Aircraft extends Aircraft {
      if(control){const action=mixer.clipAction(clip);action.play();action.paused=true;this.bindings.push({action,duration:clip.duration,control});}
     }
    }
+   addMissingRightFlaps(model);
    this.update({gear:1,flaps:0,engine:0},0);this.root.updateMatrixWorld(true);
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
