@@ -11,9 +11,12 @@ import numpy as np
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
+# The shipped GLBs are meshopt-compressed, which this reader cannot decode. Point
+# B777_GLB_PAX / B777_GLB_CARGO at the uncompressed originals (same UVs), e.g.
+#   git show db2577a:assets/accurate-b777/777-200LR-2048.candidate.glb > %TEMP%/777-pax.glb
 GLB = {
- 'pax': ROOT/'assets/accurate-b777/777-200LR-2048.candidate.glb',
- 'cargo': ROOT/'assets/accurate-b777/777-200F-refined.candidate.glb',
+ 'pax': Path(os.environ.get('B777_GLB_PAX', ROOT/'assets/accurate-b777/777-200LR-2048.candidate.glb')),
+ 'cargo': Path(os.environ.get('B777_GLB_CARGO', ROOT/'assets/accurate-b777/777-200F-refined.candidate.glb')),
 }
 SRC = ROOT/'assets/accurate-b777'
 CACHE = Path(os.environ.get('B777_CACHE', tempfile.gettempdir()))/'b777-livery-cache'

@@ -100,8 +100,10 @@ def af1c(body, fin):
     _stripe(body, -.19, -.14, NAVY, -24, 36)
     body.text(-8.0, 1.0, 'UNITED STATES OF AMERICA', 1.0, NAVY, family='Georgia', weight='bold', length=14.5)
     fin.rect_all(WHITE)
-    fin.logo('us-flag.png', fin_pt(.5, 10.6)[0], 10.6, 2.2, mirror=False)
-    fin.text(fin_pt(.5, 8.2)[0], 8.2, '28000', .8, NAVY, weight='bold')
+    # VC-25A style: a large flag across most of the upper fin chord, tail number below.
+    # The flag is mirrored on the starboard side so the union always leads (US aircraft convention).
+    fin.logo('us-flag.png', fin_pt(.58, 9.6)[0], 9.6, 4.2)
+    fin.text(fin_pt(.55, 7.3)[0], 7.3, '28000', .9, NAVY, weight='bold')
     return dict(engine=dict(base='#79b4de'))
 
 def af1n(body, fin):
@@ -113,7 +115,7 @@ def af1n(body, fin):
     body.poly(band(-25.4, 37.8, edge, lambda x: edge(x)+.07), RED)
     body.text(-8.0, 1.0, 'UNITED STATES OF AMERICA', 1.0, NAVY, family='Georgia', weight='bold', length=14.5)
     fin.rect_all(NAVY)
-    fin.logo('us-flag.png', fin_pt(.5, 8.0)[0], 8.0, 6.0, mirror=False)
+    fin.logo('us-flag.png', fin_pt(.5, 8.0)[0], 8.0, 6.0)
     return dict(engine=dict(base='#ffffff', lower=NAVY, split=-.1))
 
 def fedex(body, fin):
