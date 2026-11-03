@@ -90,6 +90,33 @@ export function keepBaseColorMapsOnly(buffer){
  out.set(text,20);out.fill(0x20,20+text.length,20+padded);out.set(rest,20+padded);
  return out.buffer;
 }
+// The left wing has no spoiler-driven skin: its spoiler surfaces stay on the wing.
+// The right side has one skin (Cylinder234) partly bound to WING_SPOILER bones, so
+// its middle section lifted about 2 m off the wing when spoilers deployed. Rebind
+// every vertex that has any spoiler weight to the bones of its nearest vertex that
+// has none, so that skin stays on the wing like the left side.
+export function pinSpoilerSkinToNeighbours(mesh){
+ if(!mesh.isSkinnedMesh||!mesh.skeleton)return false;
+ const spoiler=new Set();mesh.skeleton.bones.forEach((bone,i)=>{if(/^WING_SPOILER/.test(bone.name))spoiler.add(i);});
+ if(!spoiler.size)return false;
+ const geometry=mesh.geometry,index=geometry.getAttribute('skinIndex'),weight=geometry.getAttribute('skinWeight'),position=geometry.getAttribute('position');
+ const count=index.count,affected=new Uint8Array(count);
+ for(let v=0;v<count;v++)for(let c=0;c<4;c++)if(spoiler.has(index.getComponent(v,c))&&weight.getComponent(v,c)>0){affected[v]=1;break;}
+ const donors=[];for(let v=0;v<count;v++)if(!affected[v])donors.push(v);
+ if(!donors.length||donors.length===count)return false;
+ const newIndex=new Uint16Array(count*4),newWeight=new Float32Array(count*4);
+ for(let v=0;v<count;v++){
+  let source=v;
+  if(affected[v]){
+   let best=Infinity;const px=position.getX(v),py=position.getY(v),pz=position.getZ(v);
+   for(const d of donors){const dx=position.getX(d)-px,dy=position.getY(d)-py,dz=position.getZ(d)-pz,dist=dx*dx+dy*dy+dz*dz;if(dist<best){best=dist;source=d;}}
+  }
+  for(let c=0;c<4;c++){newIndex[v*4+c]=index.getComponent(source,c);newWeight[v*4+c]=weight.getComponent(source,c);}
+ }
+ geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute(newIndex,4));
+ geometry.setAttribute('skinWeight',new T.Float32BufferAttribute(newWeight,4));
+ return true;
+}
 // Limit both transfer and asynchronous glTF decoding. An aborted fetch is
 // cancelable; parsing may finish later, in which case its resources are freed.
 export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchImpl=globalThis.fetch}={}){
@@ -116,7 +143,7 @@ export class A380Aircraft extends Aircraft {
     const gltf=await loadA380Part(loader,part,{timeoutMs:this.loadOptions.timeoutMs,fetchImpl:this.loadOptions.fetchImpl});model.add(gltf.scene);
     const invisible=[];gltf.scene.traverse(o=>{
      if(!o.isMesh)return;const mats=[o.material].flat();
-     if(!fixedGeometry.has(o.geometry)){alignWindingToNormals(o.geometry);fixedGeometry.add(o.geometry);}
+     if(!fixedGeometry.has(o.geometry)){if(o.isSkinnedMesh)pinSpoilerSkinToNeighbours(o);alignWindingToNormals(o.geometry);fixedGeometry.add(o.geometry);}
      if(mats.every(m=>m.userData.viewerInvisible||/^Material\.00[12]$/.test(m.name))){invisible.push(o);return;}
      o.castShadow=o.receiveShadow=true;o.frustumCulled=false;
      // Lambert ignores scene.environment and leaves the unlit side almost black.
