@@ -57,9 +57,11 @@ export const ART={
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,NAVY));
   const [cx,cy]=FIN.pt(4.9,.5);
   s.circle(cx,cy,2.65,WHITE);s.circle(cx,cy,2.38,NAVY);
-  s.imageFacing('lufthansa-white.png',cx,cy,6.9,6.9);
-  // The crane keeps its original 2.375:1 proportions (418x176 px) at 8.5 m high.
-  s.imageFacing('lufthansa-crane-white.png',-1.5,-3.4,20.2,8.5,{opacity:.97});
+  s.imageFacing('lufthansa-white.png',cx,cy,6.9,6.9,{flip:true});
+  // Real D-AIMH: the crane's beak sits over the forward fuselage, pointing to the
+  // nose, and its body runs back to the wing root, about 40 m long. The atlas
+  // image is stretched to that long, low shape. flip:true points the beak forward on both sides.
+  s.imageFacing('lufthansa-crane-white.png',10.5,-1.0,40,5.5,{opacity:.97,flip:true});
   s.text('100',-16,-4.4,{cap:4.7,font:'Arial',fill:'#b6bfce',width:12.5,opacity:.62});
   s.text('1926 | 2026',-23.5,-6.6,{cap:.82,font:'Arial',fill:'#8f9bb0',width:9.5,opacity:.95});
   s.imageFacing('lufthansa-white.png',33.5,-4.8,1.65,1.65);
