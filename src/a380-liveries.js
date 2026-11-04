@@ -4,22 +4,10 @@
 const WHITE='#f4f5f6';
 const style=(o={})=>({stabilizer:WHITE,nacelle:WHITE,winglet:WHITE,freight:false,...o});
 
-// Liveries that ship the paint shop's own A380X UV atlas instead of the
-// side-projected artwork. Keys are model material names, values are files in
-// assets/a380-liveries/native/. D-AIMH's centenary scheme is the first: the
-// 47 m crane, the 1926 | 2026 dates and the door stencils are all part of the
-// real texture, so nothing has to be redrawn by hand.
-// Source: FlyByWire A380X "Lufthansa 100 Year Anniversary D-AIMH" livery by
-// steffieth (flightsim.to addon 101026), freeware, used with attribution.
-export const A380_NATIVE={
- DLH100:{
-  A380X_FUSE1:'DLH100-FUSE1.webp',
-  A380X_FUSE2:'DLH100-FUSE2.webp',
-  A380X_FUSE3:'DLH100-FUSE3.webp',
-  A380X_FUSE4:'DLH100-FUSE4.webp',
-  A380X_FUSE5:'DLH100-FUSE5.webp',
- },
-};
+// Native A380X UV atlases are opt-in only after their texture layout has been
+// verified against these exact GLBs. DLH100 uses measured side projections
+// rather than the older teaser-era repaint atlas (which predates the real reveal).
+export const A380_NATIVE={};
 
 export const A380_STYLE={
  BOE:style({winglet:'#14307a'}),
