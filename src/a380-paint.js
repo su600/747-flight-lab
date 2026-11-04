@@ -49,15 +49,19 @@ function defaultLoadTexture(url){
   texture.colorSpace=T.SRGBColorSpace;texture.flipY=false;texture.wrapS=texture.wrapT=T.ClampToEdgeWrapping;texture.anisotropy=8;
  });
 }
-// The converted A380X GLBs store UVs as KHR_mesh_quantization int16 (raw values
-// in roughly [-32768, 32767]) and their base-colour maps observe the OpenGL
-// bottom-left origin. A native atlas therefore samples its own pixels only when
-// the texture is configured with this int16→[0,1] transform plus a vertical flip.
-// The side-projected liveries ignore mesh UVs, so they are unaffected.
+// The converted A380X GLBs were produced with gltf-transform meshopt() using
+// quantizeTexcoord:14, so TEXCOORD_0 is stored as int16 in a 14-bit range
+// (round(u * 16383)) and Three r170's quantization extension is a no-op, leaving
+// the raw values in the runtime buffer. A native atlas therefore samples its own
+// pixels only when the texture is scaled by repeat=1/16383: that maps [0,16383]
+// back to the authored [0,1] UVs. Any 16-bit scale (1/32767) compresses the map
+// to half size, which is the visible misalignment of the crane and dates. glTF
+// also uses the OpenGL bottom-left origin, so the map keeps flipY=true. The
+// side-projected liveries ignore mesh UVs and are unaffected.
 function configureNative(texture){
  texture.flipY=true;
  texture.wrapS=texture.wrapT=T.ClampToEdgeWrapping;
- texture.repeat.set(1/65535,1/65535);texture.offset.set(.5,.5);
+ texture.repeat.set(1/16383,1/16383);texture.offset.set(0,0);
  texture.anisotropy=8;texture.needsUpdate=true;
 }
 

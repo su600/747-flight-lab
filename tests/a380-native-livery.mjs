@@ -61,9 +61,9 @@ for(const mesh of fuselageMeshes){
   // The GLB UVs are quantized int16: without this transform the atlas samples
   // an all-white corner and the aircraft would render blank.
   if(m.map.needsUpdate===false)m.map.needsUpdate=true;
-  assert(Math.abs(m.map.repeat.x-1/65535)<1e-9,`${m.name} quantized-U repeat is set`);
+  assert(Math.abs(m.map.repeat.x-1/16383)<1e-9,`${m.name} 14-bit-quantized-U repeat is set`);
   assert.equal(m.map.flipY,true,`${m.name} observes the GLB's OpenGL V origin`);
-  assert(Math.abs(m.map.offset.x-.5)<1e-9,`${m.name} quantized-U offset is set`);
+  assert(Math.abs(m.map.offset.x)<1e-9,`${m.name} quantized-U offset is zero`);
   assert.equal(m.userData.livery,'native',`${m.name} is in native mode`);
   mapped++;
  }
