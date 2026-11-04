@@ -34,3 +34,12 @@ Adaptations for this educational viewer:
 Adaptation tooling and application: Pi coding assistant.
 Reproduction scripts: scripts/acquire-fbw.py and scripts/optimize-models.mjs.
 These adaptations are not certified CAD, an engineering digital twin, a flight simulator or an aircraft operating procedure.
+
+CENTENARY LIVERY TEXTURE ATTRIBUTION
+
+D-AIMH "100 Years" atlas (assets/a380-liveries/native/DLH100-*.webp):
+FlyByWire A380X "Lufthansa 100 Year Anniversary D-AIMH (4K)" by steffieth.
+Source: https://flightsim.to/addon/101026/flybywire-a380-lufthansa-4k
+Freeware community repaint, redistributed here for non-commercial use with attribution.
+The original BC7 KTX2 textures were decoded, resized to 2048/1024 pixels and re-encoded as WebP.
+Lufthansa name and crane mark belong to Deutsche Lufthansa AG; no endorsement is implied.

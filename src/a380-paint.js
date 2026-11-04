@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {closeA380Windows} from './model-paint.js';
+import {A380_NATIVE} from './a380-liveries.js';
 
 // Full-aircraft side-profile livery for the A380X model. A pre-rendered
 // atlas (one image per side, see assets/a380-liveries/lib.mjs) is projected
@@ -9,11 +10,16 @@ import {closeA380Windows} from './model-paint.js';
 export const A380_ATLAS={x0:-37.5,x1:37.0,y0:-9.8,y1:12.6};
 const ROOT='/747/assets/a380-liveries/';
 // Bump when generated atlases change: the server gives /assets/* a 24-hour browser cache.
-export const A380_ATLAS_VERSION='20261104-4';
+export const A380_ATLAS_VERSION='20261104-6';
 const FIN_BASE_Y=-1.4;
 
 const BODY_MATERIAL=/^A380X_FUSE[1235]$/;
 const FIN_MATERIAL='A380X_FUSE4';
+// Materials a livery may supply as a native A380X UV atlas instead of the
+// side-projected artwork. The atlas is the paint shop's own texture, so the
+// crane, the dates and the door/window stencils land exactly where the real
+// aircraft carries them.
+const NATIVE_MATERIAL=/^A380X_FUSE[1-5]$/;
 
 const VERTEX_DECL='varying vec3 vLiveryPosition;\nuniform mat4 uLiveryInverseRoot;\n';
 const VERTEX_BODY='vLiveryPosition=(uLiveryInverseRoot*modelMatrix*vec4(transformed,1.0)).xyz;\n';
@@ -43,6 +49,17 @@ function defaultLoadTexture(url){
   texture.colorSpace=T.SRGBColorSpace;texture.flipY=false;texture.wrapS=texture.wrapT=T.ClampToEdgeWrapping;texture.anisotropy=8;
  });
 }
+// The converted A380X GLBs store UVs as KHR_mesh_quantization int16 (raw values
+// in roughly [-32768, 32767]) and their base-colour maps observe the OpenGL
+// bottom-left origin. A native atlas therefore samples its own pixels only when
+// the texture is configured with this int16→[0,1] transform plus a vertical flip.
+// The side-projected liveries ignore mesh UVs, so they are unaffected.
+function configureNative(texture){
+ texture.flipY=true;
+ texture.wrapS=texture.wrapT=T.ClampToEdgeWrapping;
+ texture.repeat.set(1/65535,1/65535);texture.offset.set(.5,.5);
+ texture.anisotropy=8;texture.needsUpdate=true;
+}
 
 /**
  * Takes over the A380 exterior skin: fuselage/fin materials sample the livery
@@ -59,7 +76,7 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
   uLiveryAtlas:{value:new T.Vector4(A380_ATLAS.x0,1/(A380_ATLAS.x1-A380_ATLAS.x0),A380_ATLAS.y1,1/(A380_ATLAS.y1-A380_ATLAS.y0))},
  };
  const projected=new Map(),flat=new Map(),flatByRole={stabilizer:[],nacelle:[],fence:[]};
- const originals=new Map();
+ const originals=new Map(),native=new Map(),nativeSlots=[];
  function projectedFor(original){
   if(!projected.has(original)){
    const m=original.clone();m.map=null;m.color.set(0xffffff);m.userData.livery='projected';
@@ -72,6 +89,22 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
    projected.set(original,m);originals.set(m,original);
   }
   return projected.get(original);
+ }
+ // A native-UV twin of a projected material: same PBR settings, no projection
+ // shader, and a map slot the livery's own atlas fills in.
+ function nativeFor(projectedMaterial){
+  if(!native.has(projectedMaterial)){
+   const m=projectedMaterial.clone();m.map=null;m.color.set(0xffffff);m.userData.livery='native';
+   m.onBeforeCompile=()=>{};m.customProgramCacheKey=()=>'a380-native';
+   native.set(projectedMaterial,m);originals.set(m,originals.get(projectedMaterial)??projectedMaterial);
+  }
+  return native.get(projectedMaterial);
+ }
+ function recordNative(mesh){
+  const mats=[mesh.material].flat();
+  if(!mats.some(m=>m&&NATIVE_MATERIAL.test(m.name)))return;
+  const twins=mats.map(m=>m&&NATIVE_MATERIAL.test(m.name)?nativeFor(m):m);
+  nativeSlots.push({mesh,projected:mesh.material,native:Array.isArray(mesh.material)?twins:twins[0]});
  }
  function flatFor(original,role){
   const key=original.uuid+':'+role;
@@ -90,9 +123,16 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
   if(names.some(n=>BODY_MATERIAL.test(n))){
    if(o.isSkinnedMesh&&names.some(n=>/^A380X_FUSE[123]$/.test(n)))body.push(o);
    swap(o,m=>BODY_MATERIAL.test(m.name)?projectedFor(m):m);
+   recordNative(o);
   }else if(names.includes(FIN_MATERIAL)){
    let inFin=false;for(let p=o;p&&p!==root;p=p.parent)if(p.name==='VTP'){inFin=true;break;}
+   // A few fin parts (the tip antenna, for one) hang off the aft-fuselage flex
+   // group instead of VTP. Anything above the roofline that far aft is fin, not
+   // stabilizer, or it would take the flat stabilizer colour on the navy fin.
+   if(!inFin){const centre=new T.Box3().setFromObject(o).getCenter(new T.Vector3());inFin=centre.y>0&&centre.x<-20;}
    swap(o,m=>m.name!==FIN_MATERIAL?m:inFin?projectedFor(m):flatFor(m,'stabilizer'));
+   // Only the fin itself takes the native atlas; the stabilizers stay flat.
+   if(inFin)recordNative(o);
   }else if(/^(?:FrontCase0(?:40|42|44|46)|Bucket0(?:28|29|30|31))$/.test(o.name)&&names.some(n=>/^A380_EXTERIOR_ENG_/.test(n))){
    swap(o,m=>/^A380_EXTERIOR_ENG_/.test(m.name)?flatFor(m,'nacelle'):m);
   }else if(/^WINGTIP_[LR]H$/.test(o.name)){
@@ -116,7 +156,8 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
   }
   for(const source of body){
    const geometry=baked.get(source),matrix=new T.Matrix4().multiplyMatrices(inverseRoot,source.matrixWorld),cap=closeA380Windows(source,geometry,matrix,sideY,plugged);
-   if(cap){cap.material=source.material;root.add(cap);caps.push(cap);}
+   // The caps reuse the skin material, so they must follow it into native mode too.
+   if(cap){cap.material=source.material;root.add(cap);caps.push(cap);recordNative(cap);}
   }
   baked.forEach(g=>g.dispose());
  }
@@ -128,7 +169,16 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
  function sync(){root.updateWorldMatrix(true,false);uniforms.uLiveryInverseRoot.value.copy(root.matrixWorld).invert();}
  sync();
 
- const atlases=new Map();let current=null,version=0,disposed=false;
+ const atlases=new Map(),nativeSets=new Map();let current=null,version=0,disposed=false;
+ function nativeSetFor(id){
+  if(!nativeSets.has(id)){
+   const files=A380_NATIVE[id],entry={textures:{}};
+   entry.promise=Promise.all(Object.entries(files).map(([material,file])=>loadTexture(`${ROOT}native/${file}?v=${A380_ATLAS_VERSION}`).then(texture=>{configureNative(texture);entry.textures[material]=texture;}))).then(()=>entry,error=>{nativeSets.delete(id);throw error;});
+   entry.promise.catch(()=>{});
+   nativeSets.set(id,entry);
+  }
+  return nativeSets.get(id);
+ }
  function atlasFor(id){
   if(!atlases.has(id)){
    const entry={};
@@ -160,10 +210,22 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
  applyStyle({});
  async function apply(id,s){
   if(disposed)return false;
-  const request=++version,entry=atlasFor(id),guard=timeout(timeoutMs,'A380 涂装载入超时，请重试');
-  try{await Promise.race([entry.promise,guard.promise]);}finally{guard.cancel();}
+  const request=++version,guard=timeout(timeoutMs,'A380 涂装载入超时，请重试');
+  const nativeEntry=A380_NATIVE[id]?nativeSetFor(id):null,entry=nativeEntry?null:atlasFor(id);
+  try{await Promise.race([(nativeEntry??entry).promise,guard.promise]);}finally{guard.cancel();}
   if(disposed||request!==version)return false;
-  uniforms.uLiveryPort.value=entry.port;uniforms.uLiveryStarboard.value=entry.starboard;
+  if(nativeEntry){
+   for(const slot of nativeSlots){
+    for(const m of [slot.native].flat()){
+     const texture=nativeEntry.textures[m.name];
+     if(texture&&m.map!==texture){m.map=texture;m.needsUpdate=true;}
+    }
+    slot.mesh.material=slot.native;
+   }
+  }else{
+   for(const slot of nativeSlots)slot.mesh.material=slot.projected;
+   uniforms.uLiveryPort.value=entry.port;uniforms.uLiveryStarboard.value=entry.starboard;
+  }
   applyStyle(s);
   const previous=current;current=id;evict([id,previous].filter(Boolean));
   return true;
@@ -171,7 +233,8 @@ export function installA380Paint(aircraft,{sideY=-4.2,loadTexture=defaultLoadTex
  function dispose(){
   disposed=true;version++;
   for(const entry of atlases.values()){entry.port?.dispose();entry.starboard?.dispose();}atlases.clear();
-  for(const m of [...projected.values(),...flat.values()])m.dispose();blank.dispose();
+  for(const entry of nativeSets.values())for(const texture of Object.values(entry.textures))texture.dispose();nativeSets.clear();
+  for(const m of [...projected.values(),...flat.values(),...native.values()])m.dispose();blank.dispose();
  }
  return {apply,dispose,sync,uniforms,caps,windows,projected,flat,flatByRole,get current(){return current;}};
 }
