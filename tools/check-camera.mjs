@@ -1,6 +1,7 @@
 // Camera gesture regression checks, independent of WebGL. Run: npm run check:camera
 import assert from 'node:assert/strict';
 import {createCameraGestures} from '../src/camera-gestures.js';
+import {setCockpitAirframeVisibility,cameraModeForWiperToggle,cockpitWipersVisible,cockpitWiperSweepAngle} from '../src/cockpit-view.js';
 class FakeCanvas{
  constructor(){this.listeners=new Map();this.captured=new Set();this.clientHeight=800;}
  addEventListener(type,fn){this.listeners.set(type,fn);}
@@ -33,3 +34,20 @@ gesture.cancel();const count=events.length;canvas.emit('pointermove',{pointerTyp
 const wheel=canvas.emit('wheel',{deltaY:2,deltaMode:1});assert(wheel.prevented);assert.deepEqual(events.at(-2),['start','zoom']);assert(Math.abs(events.at(-1)[1]-Math.exp(.032))<1e-10);
 gesture.dispose();assert.equal(canvas.listeners.size,0);
 console.log('Camera gestures passed: rotate, pan, wheel, pinch, pointer transitions, cancellation.');
+
+const fuselage={visible:true},wing={visible:true},gear={visible:true},engine={visible:true};
+const b747={type:'b747',root:{visible:false},native:{children:[fuselage,wing,gear,engine]}};
+setCockpitAirframeVisibility(b747,'cockpit');
+assert.equal(b747.root.visible,true,'the airframe remains available in cockpit mode');
+assert.equal(fuselage.visible,false,'the fuselage shell is cut away around the first-person camera');
+assert([wing,gear,engine].every(part=>part.visible),'wings, gear and engines remain visible through side windows');
+setCockpitAirframeVisibility(b747,'orbit');
+assert([fuselage,wing,gear,engine].every(part=>part.visible),'the full B747 is restored outside cockpit mode');
+const a380={type:'a380',root:{visible:true},native:{children:[]}};
+setCockpitAirframeVisibility(a380,'cockpit');assert.equal(a380.root.visible,false,'unmatched external interiors stay hidden');
+assert.equal(cameraModeForWiperToggle('orbit',true),'cockpit','turning wipers on opens the cockpit view');
+assert.equal(cameraModeForWiperToggle('cockpit',false),'cockpit','turning wipers off preserves cockpit view');
+assert.equal(cockpitWipersVisible('cockpit',true,0,0),true);assert.equal(cockpitWipersVisible('orbit',true,0,0),false);assert.equal(cockpitWipersVisible('cockpit',true,1.1,0),false,'windshield blades disappear when looking out the side window');
+assert.equal(cockpitWiperSweepAngle(0),0);assert(Math.abs(cockpitWiperSweepAngle(Math.PI/6)-26)<1e-10,'wiper sweep is driven by simulation time');
+console.log('Cockpit view passed: exterior wing groups persist, fuselage cutaway avoids occlusion, wiper view/sweep state is correct.');
+
