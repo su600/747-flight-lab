@@ -352,8 +352,8 @@ button:focus-visible,[role=slider]:focus-visible,select:focus-visible,input:focu
 }
 @media(max-width:1180px){.cell-att{width:140px}.cell-att canvas{width:112px;height:84px}.airport{display:none}}
 
-/* Touch: bigger targets, lighter glass */
-@media(pointer:coarse){
+/* Touch devices and compact mobile layouts: bigger targets, lighter glass */
+@media(pointer:coarse),(any-pointer:coarse),(max-width:760px),(max-width:950px) and (orientation:landscape) and (max-height:500px){
  :root{--deck-h:124px}
  .glass,.compass,.airport,.icon-btn,.rail button,.status{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
  .glass{background:linear-gradient(180deg,rgba(14,30,43,.84),rgba(6,15,23,.9))}
