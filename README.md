@@ -106,4 +106,5 @@ node tests/a380-paint.mjs # A380 涂装加载与状态表
 
 ---
 > 本项目由 *CodeX、Claude Code、Pi** 使用 **gpt、claude多个模型** 生成
+
 > MD由 **Pi coding agent** 使用 **gpt-6-luna** 生成 · 2026-11-03 16:57 CST
