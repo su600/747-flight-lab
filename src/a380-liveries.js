@@ -1,10 +1,12 @@
 // Per-livery A380 settings that are not painted into the atlas: the flat colours
 // of the stabilizers, engine cowls and wingtip fences (all part of each real
 // scheme), and whether the cabin windows are closed (freighter adaptations).
-// Lufthansa's official A380 announcement specifies a 47 m crane; preserve the
-// existing profile mark's 58:8 aspect ratio for its height.
+// Lufthansa's official release specifies a 47 m crane. The supplied side photo,
+// mapped to the 73.1 m model profile, places its center at x=6.2, y=-4.25 m.
+export const DLH100_CRANE_CENTER_X_METERS=6.2;
+export const DLH100_CRANE_CENTER_Y_METERS=-4.25;
 export const DLH100_CRANE_LENGTH_METERS=47;
-export const DLH100_CRANE_HEIGHT_METERS=6.5;
+export const DLH100_CRANE_HEIGHT_METERS=6.1;
 const WHITE='#f4f5f6';
 const style=(o={})=>({stabilizer:WHITE,nacelle:WHITE,winglet:WHITE,freight:false,...o});
 

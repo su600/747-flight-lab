@@ -64,12 +64,12 @@ export async function prepareDerivedLogos(){
  }
  {// Isolate and recolor Lufthansa's crane mark without the surrounding roundel.
   // Tight-crop to the crane's own pixels (the source region has a wide margin),
-  // then stretch it to the photographed proportions (about 7:1, 40 m long).
+  // then stretch to the measured 47 m x 6.1 m proportions (~7.7:1).
   const src=path.join(REPO,'assets/livery-logos/lufthansa.png');
   const probe=await sharp(src).extract({left:48,top:190,width:418,height:176}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   let x0=probe.info.width,x1=-1,y0=probe.info.height,y1=-1;
   for(let y=0;y<probe.info.height;y++)for(let x=0;x<probe.info.width;x++)if(probe.data[(y*probe.info.width+x)*4+3]>40){x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);}
-  const {data,info}=await sharp(src).extract({left:48+x0,top:190+y0,width:x1-x0+1,height:y1-y0+1}).resize(940,130,{fit:'fill'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
+  const {data,info}=await sharp(src).extract({left:48+x0,top:190+y0,width:x1-x0+1,height:y1-y0+1}).resize(1000,130,{fit:'fill'}).ensureAlpha().raw().toBuffer({resolveWithObject:true});
   for(let i=0;i<data.length;i+=4){data[i]=255;data[i+1]=255;data[i+2]=255;}
   await put('lufthansa-crane-white.png',data,info);
  }

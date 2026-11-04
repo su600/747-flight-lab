@@ -2,7 +2,7 @@
 // aircraft-frame metres, see lib.mjs. `real` marks liveries that match an
 // actual A380 operator; the others adapt the airline's own scheme.
 import {fillBase,FUSE,FIN,keel} from './lib.mjs';
-import {DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../../src/a380-liveries.js';
+import {DLH100_CRANE_CENTER_X_METERS,DLH100_CRANE_CENTER_Y_METERS,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../../src/a380-liveries.js';
 const WHITE='#f4f5f6';
 const finShape=(grow=.25)=>[[FIN.le(FIN.root)-grow,FIN.root-grow],[FIN.le(FIN.top+grow)-grow,FIN.top+grow],[FIN.te(FIN.top+grow)+grow,FIN.top+grow],[FIN.te(FIN.root)+grow,FIN.root-grow]];
 const finY=sFrac=>FIN.root+sFrac*(FIN.top-FIN.root);
@@ -75,10 +75,10 @@ export const ART={
   const [cx,cy]=FIN.pt(4.9,.5);
   s.circle(cx,cy,2.65,WHITE);s.circle(cx,cy,2.38,NAVY);
   s.imageFacing('lufthansa-white.png',cx,cy,6.9,6.9,{flip:true});
-  // Lufthansa's official release gives the stylized crane's real length as 47 m.
-  // The profile artwork keeps that scale, slightly forward and low on both decks.
+  // Position the 47 m crane from the side-on D-AIMH reference; its upper edge
+  // stays on the fuselage crown instead of being clipped above the roofline.
   // flip:true points the beak toward the nose on both sides.
-  s.imageFacing('lufthansa-crane-white.png',4.5,-3.25,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS,{opacity:.97,flip:true});
+  s.imageFacing('lufthansa-crane-white.png',DLH100_CRANE_CENTER_X_METERS,DLH100_CRANE_CENTER_Y_METERS,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS,{opacity:.97,flip:true});
   s.text('100',-16,-4.4,{cap:2.6,font:'Arial',fill:'#b6bfce',width:7.0,opacity:.72});
   s.text('1926 | 2026',-23.5,-6.6,{cap:.82,font:'Arial',fill:'#8f9bb0',width:9.5,opacity:.95});
   s.imageFacing('lufthansa-white.png',33.5,-4.8,1.65,1.65);

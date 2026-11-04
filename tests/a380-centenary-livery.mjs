@@ -8,7 +8,7 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {A380Aircraft,keepBaseColorMapsOnly} from '../src/a380-aircraft.js';
-import {A380_NATIVE,A380_STYLE,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../src/a380-liveries.js';
+import {A380_NATIVE,A380_STYLE,DLH100_CRANE_CENTER_X_METERS,DLH100_CRANE_CENTER_Y_METERS,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../src/a380-liveries.js';
 import {A380_ATLAS_VERSION} from '../src/a380-paint.js';
 
 globalThis.self??=globalThis;
@@ -16,7 +16,10 @@ globalThis.createImageBitmap??=async()=>({width:1,height:1,close(){}});
 globalThis.ProgressEvent??=class ProgressEvent{constructor(type,props){this.type=type;Object.assign(this,props);}};
 
 assert.equal(DLH100_CRANE_LENGTH_METERS,47,'Lufthansa publishes a 47 m crane length');
-assert.equal(DLH100_CRANE_HEIGHT_METERS,6.5,'the profile keeps the crane mark at its measured aspect ratio');
+assert.equal(DLH100_CRANE_HEIGHT_METERS,6.1,'the side photo sets the crane height');
+assert.equal(DLH100_CRANE_CENTER_X_METERS,6.2,'the crane center is shifted forward to match the real profile');
+assert.equal(DLH100_CRANE_CENTER_Y_METERS,-4.25,'the crane center keeps its upper edge on the fuselage crown');
+assert(DLH100_CRANE_CENTER_Y_METERS+DLH100_CRANE_HEIGHT_METERS/2<-1.06,'the crane stays below the measured fuselage roofline');
 assert.equal(A380_NATIVE.DLH100,undefined,'the teaser-era atlas is not used for the revealed D-AIMH livery');
 
 const names=['fuselage','wings','nose','wing-left','wing-right','body-left','body-right'];
