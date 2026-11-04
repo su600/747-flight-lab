@@ -43,6 +43,22 @@ for(let i=0;i<2;i++){
  wingtipClearances.push(+clearance.toFixed(3));
 }
 assert(Math.abs(wingtipClearances[0]-wingtipClearances[1])<.02,'left/right wingtip heights are symmetric');
+const windshield=root.getObjectByName('MAIN_FUSELAGE030');
+assert(windshield?.isMesh&&windshield.visible,'cockpit windshield geometry exists');
+const windshieldMaterial=[windshield.material].flat().find(m=>m?.name==='A380_COCKPIT_WINDSCREEN');
+assert(windshieldMaterial,'cockpit windshield has its dedicated glass material');
+assert.equal(windshieldMaterial.transparent,false,'windshield must not render as an open hole');assert.equal(windshieldMaterial.opacity,1);
+const passengerWindows=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_PAX_WINDOW'))passengerWindows.push(o);});
+assert.equal(passengerWindows.length,18,'passenger glazing is retained');assert(passengerWindows.every(o=>o.visible),'passenger glass meshes are visible');
+const compression=aircraft.bindings.find(b=>b.control==='gearCompression');
+assert(compression,'A380 nose-gear compression clip is bound');assert.equal(compression.action.getClip().name,'c_gear_comp');
+const lowerStrut=root.getObjectByName('NLG_LOWER_STRUT');assert(lowerStrut,'nose gear lower strut exists');const extended=lowerStrut.position.clone();
+aircraft.update({gear:1,flaps:0,engine:0,onGround:false},.1);assert.equal(aircraft.gearCompression,0);
+for(let i=0;i<20;i++)aircraft.update({gear:1,flaps:0,engine:0,onGround:true},.1);
+assert(aircraft.gearCompression>.99,'gear settles under ground load');assert(compression.action.time>compression.duration*.99);
+assert(lowerStrut.position.distanceTo(extended)>.4,'nose strut compresses after touchdown');
+for(let i=0;i<20;i++)aircraft.update({gear:1,flaps:0,engine:0,onGround:false},.1);
+assert(aircraft.gearCompression<.01,'gear strut re-extends after liftoff');assert(lowerStrut.position.distanceTo(extended)<.02);
 const fuselage=root.getObjectByName('MAIN_FUSELAGE');
 assert(fuselage,'real GLTFLoader node name');
 // Current GLB is multi-primitive: the semantic name belongs to a Group,

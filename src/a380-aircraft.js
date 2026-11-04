@@ -220,7 +220,7 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
  try{return await Promise.race([work,deadline]);}catch(error){if(expired)throw Error('A380 '+part+' 载入超时，请重试');throw error;}finally{clearTimeout(timer);}
 }
 export class A380Aircraft extends Aircraft {
- constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];}
+ constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;}
  async load(){
   const loader=this.loadOptions.loader||new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),materials=new Map(),fixedGeometry=new WeakSet();
   // Source nose points toward -Z; rotate it to this simulator's +X heading.
@@ -240,6 +240,11 @@ export class A380Aircraft extends Aircraft {
      // converted normal maps to retain the lower-cost material path.
      const simplify=m=>{if(!materials.has(m)){const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
      o.material=Array.isArray(o.material)?mats.map(simplify):simplify(mats[0]);
+     if(o.name==='MAIN_FUSELAGE030'){
+      // The exterior GLB has no cockpit interior; keep the windshield pane solidly tinted, not hollow.
+      const opaqueWindshield=m=>{const pane=m.clone();pane.name='A380_COCKPIT_WINDSCREEN';pane.color.set(0x182b3a);pane.transparent=false;pane.opacity=1;pane.depthWrite=true;pane.roughness=.18;pane.metalness=.2;return pane;};
+      o.material=Array.isArray(o.material)?o.material.map(opaqueWindshield):opaqueWindshield(o.material);
+     }
      for(const m of [o.material].flat())if(m.map)m.map.anisotropy=4;
     });invisible.forEach(o=>{o.removeFromParent();this.discarded.push(o);});
     const mixer=new T.AnimationMixer(gltf.scene);this.mixers.push(mixer);
@@ -251,7 +256,8 @@ export class A380Aircraft extends Aircraft {
      if(/rudder.*key/.test(name))control='rudder';else if(/flap_percent|slat_percent/.test(name))control='flaps';
      else if(/spoiler.*key/.test(name))control='spoiler';else if(/^n1_\d_anim/.test(name))control='engine';
      else if(/^(?:door_cargo|fwd_door_cargo|aft_door_cargo)$/.test(name))control='door';
-     else if(/gear|blg_inner_door/.test(name)&&!/comp|wheel|tire/.test(name))control='gear';
+     else if(/gear.*comp|comp.*gear/.test(name))control='gearCompression';
+     else if(/gear|blg_inner_door/.test(name)&&!/wheel|tire/.test(name))control='gear';
      else if(/elevator.*deflection|trimtab_elevator/.test(name))control='elevator';
      else if(/aileron.*percent/.test(name))control='aileron';
      if(control){const action=mixer.clipAction(clip);action.play();action.paused=true;this.bindings.push({action,duration:clip.duration,control});}
@@ -281,10 +287,16 @@ export class A380Aircraft extends Aircraft {
  }
  update(s,dt){
   super.update(s,dt);this.paint?.sync();this.fanPhase=(this.fanPhase+(s.engine||0)*dt*1.8)%1;
+  // Drive the GLB's c_gear_comp nose-strut clip from wheel contact, smoothing touchdown and liftoff.
+  const compressionTarget=s.onGround&&(s.gear??1)>.95?1:0;
+  this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
   // Source clips are centred at 50%. Left/right aileron clips already encode
   // opposite deflections. Elevator clip direction is reversed relative to the
   // simulation: negative elevator (pull up) raises the trailing edge.
-  for(const b of this.bindings){let v=b.control==='engine'?this.fanPhase:b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;}
+  for(const b of this.bindings){
+   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
+   b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;
+  }
   for(const mixer of this.mixers)mixer.update(0);
  }
  // Textures load asynchronously; a newer request supersedes an older one.
