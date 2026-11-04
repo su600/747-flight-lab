@@ -106,6 +106,6 @@ node tests/a380-paint.mjs # A380 涂装加载与状态表
 本项目中的飞行力学和自动起降流程为简化教学演示；A330、A380 和 777 也复用部分 747 飞行模型或座舱逻辑。模型尺寸、涂装真实性和动画完整性不等同于工程校核或真实飞行训练。
 
 ---
-> 本项目由 **CodeX、Claude Code、Pi** 使用 **GPT、Claude** 生成
+> 本项目由 **CodeX、Claude Code、Pi、Copilot** 使用 **GPT、Claude模型** 生成
 
 > MD由 **Pi coding agent** 使用 **gpt-6-luna** 生成 · 2026-11-03 16:57 CST
