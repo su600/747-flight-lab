@@ -2,21 +2,13 @@
 
 一个在浏览器中运行的互动式飞行观察与教学模拟器。项目包含多款客机外观、自动起降演示、手动飞行、可操作部件和多种观察视角。使用支持 WebGL 2 的桌面或移动浏览器即可运行。
 
-> **用途说明**：这是儿童与初学者的教学演示，不是经认证的飞行模拟器、训练设备或航空操作程序。机场为虚构场景；飞行模型、仪表和部件动画均为简化实现。
+> **用途说明**：这是儿童与初学者的教学演示，机场为虚构场景；飞行模型、仪表和部件动画均为简化实现，不用于商业。
 
 ## 截图
 
 ### 飞行实验室界面
 
 ![747 Flight Lab 主界面：地面观察、飞机构型与飞行控制](docs/screenshots/flight-lab-overview.png)
-
-### A380 · 汉莎 100 周年纪念涂装
-
-以下是左右舷贴图预览。涂装参考汉莎航空 A380 D-AIMH 的官方照片，包含深蓝机身、大型白色鹤标、“100”及“1926 | 2026”字样；此处为项目中的非官方复刻。参考：[Lufthansa A380 now with XXL crane](https://newsroom.lufthansagroup.com/en/lufthansa-a380-now-with-xxl-crane/)。
-
-![A380 汉莎 100 周年涂装：左舷贴图预览](docs/screenshots/a380-centennial-port.png)
-
-![A380 汉莎 100 周年涂装：右舷贴图预览](docs/screenshots/a380-centennial-starboard.png)
 
 ## 功能
 
