@@ -3,6 +3,8 @@ import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {liveryForModel} from './livery-for-model.js';
 const ROOT='/747/assets/aircraft/';
+const LIVERY_TEXTURE_VERSION='20261104-1';
+const VERSIONED_LIVERIES=new Set(['CEA.png','CHH.png','CSN.png']);
 const textures=new Map();
 const textureLoads=new Map();
 const loader=new T.TextureLoader();
@@ -13,7 +15,8 @@ function texture(name){
   const loaded=new Promise((resolve,reject)=>{resolveLoad=resolve;rejectLoad=reject;});
   // Some textures are loaded by the model rather than awaited by the livery selector.
   loaded.catch(()=>{});
-  const t=loader.load(ROOT+name,()=>resolveLoad(t),undefined,()=>{
+  const version=VERSIONED_LIVERIES.has(name)?`?v=${LIVERY_TEXTURE_VERSION}`:'';
+  const t=loader.load(ROOT+name+version,()=>resolveLoad(t),undefined,()=>{
    if(textures.get(name)===t){textures.delete(name);textureLoads.delete(name);}
    rejectLoad(Error('涂装载入失败，请重试'));
   });

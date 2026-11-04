@@ -296,12 +296,58 @@ dialog .primary-btn{margin-top:14px}
 /* ---------- Touch pad ---------- */
 #touchControls{display:none}
 
+/* ---------- Unified control rhythm ---------- */
+:root{
+ --line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.2);
+ --deck-h:116px;
+}
+.glass{border-radius:20px;border-color:var(--line);box-shadow:0 18px 48px rgba(0,8,16,.38),inset 0 1px 0 rgba(255,255,255,.09)}
+.icon-btn{border-color:var(--line);box-shadow:0 8px 20px rgba(0,8,16,.22),inset 0 1px 0 rgba(255,255,255,.07)}
+.modes{width:292px;padding:16px 14px 12px;gap:6px;border-radius:20px}
+.modes .panel-label{padding:0 6px 8px}
+.mode{grid-template-columns:42px minmax(0,1fr) auto;gap:11px;padding:8px 10px;border-radius:14px}
+.mode-ico{width:42px;height:42px;border-radius:12px;font-size:21px}
+.mode.active{box-shadow:inset 3px 0 0 var(--cyan)}
+.mode-inspect{margin-top:5px}
+.copilot{margin-top:6px;padding:12px 13px;border-radius:14px}
+.modes-foot{margin-top:6px;padding:8px 6px 0}
+.modes-foot>div{gap:7px}
+.chip-btn{min-width:42px;height:34px;border-radius:12px}
+.rail{gap:8px}
+.rail button{width:60px;height:60px;border-radius:17px;gap:4px;font-size:22px;box-shadow:0 10px 24px rgba(0,8,16,.3),inset 0 1px 0 rgba(255,255,255,.08)}
+.rail em{font-size:10.5px;letter-spacing:.06em}
+#drawer{width:360px;border-radius:20px}
+.drawer-head{padding:18px 20px 13px}
+.drawer-content{padding:8px 20px 20px}
+.part-grid,.aircraft-choices,#liveries{gap:9px}
+.part-grid button,.aircraft-choices button{border-radius:12px}
+.livery-card{gap:12px;border-radius:14px}
+.livery-swatch{border-radius:9px}
+.time-options{gap:9px}
+.time-options button{border-radius:13px}
+.setting{border-radius:13px}
+.status{padding:8px 16px}
+.cam-dock{gap:3px;padding:5px}
+.cam-dock button{padding:9px 16px;border-radius:12px}
+.deck{border-radius:20px;overflow:hidden}
+.cell{padding:10px 16px}
+.cell-att{width:146px;padding:9px 12px;gap:6px}
+.cell-att canvas{border-radius:12px}
+.cell-metric{min-width:136px;gap:5px}
+.cell-metric strong{font-size:40px}
+.cell-thrust{width:246px;gap:6px}
+.thrust-body{gap:8px}
+.cell-actions{width:316px;gap:7px;padding:10px 12px}
+.act{gap:9px;padding:0 9px;border-radius:12px}
+.act kbd{width:27px;height:27px;border-radius:8px}
+button:focus-visible,[role=slider]:focus-visible,select:focus-visible,input:focus-visible{outline-offset:2px}
+
 /* ======================= Responsive ======================= */
 @media(max-width:1280px){
  .modes{width:272px}.mode-txt small{font-size:11px}
- .cell{padding:12px 16px}
- .cell-thrust{width:238px}.cell-actions{width:304px}
- .cell-metric{min-width:128px}.cell-metric strong{font-size:38px}
+ .cell{padding:10px 14px}
+ .cell-thrust{width:232px}.cell-actions{width:300px}
+ .cell-metric{min-width:124px}.cell-metric strong{font-size:36px}
  .airport span{display:none}
 }
 @media(max-width:1180px){.cell-att{width:140px}.cell-att canvas{width:112px;height:84px}.airport{display:none}}
@@ -349,7 +395,7 @@ dialog .primary-btn{margin-top:14px}
  .act{min-height:56px}
  .modes{width:232px}.mode-txt small,.copilot,.mode-no{display:none}.mode{grid-template-columns:44px 1fr}
  .craft-chip{display:flex}
- .compass{width:min(360px,44vw)}
+ .compass{width:min(320px,42vw)}
 }
 
 /* Phones keep a compact, usable layout */
@@ -361,6 +407,7 @@ dialog .primary-btn{margin-top:14px}
  .compass{top:max(12px,env(safe-area-inset-top));left:calc(max(10px,env(safe-area-inset-left)) + 55px);right:calc(max(10px,env(safe-area-inset-right)) + 144px);width:auto;transform:none;height:40px}.compass-box{bottom:-17px;padding:4px 11px}
  .craft-chip{display:none}
  .modes{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 54px);padding:4px;flex-direction:row;gap:6px;overflow-x:auto}
+ .modes,.cam-dock{scrollbar-width:none}.modes::-webkit-scrollbar,.cam-dock::-webkit-scrollbar{display:none}
  .modes .panel-label,.copilot,.modes-foot,.mode-no,.mode-txt small{display:none}
  .mode{grid-template-columns:36px auto;width:auto;flex:none;padding:3px 8px 3px 3px;gap:8px}.mode-ico{width:36px;height:36px;font-size:18px}.mode-txt b{font-size:13px;white-space:nowrap}
  .mode-inspect{margin-top:0}.mode-inspect::before{display:none}

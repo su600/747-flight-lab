@@ -57,7 +57,7 @@ const logoCache=new Map();
 export async function prepareDerivedLogos(){
  const read=n=>sharp(path.join(REPO,'assets/livery-logos',n)).ensureAlpha().raw().toBuffer({resolveWithObject:true});
  const put=async(key,data,info)=>logoCache.set(key,'data:image/png;base64,'+(await sharp(data,{raw:{width:info.width,height:info.height,channels:4}}).png().toBuffer()).toString('base64'));
- for(const [key,src,hex] of [['klm-white.png','klm.png','#ffffff'],['hainan-gold.png','hainan.png','#f2b705'],['lufthansa-white.png','lufthansa.png','#ffffff']]){
+ for(const [key,src,hex] of [['klm-white.png','klm.png','#ffffff'],['hainan-gold.png','hainan.png','#ffd100'],['lufthansa-white.png','lufthansa.png','#ffffff']]){
   const {data,info}=await read(src),c=[1,3,5].map(i=>parseInt(hex.slice(i,i+2),16));
   for(let i=0;i<data.length;i+=4){data[i]=c[0];data[i+1]=c[1];data[i+2]=c[2];}
   await put(key,data,info);

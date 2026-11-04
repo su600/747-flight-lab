@@ -22,6 +22,21 @@ function bellyBand(s,color,thick){
 const interp=(table)=>x=>{for(let i=0;i<table.length-1;i++){const [x0,y0]=table[i],[x1,y1]=table[i+1];if(x<=x0&&x>=x1)return y0+(y1-y0)*(x0-x)/(x0-x1);}return table.at(-1)[1];};
 const lineAlong=(s,fn,color,w)=>s.curve(xs(36,-30,3).map(x=>[x,fn(x)]),{stroke:color,width:w});
 const stdBelly=interp([[37,.2],[33,.9],[28,1.2],[15,1.9],[0,2.3],[-12,2.3],[-20,1.9],[-28,1.4],[-37.5,1.0]]);
+function starPoints(cx,cy,outer,inner,rotation){
+ return Array.from({length:10},(_,i)=>{
+  const radius=i%2?inner:outer,angle=rotation+i*Math.PI/5;
+  return [cx+Math.cos(angle)*radius,cy+Math.sin(angle)*radius];
+ });
+}
+function chinaFlag(s,x,y,width){
+ const height=width*2/3,big=[x-width*.25,y+height*.25],outer=height*.13,inner=outer*.382;
+ s.rect(x-width/2,y-height/2,x+width/2,y+height/2,'#de2910');
+ s.poly(starPoints(...big,outer,inner,-Math.PI/2),'#ffde00');
+ for(const [dx,dy] of [[0,.4],[.1,.25],[.1,0],[0,-.25]]){
+  const cx=x+width*dx,cy=y+height*dy;
+  s.poly(starPoints(cx,cy,height*.075,height*.029,Math.atan2(big[1]-cy,big[0]-cx)),'#ffde00');
+ }
+}
 
 export const ART={
  // ---------------------------------------------------------------- Emirates
@@ -35,6 +50,7 @@ export const ART={
   });
   s.text('Emirates',20.4,-4.95,{cap:2.15,font:'Palatino Linotype',fill:GOLD,width:14.5});
   s.text('الإمارات',8.2,-4.95,{cap:1.7,font:'Dubai',fill:GOLD,width:6.4});
+  s.text('A6-EDA',-29,-4.55,{cap:.4,font:'Arial',fill:'#82765f',width:2.7});
  }},
  // --------------------------------------------------------------- Lufthansa
  DLH:{real:true,draw(s){
@@ -47,6 +63,7 @@ export const ART={
   s.circle(cx,cy,2.62,'#f9ad00');
   s.imageFacing('lufthansa.png',cx,cy,6.9,6.9);
   s.text('Lufthansa',22.7,-5.2,{cap:1.8,font:'Arial',fill:NAVY,width:12.2});
+  s.text('D-AIMA',-29,-4.55,{cap:.4,font:'Arial',fill:NAVY,width:2.8});
  }},
  DLH100:{real:true,draw(s){
   const NAVY='#05164d',WHITE='#f1f2f4';
@@ -66,6 +83,7 @@ export const ART={
   s.text('1926 | 2026',-23.5,-6.6,{cap:.82,font:'Arial',fill:'#8f9bb0',width:9.5,opacity:.95});
   s.imageFacing('lufthansa-white.png',33.5,-4.8,1.65,1.65);
   s.text('Lufthansa',25.5,-5.7,{cap:1.0,font:'Arial',fill:WHITE,width:7.6});
+  s.text('D-AIMH',-29,-4.55,{cap:.4,font:'Arial',fill:'#8793a1',width:2.8});
  }},
  // ------------------------------------------------------------------- British Airways
  BAW:{real:true,draw(s){
@@ -78,6 +96,7 @@ export const ART={
   s.poly([[-23,-2.4],[-37,-1.4],[-37,-3.4],[-26,-3.6]],RED);
   s.imageFacing('british-airways.png',23.2,-3.55,12.9,12.9);
   s.text('BRITISH AIRWAYS',16.4,-5.2,{cap:1.4,font:'Palatino Linotype',fill:NAVY,width:15.9});
+  s.text('G-XLEA',-29,-4.55,{cap:.4,font:'Arial',fill:NAVY,width:2.8});
  }},
  // ------------------------------------------------------------ China Southern
  CSN:{real:true,draw(s){
@@ -92,6 +111,7 @@ export const ART={
   s.imageFacing('csn-flower.png',cx,cy,10.5,10.5);
   s.text('中国南方航空',15.8,-4.75,{cap:1.3,font:'Microsoft YaHei',fill:DEEP,width:15.4});
   s.text('CHINA SOUTHERN',.5,-4.75,{cap:.75,font:'Arial',fill:DEEP,width:10.7,italic:true});
+  s.text('B-6137',-29,-4.55,{cap:.4,font:'Arial',fill:DEEP,width:2.8});
  }},
  // --------------------------------------------- Airbus house colours (F-WWOW style)
  BOE:{real:true,draw(s){
@@ -104,7 +124,7 @@ export const ART={
    c.poly([[-18.5,-1.2],[-20.8,-1.2],[-24.3,3.2],[-22.9,3.2]],'#f4f5f6');
   });
   s.text('A380',-27.3,.55,{cap:2.3,font:'Arial',fill:'#ffffff',width:7.3});
-  s.text('F-WWOW',-23,-4.1,{cap:.28,font:'Arial',weight:'normal',fill:'#ffffff'});
+  s.text('F-WWOW',-29,-4.55,{cap:.4,font:'Arial',weight:'normal',fill:'#13347f',width:2.8});
  }},
  // ---------------------------------------------------------------- Air China
  CCA:{real:false,draw(s){
@@ -116,6 +136,7 @@ export const ART={
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,'#eceef0'));
   const [cx,cy]=FIN.pt(5,.5);
   s.imageFacing('air-china.png',cx,cy,7.4,7.4);
+  chinaFlag(s,30.1,-3.1,1.25);
   s.text('AIR CHINA',24.5,-4.7,{cap:1.05,font:'Arial',fill:RED,width:8.2,italic:true});
   s.text('中国国际航空公司',3,-4.6,{cap:.8,font:'Microsoft YaHei',fill:'#3b4650',width:12});
  }},
@@ -130,22 +151,22 @@ export const ART={
  }},
  // --------------------------------------------------------------- Hainan
  CHH:{real:false,draw(s){
-  const RED='#d5102b',GOLD='#e9c62c';
+  const RED='#ed1c24',GOLD='#ffd100';
   fillBase(s,'#f4f5f6');
-  // Red, orange and gold swoosh rising along the lower fuselage.
-  const wave=(off,thick,color)=>{
-   const up=xs(36,-34,3).map(x=>[x,-7.9+off+Math.max(0,x-26)*.35+(x<-8?(-8-x)*.2:0)]);
-   s.curve(up,{stroke:color,width:thick});
+  const sweep=x=>-7.55+Math.max(0,x-28)*.04+Math.max(0,-x-10)*.09;
+  const stripe=(upper,lower,color)=>{
+   const top=xs(37,-37.5,2).map(x=>[x,sweep(x)+upper]);
+   const bottom=xs(37,-37.5,2).reverse().map(x=>[x,sweep(x)+lower]);
+   s.poly([...top,...bottom],color);
   };
-  wave(.5,.5,RED);wave(0,.22,GOLD);
+  stripe(.72,-.38,RED);
+  stripe(-.38,-.72,GOLD);
   s.clip(finShape(),c=>{
    c.rect(-40,-2,-15,13,RED);
-   const g=(pts,w)=>c.curve(pts.map(p=>FIN.pt(...p)),{stroke:GOLD,width:w});
-   g([[8.6,.12],[9.2,.35],[8.2,.62],[6.5,.62]],.9);
-   g([[7.4,.9],[6.6,.5],[5.9,.15],[5.0,.05]],.5);
-   g([[3.3,.2],[3.1,.45],[3.6,.55],[4.2,.5]],.8);
-   g([[6.1,.1],[4.6,.3],[3.6,.4],[2.6,.55]],1.2);
+   const [cx,cy]=FIN.pt(5.5,.5);
+   c.imageFacing('hainan-gold.png',cx,cy,8.2,8.2);
   });
+  s.imageFacing('hainan.png',4.2,-4.9,2.5,2.5);
   s.text('Hainan Airlines',24,-4.7,{cap:1.0,font:'Arial',fill:RED,width:9.8,italic:true});
   s.text('海南航空',13.5,-4.7,{cap:1.0,font:'Microsoft YaHei',fill:RED,width:5.5});
  }},

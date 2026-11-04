@@ -29,6 +29,9 @@ assert.deepEqual(Object.entries(A380_REALITY).filter(([,v])=>v.status==='real').
 assert.match(A380_REALITY.DLH100.note,/D-AIMH.*47 米.*鹤标.*“100”及“1926 \| 2026”/);
 assert.equal(A380_STYLE.DLH100.nacelle,'#f4f5f6','D-AIMH anniversary engines remain white');
 assert.equal(A380_STYLE.DLH100.stabilizer,'#f4f5f6','D-AIMH anniversary horizontal stabilizers remain white');
+assert.equal(A380_STYLE.KLM.nacelle,'#00a1de','KLM engines match the blue 747 livery');
+assert.equal(A380_STYLE.CHH.stabilizer,'#ed1c24','Hainan stabilizers match the red fin');
+assert.equal(A380_STYLE.CHH.winglet,'#ed1c24','Hainan winglets match the 747 livery');
 
 const aircraft=new Aircraft();aircraft.type='a380';
 const model=new T.Group();model.rotation.y=Math.PI/2;aircraft.root.add(model);

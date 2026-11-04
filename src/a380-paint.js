@@ -9,7 +9,7 @@ import {closeA380Windows} from './model-paint.js';
 export const A380_ATLAS={x0:-37.5,x1:37.0,y0:-9.8,y1:12.6};
 const ROOT='/747/assets/a380-liveries/';
 // Bump when generated atlases change: the server gives /assets/* a 24-hour browser cache.
-export const A380_ATLAS_VERSION='20261107';
+export const A380_ATLAS_VERSION='20261104-4';
 const FIN_BASE_Y=-1.4;
 
 const BODY_MATERIAL=/^A380X_FUSE[1235]$/;

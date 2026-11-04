@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {Sky} from 'three/addons/objects/Sky.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 let seed=747;const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
 const matCache=new Map();
@@ -70,6 +71,20 @@ function mountainGeometry(radius,height,snow){const g=new T.ConeGeometry(radius,
   if(snow&&k>.72)c.setRGB(.95,.96,.98);else if(k>.5)c.setHSL(.58,.07,.5+k*.1);else c.setHSL(.3-k*.12,.16,.28+k*.22);
   col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b;}
  g.setAttribute('color',new T.BufferAttribute(col,3));g.computeVertexNormals();return g;}
+function rollingHillGeometry(radius,height){
+ const g=new T.PlaneGeometry(radius*2,radius*2,48,48);g.rotateX(-Math.PI/2);
+ const p=g.attributes.position,col=new Float32Array(p.count*3),c=new T.Color();
+ for(let i=0;i<p.count;i++){
+  const x=p.getX(i)/radius,z=p.getZ(i)/radius,r=Math.hypot(x,z),edge=Math.max(0,1-r*r);
+  const ridges=.78+.12*Math.sin(x*5.2+z*2.7)+.08*Math.sin(z*7.4-x*3.1);
+  const y=height*edge*edge*Math.max(.35,ridges)+(rnd()-.5)*height*.018*edge;
+  p.setY(i,Math.max(0,y));
+  const slope=Math.min(1,Math.hypot(x,z)*.8),rock=Math.max(0,(y/height-.72)*2.8);
+  c.setHSL(.29-slope*.08-rock*.07,.3-rock*.16,.3+slope*.12+rock*.12);
+  col.set([c.r,c.g,c.b],i*3);
+ }
+ g.setAttribute('color',new T.BufferAttribute(col,3));g.computeVertexNormals();return g;
+}
 // Three stacked skirts for conifers; two lumpy crowns for broadleaf trees.
 function pineGeometry(){const tiers=[[1,.52,.05],[.78,.42,.3],[.54,.36,.52]].map(([r,h,y])=>{const g=new T.ConeGeometry(r,h*1.15,8,1);g.translate(0,y+h*.5,0);return g;});return mergeGeometries(tiers);}
 function oakGeometry(){const a=new T.IcosahedronGeometry(1,2),b=new T.IcosahedronGeometry(.68,1);b.translate(.5,.28,.15);const c=new T.IcosahedronGeometry(.6,1);c.translate(-.46,.16,-.22);return mergeGeometries([a,b,c]);}
@@ -91,6 +106,20 @@ export class World{
   // Mowed stripes beside the runway and soft far-field patches break up the horizon.
   const mowA=mat('#7c9764',.95),mowB=mat('#8aa571',.95);for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,-.045);
   for(let i=0;i<26;i++){const m=mat(['#a3a56a','#6f8d5c','#8d9e63','#7c9a6f'][i%4],.95);this.ground((rnd()-.5)*16000,600+rnd()*4200,500+rnd()*1700,300+rnd()*900,m,-.049).renderOrder=-49+i*.01;}
+  const islandShape=new T.Shape();islandShape.moveTo(-.5,-.24);islandShape.lineTo(-.37,-.5);islandShape.lineTo(.34,-.5);islandShape.lineTo(.5,-.18);islandShape.lineTo(.43,.34);islandShape.lineTo(.22,.5);islandShape.lineTo(-.37,.43);islandShape.lineTo(-.5,.12);islandShape.closePath();
+  const islandGeo=new T.ShapeGeometry(islandShape);islandGeo.rotateX(-Math.PI/2);
+  const airportTurf=new T.MeshStandardMaterial({color:'#ffffff',roughness:.96,map:fieldTexture(),bumpMap:grassBumpTexture(),bumpScale:.22});
+  airportTurf.map.repeat.set(2,2);airportTurf.bumpMap.repeat.set(4,4);
+  const greenIslands=[
+   [-1500,-160,500,22],[-320,-160,980,22],[890,-160,1180,22],
+   [-1320,-82,310,42],[-320,-82,340,42],[900,-82,440,42],
+   [-1460,-380,95,170],[855,-380,95,170],[1320,-660,520,34],[1320,-450,520,28]
+  ];
+  const turf=new T.InstancedMesh(islandGeo,airportTurf,greenIslands.length),turfTransform=new T.Object3D();
+  for(let i=0;i<greenIslands.length;i++){
+   const [x,z,w,d]=greenIslands[i];turfTransform.position.set(x,.055,z);turfTransform.scale.set(w,1,d);turfTransform.updateMatrix();turf.setMatrixAt(i,turfTransform.matrix);
+  }
+  turf.instanceMatrix.needsUpdate=true;turf.receiveShadow=true;turf.castShadow=false;scene.add(turf);
   this.waterNormal=waterNormalTexture();this.waterNormal.repeat.set(420,95);const sea=new T.MeshStandardMaterial({color:'#2d6a84',roughness:.07,metalness:.0,normalMap:this.waterNormal,normalScale:new T.Vector2(.55,.55),envMapIntensity:1.2});this.ground(0,16000,100000,22000,sea,.02);this.ground(0,4970,100000,140,mat('#d2c5a2'),.03);
   const asphalt=mat('#343e42',.88);asphalt.map=pavementTexture('#4a5254',14,{stains:26});this.ground(0,0,3900,82,asphalt,.03);
   const runway=mat('#424c51',.82);runway.map=pavementTexture('#50575a',16,{stains:30});this.ground(0,0,3800,60,runway,.05);
@@ -106,6 +135,25 @@ export class World{
    const number=this.label(end<0?'09':'27',end*1760,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
    for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
   }
+  const groundRects=(rects,material,y,order)=>{
+   const mesh=new T.InstancedMesh(UNIT_PLANE,material,rects.length),transform=new T.Object3D();
+   for(let i=0;i<rects.length;i++){const [x,z,w,d]=rects[i];transform.rotation.set(-Math.PI/2,0,0);transform.position.set(x,y,z);transform.scale.set(w,d,1);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);}
+   mesh.instanceMatrix.needsUpdate=true;mesh.renderOrder=order;mesh.castShadow=false;mesh.receiveShadow=false;scene.add(mesh);return mesh;
+  };
+  const taxiEdges=[];
+  for(const [start,end] of [[-1890,-1768],[-1732,-868],[-832,182],[218,1532],[1568,1900]]){
+   taxiEdges.push([(start+end)/2,-143.5,end-start,.5],[(start+end)/2,-116.5,end-start,.5]);
+  }
+  groundRects(taxiEdges,yellow,.078,82);
+  const connectorLines=[],holdSolid=[],holdDashed=[],standStops=[];
+  for(const x of [-1750,-850,200,1550]){
+   for(let z=-143;z<=-63;z+=12)connectorLines.push([x,z,.55,4.5]);
+   holdSolid.push([x,-57,34,.5],[x,-59,34,.5]);
+   for(let i=0;i<7;i++){const dx=-15.6+i*5.2;holdDashed.push([x+dx,-52,3.2,.5],[x+dx,-50,3.2,.5]);}
+  }
+  for(let i=0;i<9;i++){const x=-1200+i*230;standStops.push([x,-311,28,.55],[x,-314,28,.55]);}
+  groundRects(connectorLines,yellow,.079,83);
+  groundRects([...holdSolid,...holdDashed,...standStops],yellow,.081,84);
   // Rubber deposits in the touchdown zones.
   for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),.078);}
   for(let x=-1890;x<1900;x+=60){this.lamp(x,.3,-32,0xffe8bd);this.lamp(x,.3,32,0xffe8bd);if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);}
@@ -122,11 +170,28 @@ export class World{
   // Gate guidance, parking boxes, and safe movement boundaries.
   for(let i=0;i<9;i++){const x=-1200+i*230;this.ground(x,-370,.35,170,yellow,.08);this.ground(x,-286,38,.45,yellow,.08);this.ground(x-48,-350,.35,180,red,.08);this.ground(x+48,-350,.35,180,red,.08);const n=this.label(String(i+1).padStart(2,'0'),x,.09,-288,12,9,true,'#d8b34c');n.rotation.z=Math.PI;}
   const terminalMetal=mat('#dfe2dc',.4,.28),glass=mat('#497179',.23,.52),atriumGlass=mat('#315f6b',.2,.48),atriumRoof=mat('#c3d0cb',.38,.22),dark=mat('#293e45',.52,.25),terminalBase=mat('#4c5554',.82,.05),towerBody=mat('#d3d7d0',.7,.06);glass.envMapIntensity=atriumGlass.envMapIntensity=1.3;this.glass=glass;
-  // Layered terminal wings and a raised central atrium replace the old single glass wall.
+  // Layered glass wings, a raised atrium, and a broad sculpted canopy form a modern terminal.
   this.box(-300,3,-603,1940,6,116,terminalBase,true);
   for(const [x,w] of [[-925,650],[-300,620],[325,650]]){this.box(x,15,-603,w,22,84,glass,true);this.box(x,27,-603,w+14,3,112,terminalMetal,true);}
   this.box(-300,42,-603,420,30,84,atriumGlass,true);this.box(-300,58,-603,460,3,122,atriumRoof,true);
   this.box(-300,59.8,-603,280,.45,72,glass);
+  const canopyShape=new T.Shape();
+  canopyShape.moveTo(-1290,-62);canopyShape.quadraticCurveTo(-1308,-34,-1260,-14);canopyShape.lineTo(-1110,48);canopyShape.quadraticCurveTo(-1050,69,-965,69);
+  canopyShape.lineTo(410,69);canopyShape.quadraticCurveTo(505,69,565,48);canopyShape.lineTo(690,-8);canopyShape.quadraticCurveTo(733,-28,712,-59);
+  canopyShape.lineTo(650,-75);canopyShape.quadraticCurveTo(592,-86,520,-72);canopyShape.lineTo(-950,-72);canopyShape.quadraticCurveTo(-1050,-72,-1130,-46);canopyShape.closePath();
+  const canopyGeo=new T.ExtrudeGeometry(canopyShape,{depth:3,bevelEnabled:true,bevelSegments:3,steps:1,bevelSize:5,bevelThickness:1.2});
+  canopyGeo.rotateX(-Math.PI/2);
+  const canopyMat=new T.MeshStandardMaterial({color:'#e4e9e4',roughness:.36,metalness:.22,envMapIntensity:.8});
+  const canopy=new T.Mesh(canopyGeo,canopyMat);canopy.position.set(0,29,-603);canopy.castShadow=true;canopy.receiveShadow=true;scene.add(canopy);
+  const skylight=mat('#8eb4b9',.22,.35);
+  for(const [x,w] of [[-870,520],[-300,340],[270,520]]){
+   const strip=new T.Mesh(UNIT_PLANE,skylight);strip.scale.set(w,19,1);strip.rotation.x=-Math.PI/2;strip.position.set(x,32.05,-602);strip.receiveShadow=false;scene.add(strip);
+  }
+  const canopySupports=new T.InstancedMesh(boxGeo(2.4,22,2.4),terminalMetal,18),support=new T.Object3D();
+  for(let i=0;i<9;i++)for(let side=0;side<2;side++){
+   const x=-1200+i*230;support.position.set(x+(side?31:-31),16.5,-526);support.updateMatrix();canopySupports.setMatrixAt(i*2+side,support.matrix);
+  }
+  canopySupports.instanceMatrix.needsUpdate=true;canopySupports.castShadow=true;scene.add(canopySupports);
   // Facade mullions use instancing so the extra architecture adds one draw call per tier.
   const facadeFrames=new T.InstancedMesh(boxGeo(.65,20,.7),terminalMetal,87),frameTransform=new T.Object3D();
   for(let i=0;i<87;i++){frameTransform.position.set(-1230+i*22,15,-559);frameTransform.updateMatrix();facadeFrames.setMatrixAt(i,frameTransform.matrix);}
@@ -138,7 +203,7 @@ export class World{
   this.box(-300,37,-556,360,9,1.5,dark,true);
   this.label('STAR BAY INTERNATIONAL',-300,39,-555.1,336,5,false,'#f3eddd');
   this.label('星湾国际机场 · TERMINAL 1',-300,34.8,-555.1,300,3.2,false,'#d7e2dc');
-  for(let i=0;i<9;i++){const x=-1200+i*230;this.box(x,7,-510,9,6,105,glass,true);this.box(x,11,-510,11,1.2,110,terminalMetal,true);this.box(x,6,-455,13,8,10,dark,true);this.box(x,3,-495,1,6,1,terminalMetal);this.box(x,3,-478,1.2,6,1.2,terminalBase,true);this.label('G'+(i+1),x,9,-449,7,3,false,'#ffda7e','#243941');}
+  for(let i=0;i<9;i++){const x=-1200+i*230;this.box(x,7,-510,9,6,105,glass,true);this.box(x,11,-510,11,1.2,110,terminalMetal,true);this.box(x,6,-455,13,8,10,dark,true);this.box(x,3,-495,1,6,1,terminalMetal);this.box(x,3,-478,1.2,6,1.2,terminalBase,true);this.box(x,11,-455,14,1.4,20,terminalMetal);this.box(x,8.5,-444,11,1,5,glass);this.label('G'+(i+1),x,9,-449,7,3,false,'#ffda7e','#243941');}
   // Instanced yellow lead-in lanes and white stand edges guide traffic without dozens of draw calls.
   const apronGuides=new T.InstancedMesh(UNIT_PLANE,yellow,18),apronEdges=new T.InstancedMesh(UNIT_PLANE,white,18),mark=new T.Object3D();
   for(let i=0;i<9;i++){
@@ -165,7 +230,7 @@ export class World{
   // Airport hangars.
   for(let i=0;i<3;i++){this.box(1120+i*210,18,-560,170,36,130,mat('#c8cabe'),true);this.box(1120+i*210,14,-493,140,25,1,mat('#607477'));this.label('HANGAR '+(i+1),1120+i*210,31,-492,85,6,false,'#35515c');}
   for(const x of [-1300,-800,-300,200,700]){this.box(x,15,-225,.5,30,.5,dark,true);this.box(x,30,-225,9,.4,2,dark);}
-  this.vehicles=[];for(let i=0;i<8;i++){const g=new T.Group(),color=i%3===0?0xe2b449:0xe7e9dd;const body=new T.Mesh(new T.BoxGeometry(7,2,2.5),mat(color));body.position.y=1.5;g.add(body);const windshield=new T.Mesh(new T.BoxGeometry(1.2,1,2.4),glass);windshield.position.set(2,2.4,0);g.add(windshield);for(const x of [-2,2])for(const z of [-1.3,1.3]){const wheel=new T.Mesh(new T.CylinderGeometry(.55,.55,.3,12),dark);wheel.rotation.x=Math.PI/2;wheel.position.set(x,.55,z);g.add(wheel);}g.position.set(-1200+i*230,0,-430-rnd()*25);scene.add(g);this.vehicles.push(g);}
+  this.buildServiceVehicles(dark);
   // Distant urban edge and tree belts use instancing to keep the airport responsive.
   const temp=new T.Object3D(),col=new T.Color();
   this.cityMat=new T.MeshStandardMaterial({color:'#ffffff',roughness:.38,metalness:.35,map:facadeTexture(false),emissive:'#ffffff',emissiveMap:facadeTexture(true),emissiveIntensity:0});
@@ -177,6 +242,8 @@ export class World{
   pines.forEach(([x,z,h],i)=>{temp.position.set(x,0,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.36,h,h*.36);temp.updateMatrix();pineMesh.setMatrixAt(i,temp.matrix);pineMesh.setColorAt(i,col.setHSL(.36+rnd()*.05,.35,.2+rnd()*.1));});
   oaks.forEach(([x,z,h],i)=>{temp.position.set(x,h*.42,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.42,h*.4,h*.42);temp.updateMatrix();oakMesh.setMatrixAt(i,temp.matrix);oakMesh.setColorAt(i,col.setHSL(.22+rnd()*.12,.4,.28+rnd()*.12));});
   temp.rotation.set(0,0,0);scene.add(pineMesh,oakMesh);this.buildLandmarks();
+  const hills=[[-10500,-7600,3500,410],[10800,-9800,4100,500],[-14800,-1200,3800,350],[15100,1800,4200,440],[-9200,3200,2900,290]];
+  for(const [x,z,r,h] of hills){const hill=new T.Mesh(rollingHillGeometry(r,h),new T.MeshStandardMaterial({vertexColors:true,roughness:.96,flatShading:true}));hill.position.set(x,0,z);hill.receiveShadow=true;scene.add(hill);}
   for(let i=0;i<18;i++){const mh=700+rnd()*1900,mountain=new T.Mesh(mountainGeometry(1400+rnd()*2100,mh,mh>1700),new T.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:true}));mountain.position.set(-24000+i*2800,mh/2-40,-16000-rnd()*3000);mountain.rotation.y=rnd()*6;scene.add(mountain);}
   this.buildWindsock();this.buildStars();
   this.cloudMat=new T.SpriteMaterial({map:cumulusTexture(),transparent:true,opacity:.85,depthWrite:false,color:0xffffff});
@@ -185,6 +252,145 @@ export class World{
   for(let i=0;i<14;i++)mkCloud(4,1000+rnd()*600,420,420,230);
   this.glowTex=glowTexture();
   this.buildLamps();this.setTime('day');
+ }
+ buildServiceVehicles(dark){
+  const scene=this.scene,asphalt=mat('#30383a',.9),yellow=mat('#e4aa27',.58,.08),white=mat('#e6e9e4',.55,.08),green=mat('#55966a',.56,.04),windowMat=mat('#294b53',.26,.22),reflective=mat('#f2d85e',.42,.12),tankerMat=mat('#d7ddda',.3,.24),aluminium=mat('#aeb6b3',.38,.55);
+  const headlight=new T.MeshStandardMaterial({color:'#fff5d5',emissive:'#80642b',roughness:.32}),tailLight=new T.MeshStandardMaterial({color:'#bd392a',emissive:'#54100b',roughness:.38}),beaconMat=new T.MeshStandardMaterial({color:'#ff9d26',emissive:'#a94508',roughness:.3});
+  const wheelGeo=new T.CylinderGeometry(.48,.48,.42,16),rimGeo=new T.CylinderGeometry(.255,.255,.1,16),hubGeo=new T.CylinderGeometry(.105,.105,.12,12),roundedGeometries=new Map(),decalMaterials=new Map(),vehicles=[];
+  const roundedGeo=(w,h,d)=>{
+   const key=`${w}|${h}|${d}`;let g=roundedGeometries.get(key);
+   if(!g){g=new RoundedBoxGeometry(w,h,d,2,Math.min(.22,w*.18,h*.18,d*.18));roundedGeometries.set(key,g);}
+   return g;
+  };
+  const addBox=(root,x,y,z,w,h,d,material)=>{
+   const mesh=new T.Mesh(boxGeo(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=false;mesh.receiveShadow=false;root.add(mesh);return mesh;
+  };
+  const addRounded=(root,x,y,z,w,h,d,material)=>{
+   const mesh=new T.Mesh(roundedGeo(w,h,d),material);mesh.position.set(x,y,z);mesh.castShadow=false;mesh.receiveShadow=false;root.add(mesh);return mesh;
+  };
+  const decal=(root,text,x,y,z,w,h,bg='#24363a',fg='#f4edcf')=>{
+   const key=`${text}|${bg}|${fg}`;let material=decalMaterials.get(key);
+   if(!material){
+    const canvas=document.createElement('canvas');canvas.width=384;canvas.height=96;const ctx=canvas.getContext('2d');
+    ctx.fillStyle=bg;ctx.beginPath();ctx.roundRect(2,2,380,92,14);ctx.fill();
+    ctx.fillStyle=fg;ctx.font='bold 54px Arial';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(text,192,50,360);
+    material=new T.MeshBasicMaterial({map:canvasTex(canvas),side:T.DoubleSide,toneMapped:false});decalMaterials.set(key,material);
+   }
+   const mesh=new T.Mesh(new T.PlaneGeometry(w,h),material);mesh.position.set(x,y,z);
+   if(z<0){mesh.rotation.y=Math.PI;mesh.scale.x=-1;}
+   mesh.castShadow=false;mesh.receiveShadow=false;root.add(mesh);
+  };
+  const wheels=(root,points,wheelGroups)=>{
+   for(const [x,z,r=.48] of points){
+    const axle=new T.Group();axle.rotation.x=Math.PI/2;axle.scale.setScalar(r/.48);axle.position.set(x,r,z);
+    const wheel=new T.Group();wheel.userData.radius=r;axle.add(wheel);
+    const tire=new T.Mesh(wheelGeo,asphalt);wheel.add(tire);
+    for(const side of [-1,1]){
+     const rim=new T.Mesh(rimGeo,aluminium),hub=new T.Mesh(hubGeo,asphalt);
+     rim.position.y=side*.235;hub.position.y=side*.295;wheel.add(rim,hub);
+    }
+    axle.castShadow=false;root.add(axle);wheelGroups.push(wheel);
+   }
+  };
+  const truck=(root,wheelGroups,{length=7,width=2.8,bodyColor=yellow,cabColor=yellow}={})=>{
+   addRounded(root,-.1,1.15,0,length,1.5,width,bodyColor);
+   addRounded(root,-.1,.56,0,length*.78,.45,width*.68,asphalt);
+   const cabX=length*.32;
+   addRounded(root,cabX,2.15,0,length*.3,2,width*.84,cabColor);
+   addBox(root,cabX+length*.15+.04,2.45,0,.08,.92,width*.67,windowMat);
+   for(const side of [-1,1]){
+    addBox(root,cabX-.1,2.47,side*width*.425,length*.14,.76,.08,windowMat);
+    addBox(root,cabX+.2,2.78,side*width*.55,.72,.08,.24,asphalt);
+    addRounded(root,cabX+.55,2.82,side*width*.62,.34,.28,.12,windowMat);
+    addRounded(root,length*.25,1.55,side*width*.505,length*.54,.2,.08,reflective);
+    addRounded(root,length*.49,1.45,side*width*.43,.18,.3,.1,tailLight);
+    addRounded(root,length*.49,1.55,side*width*.43,.18,.24,.1,headlight);
+   }
+   addRounded(root,cabX+.35,1.27,0,.42,.18,width*.95,asphalt);
+   addBox(root,length*.5,1.5,0,.2,.3,width*.9,white);
+   wheels(root,[[-length*.34,-width*.4],[-length*.34,width*.4],[length*.34,-width*.4],[length*.34,width*.4]],wheelGroups);
+  };
+  const cart=(root,x,index,wheelGroups)=>{
+   addRounded(root,x,1.03,0,4.2,.22,2.5,aluminium);
+   for(const side of [-1,1]){
+    addBox(root,x,1.72,side*1.14,4.05,.12,.12,aluminium);
+    for(const dx of [-1.85,-.95,0,.95,1.85])addBox(root,x+dx,1.42,side*1.14,.08,.62,.08,aluminium);
+   }
+   addBox(root,x-2.02,1.46,0,.12,.66,2.25,aluminium);addBox(root,x+2.02,1.46,0,.12,.66,2.25,aluminium);
+   addBox(root,x,1.8,0,3.8,.08,2.2,reflective);
+   const luggage=mat(index%2?'#627c8b':'#9b7955',.82);
+   addRounded(root,x-.8,2.25,-.48,1.45,.72,.9,luggage);addRounded(root,x+.72,2.18,.45,1.35,.58,.88,luggage);
+   addBox(root,x-.8,2.63,-.48,.06,.12,.93,asphalt);addBox(root,x+.72,2.48,.45,.06,.1,.91,asphalt);
+   wheels(root,[[x-1.3,-1.25],[x-1.3,1.25],[x+1.3,-1.25],[x+1.3,1.25]].map(([wx,wz])=>[wx,wz,.36]),wheelGroups);
+   addBox(root,x+2.35,.55,0,.8,.14,.14,asphalt);addBox(root,x+2.85,.72,0,.14,.12,.12,aluminium);
+  };
+  const addVehicle=(type,route,speed,startDelay=0)=>{
+   const root=new T.Group(),wheelGroups=[];
+   if(type==='tug'){
+    addRounded(root,-.2,1.05,0,5.1,1.3,2.8,yellow);addRounded(root,1.3,1.88,0,1.95,1.45,2.35,yellow);
+    addBox(root,2.3,2.1,0,.08,.82,1.9,windowMat);
+    for(const side of [-1,1]){
+     addBox(root,1.25,2.12,side*1.2,.9,.72,.08,windowMat);
+     addBox(root,1.95,2.45,side*1.52,.62,.08,.22,asphalt);addRounded(root,2.15,2.5,side*1.63,.24,.25,.12,windowMat);
+     addRounded(root,2.42,1.35,side*.9,.16,.28,.18,headlight);
+     addRounded(root,-2.72,1.27,side*.9,.14,.22,.16,tailLight);
+     addBox(root,-1.5,1.6,side*1.42,1.2,.18,.08,reflective);
+    }
+    addRounded(root,-1.9,.45,0,1.1,.32,2.1,asphalt);addBox(root,-3, .65,0,.7,.18,.18,aluminium);
+    const beacon=new T.Mesh(new T.CylinderGeometry(.16,.2,.35,10),beaconMat);beacon.position.set(1.3,2.8,0);root.add(beacon);
+    for(const side of [-1,1])decal(root,'AIR TOW',.15,1.1,side*1.43,1.8,.34,'#252f2c','#f7d45c');
+    wheels(root,[[-1.5,-1.18],[-1.5,1.18],[1.5,-1.18],[1.5,1.18]],wheelGroups);
+   }else if(type==='fuel'){
+    truck(root,wheelGroups,{length:8.6,width:3,bodyColor:yellow});
+    const tank=new T.Mesh(new T.CylinderGeometry(1.12,1.12,5.6,20,1),tankerMat);tank.rotation.z=Math.PI/2;tank.position.set(-.65,2.78,0);root.add(tank);
+    for(const x of [-3.1,-2.25,-1.4,.1,1.25]){const ring=new T.Mesh(new T.TorusGeometry(1.1,.045,7,24),aluminium);ring.rotation.y=Math.PI/2;ring.position.set(x,2.78,0);root.add(ring);}
+    for(const side of [-1,1]){
+     addBox(root,-.65,3.88,side*.55,4.35,.08,.14,reflective);
+     addRounded(root,-.65,2.62,side*1.08,4.2,.22,.1,yellow);
+     addBox(root,-2.5,1.95,side*1.58,.12,1.65,.1,aluminium);addBox(root,-2.05,1.95,side*1.58,.12,1.65,.1,aluminium);
+     for(let rung=0;rung<5;rung++)addBox(root,-2.27,1.4+rung*.27,side*1.58,.44,.07,.08,aluminium);
+     const hose=new T.Mesh(new T.TorusGeometry(.44,.07,8,16),asphalt);hose.position.set(-3.65,1.72,side*1.4);hose.rotation.y=Math.PI/2;root.add(hose);
+     addBox(root,-3.65,1.18,side*1.5,.75,.22,.12,yellow);
+    }
+    const beacon=new T.Mesh(new T.CylinderGeometry(.15,.18,.28,10),beaconMat);beacon.position.set(2.75,3.25,0);root.add(beacon);
+    for(const side of [-1,1])decal(root,'JET A-1',-.55,2.55,side*1.15,2.1,.42,'#263b43','#f2d35a');
+   }else if(type==='baggage'){
+    truck(root,wheelGroups,{length:5.8,width:2.5,bodyColor:yellow});
+    for(const side of [-1,1])decal(root,'BAGGAGE',.1,1.1,side*1.28,2.2,.34,'#344a54','#f4e3a8');
+    for(let i=0;i<3;i++)cart(root,-5.3-i*5.4,i,wheelGroups);
+   }else{
+    const length=11.2,width=3.1;
+    addRounded(root,-.25,1.95,0,length,3.2,width,white);
+    addRounded(root,-.25,.62,0,length*.9,.42,width*.92,green);
+    addBox(root,5.38,2.72,0,.08,1.35,2.45,windowMat);
+    addBox(root,-.3,3.57,0,8.8,.16,width*.88,green);
+    addBox(root,5.42,3.52,0,.08,.4,1.35,windowMat);
+    addBox(root,5.3,1.13,0,.16,.2,width*.82,reflective);
+    for(let i=0;i<5;i++){
+     const x=-3.65+i*1.35;
+     addRounded(root,x,2.72,-width*.49,.98,1.27,.1,windowMat);
+     addRounded(root,x,2.72,width*.49,.98,1.27,.1,windowMat);
+     if(i<4)for(const side of [-1,1])addBox(root,x+.59,2.72,side*width*.49,.08,1.3,.11,white);
+    }
+    for(const side of [-1,1]){
+     addRounded(root,-2.8,2.0,side*(width*.5+.035),1.25,2.15,.08,green);
+     addRounded(root,-2.8,2.18,side*(width*.5+.09),.82,1.35,.06,windowMat);
+     addBox(root,4.7,2.93,side*1.82,.38,.1,.26,asphalt);addRounded(root,4.85,2.98,side*1.98,.2,.28,.12,windowMat);
+     addRounded(root,5.25,1.42,side*1.0,.13,.32,.2,headlight);addRounded(root,5.25,1.42,side*1.33,.13,.32,.2,headlight);
+     addRounded(root,-5.7,1.4,side*1.05,.12,.28,.16,tailLight);
+     decal(root,'AIRPORT SHUTTLE',-.45,1.13,side*1.58,3.1,.32,'#31553d','#f7f3df');
+    }
+    wheels(root,[[-4.3,-1.35],[-4.3,1.35],[4.2,-1.35],[4.2,1.35]],wheelGroups);
+   }
+   root.position.set(route[0][0],0,route[0][1]);scene.add(root);
+   vehicles.push({root,route,speed,next:1,wait:startDelay,wheels:wheelGroups,task:type});
+  };
+  addVehicle('tug',[[-1370,-205,2],[-1370,-255,1],[-1050,-255,3],[-1050,-205,2]],4.8,1);
+  addVehicle('fuel',[[-980,-230,1],[-980,-300,4],[-980,-230,0],[-730,-230,0],[-730,-300,1],[-730,-230,1],[0,-230,1],[0,-300,4],[250,-300,1],[250,-230,1],[980,-230,1],[980,-300,4],[1210,-300,1],[1210,-230,1]],4,3);
+  addVehicle('baggage',[[1340,-205,1],[-1340,-205,2],[-1340,-255,2],[1340,-255,1]],5,4);
+  addVehicle('bus',[[-1330,-185,2],[-700,-185,3],[0,-185,3],[700,-185,3],[1330,-185,2],[1330,-225,1],[-1330,-225,2]],5.5,0);
+  addVehicle('bus',[[1330,-195,3],[700,-195,2],[0,-195,2],[-700,-195,2],[-1330,-195,3],[-1330,-235,1],[1330,-235,2]],5,8);
+  this.vehicles=vehicles;
  }
  buildLandmarks(){
   const scene=this.scene,plaza=mat('#aaa99e',.9),sign=mat('#35444a',.72),steel=new T.MeshStandardMaterial({color:'#76634f',roughness:.58,metalness:.48}),stone=mat('#a89a80',.86),roof=mat('#465157',.75),gold=mat('#b89a56',.48,.5),copper=new T.MeshStandardMaterial({color:'#78927b',roughness:.58,metalness:.34}),white=new T.MeshPhysicalMaterial({color:'#eeeae0',roughness:.3,clearcoat:.65,clearcoatRoughness:.22}),glass=new T.MeshPhysicalMaterial({color:'#8faebc',roughness:.2,metalness:.42,clearcoat:.7,clearcoatRoughness:.16});
@@ -290,8 +496,28 @@ export class World{
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
   this.scaleLamps(night?2:dusk?1.5:1);
  }
+ updateServiceVehicles(dt){
+  for(const vehicle of this.vehicles){
+   vehicle.wait=Math.max(0,vehicle.wait-dt);
+   if(vehicle.wait>0||dt<=0)continue;
+   let distanceLeft=vehicle.speed*dt,moved=0;
+   for(let hops=0;distanceLeft>0&&hops<8;hops++){
+    const [targetX,targetZ,dwell]=vehicle.route[vehicle.next],dx=targetX-vehicle.root.position.x,dz=targetZ-vehicle.root.position.z,distance=Math.hypot(dx,dz);
+    if(distance<=distanceLeft){
+     vehicle.root.position.set(targetX,0,targetZ);distanceLeft-=distance;moved+=distance;vehicle.next=(vehicle.next+1)%vehicle.route.length;vehicle.wait=dwell;
+     if(dwell>0)break;
+    }else{
+     const step=distanceLeft/distance;vehicle.root.position.x+=dx*step;vehicle.root.position.z+=dz*step;moved+=distanceLeft;
+     vehicle.root.rotation.y=-Math.atan2(dz,dx);distanceLeft=0;
+    }
+    if(distance>0)vehicle.root.rotation.y=-Math.atan2(dz,dx);
+   }
+   for(const wheel of vehicle.wheels)wheel.rotation.y+=moved/wheel.userData.radius;
+  }
+ }
  update(dt,pos){
   this.t+=dt;if(this.waterNormal){this.waterNormal.offset.x=(this.t*.0021)%1;this.waterNormal.offset.y=(this.t*.0013)%1;}
+  this.updateServiceVehicles(dt);
   // Quantize the shadow camera in light space to avoid shadows swimming over the aircraft.
   const right=_right.crossVectors(SUN_UP,this.sunOffset).normalize();
   const up=_up.crossVectors(this.sunOffset,right).normalize();
