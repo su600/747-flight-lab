@@ -2,9 +2,7 @@
 // aircraft-frame metres, see lib.mjs. `real` marks liveries that match an
 // actual A380 operator; the others adapt the airline's own scheme.
 import {fillBase,FUSE,FIN,keel} from './lib.mjs';
-
-export const DLH100_CRANE_LENGTH_METERS=47;
-export const DLH100_CRANE_HEIGHT_METERS=6.5;
+import {DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../../src/a380-liveries.js';
 const WHITE='#f4f5f6';
 const finShape=(grow=.25)=>[[FIN.le(FIN.root)-grow,FIN.root-grow],[FIN.le(FIN.top+grow)-grow,FIN.top+grow],[FIN.te(FIN.top+grow)+grow,FIN.top+grow],[FIN.te(FIN.root)+grow,FIN.root-grow]];
 const finY=sFrac=>FIN.root+sFrac*(FIN.top-FIN.root);

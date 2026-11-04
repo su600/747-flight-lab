@@ -8,9 +8,8 @@ import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {A380Aircraft,keepBaseColorMapsOnly} from '../src/a380-aircraft.js';
-import {A380_NATIVE,A380_STYLE} from '../src/a380-liveries.js';
+import {A380_NATIVE,A380_STYLE,DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../src/a380-liveries.js';
 import {A380_ATLAS_VERSION} from '../src/a380-paint.js';
-import {DLH100_CRANE_LENGTH_METERS,DLH100_CRANE_HEIGHT_METERS} from '../assets/a380-liveries/liveries.mjs';
 
 globalThis.self??=globalThis;
 globalThis.createImageBitmap??=async()=>({width:1,height:1,close(){}});
