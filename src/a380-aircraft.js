@@ -220,14 +220,14 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
  try{return await Promise.race([work,deadline]);}catch(error){if(expired)throw Error('A380 '+part+' 载入超时，请重试');throw error;}finally{clearTimeout(timer);}
 }
 export class A380Aircraft extends Aircraft {
- constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];}
+ constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];}
  async load(){
   const loader=this.loadOptions.loader||new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),materials=new Map(),fixedGeometry=new WeakSet();
   // Source nose points toward -Z; rotate it to this simulator's +X heading.
   const model=new T.Group();model.rotation.y=Math.PI/2;this.root.add(model);
   try{
    for(const part of ['fuselage','wings','nose','wing-left','wing-right','body-left','body-right']){
-    const gltf=await loadA380Part(loader,part,{timeoutMs:this.loadOptions.timeoutMs,fetchImpl:this.loadOptions.fetchImpl});model.add(gltf.scene);
+    const gltf=await loadA380Part(loader,part,{timeoutMs:this.loadOptions.timeoutMs,fetchImpl:this.loadOptions.fetchImpl});model.add(gltf.scene);if(part==='wings')this.wingSurface=gltf.scene;
     const invisible=[];gltf.scene.traverse(o=>{
      if(!o.isMesh)return;const mats=[o.material].flat();
      if(!fixedGeometry.has(o.geometry)){if(o.isSkinnedMesh)pinSpoilerSkinToNeighbours(o);alignWindingToNormals(o.geometry);fixedGeometry.add(o.geometry);}
@@ -263,10 +263,19 @@ export class A380Aircraft extends Aircraft {
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
    this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
+   if(!this.wingSurface)throw Error('A380 wing surface missing');
+   // Root coordinates, not GLB-source coordinates: probe just inboard of the
+   // span tip and place the light center 16 cm above the actual upper surface.
+   const wingBounds=new T.Box3().setFromObject(this.wingSurface,true),probeX=wingBounds.min.x+1.4,ray=new T.Raycaster(),down=new T.Vector3(0,-1,0);
+   this.wingtipPoints=[wingBounds.min.z+.1,wingBounds.max.z-.1].map(z=>{
+    ray.set(new T.Vector3(probeX,wingBounds.max.y+2,z),down);
+    const hit=ray.intersectObject(this.wingSurface,true)[0];if(!hit)throw Error('A380 wingtip attachment point not found');
+    const point=this.root.worldToLocal(hit.point.clone());point.y+=.16;return point;
+   });
    clearDoorPanelsFromSkin(model,this.root.getWorldPosition(new T.Vector3()));
    this.paint=installA380Paint(this,{sideY:-4.2,loadTexture:this.loadOptions.loadTexture,timeoutMs:this.liveryTimeoutMs});
    this.paintLivery=livery=>this.setLivery(livery.id);
-   for(const [pos,color] of [[[-16,0,-39.8],0xff3333],[[-16,0,39.8],0x33ff99],[[0,5,0],0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.fromArray(pos);this.root.add(m);this.lights.push(m);}
+   for(const [pos,color] of [[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99],[new T.Vector3(0,5,0),0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.copy(pos);this.root.add(m);this.lights.push(m);}
    return this;
   }catch(error){this.dispose();throw error;}
  }

@@ -29,6 +29,20 @@ const aircraft=await new A380Aircraft({fetchImpl}).load();
 const loadMs=performance.now()-started;
 assert.deepEqual(requested,['fuselage.glb','wings.glb','nose.glb','wing-left.glb','wing-right.glb','body-left.glb','body-right.glb']);
 const root=aircraft.root;
+root.updateMatrixWorld(true);
+assert.equal(aircraft.wingtipPoints.length,2,'A380 wingtip emitters discovered');
+assert(aircraft.wingSurface,'A380 wing surface retained for placement checks');
+const wingBounds=new T.Box3().setFromObject(aircraft.wingSurface,true),ray=new T.Raycaster(),down=new T.Vector3(0,-1,0),wingtipClearances=[];
+for(let i=0;i<2;i++){
+ const point=aircraft.wingtipPoints[i],light=aircraft.lights[i];
+ assert(light?.isMesh,'visible wingtip light exists');
+ assert(light.getWorldPosition(new T.Vector3()).distanceTo(point)<1e-6,'light and airflow share a root-local point');
+ ray.set(new T.Vector3(point.x,wingBounds.max.y+2,point.z),down);
+ const hit=ray.intersectObject(aircraft.wingSurface,true)[0];assert(hit,`wingtip ${i} ray intersects wing`);
+ const clearance=point.y-hit.point.y;assert(clearance>=.14&&clearance<=.18,`wingtip ${i} stays just above the surface: ${clearance}`);
+ wingtipClearances.push(+clearance.toFixed(3));
+}
+assert(Math.abs(wingtipClearances[0]-wingtipClearances[1])<.02,'left/right wingtip heights are symmetric');
 const fuselage=root.getObjectByName('MAIN_FUSELAGE');
 assert(fuselage,'real GLTFLoader node name');
 // Current GLB is multi-primitive: the semantic name belongs to a Group,
@@ -93,4 +107,4 @@ updateCabinLights(aircraft,'night');assert(second.visible);
 removeCabinLights(aircraft);
 fuselage.name='MAIN_FUSELAGE';hull.forEach((o,i)=>o.name=names[i]);
 root.remove(decoy);decoy.geometry.dispose();decoy.material.dispose();
-console.log(JSON.stringify({ok:true,glbs:requested.length,loadMs:Math.round(loadMs),createMs:Math.round(createMs),windows:lights.count,byDeckAndSide:counts,rangeX:[minX,maxX],runtimeHullNames:names},null,2));
+console.log(JSON.stringify({ok:true,glbs:requested.length,loadMs:Math.round(loadMs),createMs:Math.round(createMs),windows:lights.count,wingtipClearances,byDeckAndSide:counts,rangeX:[minX,maxX],runtimeHullNames:names},null,2));

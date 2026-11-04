@@ -360,7 +360,7 @@ async function verifyRepeatedLiverySwitching(){
    assert(materials.every(material=>material.map===map),'all livery materials should share the selected texture');
   }
   for(const id of new Set(sequence)){
-   const hits=requests.filter(request=>request.url.endsWith(`/${id}.png`));
+   const hits=requests.filter(request=>request.url.split('?')[0].endsWith(`/${id}.png`));
    assert.equal(hits.length,1,`${id} should load once and reuse its cached resource across switches`);
   }
   console.log(`Livery resource check passed: ${sequence.length} switches, ${new Set(sequence).size} cached atlas resources, no duplicate loads.`);

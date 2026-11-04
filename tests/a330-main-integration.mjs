@@ -99,9 +99,10 @@ T.TextureLoader.prototype.load=function(url,onLoad,_progress,onError){
 
 const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const infoStart=source.indexOf('const AIRCRAFT_INFO='),infoEnd=source.indexOf('\nlet originalAbout',infoStart);
+const emitterStart=source.indexOf('function setEmitters('),emitterEnd=source.indexOf('\nasync function selectAircraft',emitterStart);
 const first=source.indexOf('function syncCabinTime('),last=source.indexOf('// ---- UI',first);
 const snapshotStart=source.indexOf('snapshot(){return{'),snapshotEnd=source.indexOf('};}};',snapshotStart);
-assert(infoStart>=0&&infoEnd>infoStart&&first>=0&&last>first&&snapshotStart>=0&&snapshotEnd>snapshotStart,'real coordinator code available');
+assert(infoStart>=0&&infoEnd>infoStart&&emitterStart>=0&&emitterEnd>emitterStart&&first>=0&&last>first&&snapshotStart>=0&&snapshotEnd>snapshotStart,'real coordinator code available');
 const snapshotMethod=source.slice(snapshotStart,snapshotEnd+3);
 const elements=new Map(),liveryButtons=LIVERIES.map(l=>({dataset:{livery:l.id},classList:{toggle(){}},setAttribute(){},querySelector(){return {textContent:''};}}));
 const aircraftButtons=['b747','a380','a330','b777'].map(id=>({dataset:{aircraft:id},classList:{toggle(){}},setAttribute(){}}));
@@ -117,9 +118,10 @@ vm.runInContext(`
  const originalEmitters={engines:[],tips:[],mainGear:[]};let originalAbout='<p>747</p>';
  const aircraftCache=new Map([['b747',Promise.resolve(plane)]]);let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
  ${source.slice(infoStart,infoEnd)}
+ ${source.slice(emitterStart,emitterEnd)}
  ${source.slice(first,last)}
  const snapshotHost={${snapshotMethod}};
- globalThis.test={selectAircraft,selectLivery,syncCabinTime,getAircraft,snapshot:()=>snapshotHost.snapshot(),state(){return {plane,scene,sim,world,airflow,desiredLivery,aircraftCache}},setTime(time){world.time=time;syncCabinTime(plane)}};
+ globalThis.test={selectAircraft,selectLivery,setEmitters,syncCabinTime,getAircraft,snapshot:()=>snapshotHost.snapshot(),state(){return {plane,scene,sim,world,airflow,desiredLivery,aircraftCache}},setTime(time){world.time=time;syncCabinTime(plane)}};
 `,context);
 const api=context.test,initial=api.state().plane,scene=api.state().scene;
 // A failed load removes its cache entry, keeps the 747 displayed and is retryable.
@@ -155,4 +157,7 @@ assert(wingFixes>=1);assert.equal(genericAdds,0);assert(genericUpdates>=1,'747 k
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8'),notes=await readFile(new URL('../MODEL-NOTES.html',import.meta.url),'utf8');
 assert.match(html,/A330–303/);assert.match(html,/非 A330-200F/);assert.match(notes,/f016c7c0ad8c6c48b7d9eed7ed7dde49dc69059d/);assert.match(notes,/GPL-2\.0/);assert.match(notes,/Josh Davidson/);assert.match(notes,/不是 A330-200F/);assert(!notes.includes('A330-300 和 777-300ER 为本项目原创'));
 const snap=api.snapshot();assert.equal(snap.aircraft,'a330');assert.equal(snap.animations,ready.a330Animations.length);assert.equal(snap.paint,'a330-atlas');assert.equal(snap.cargoMode,true);assert.equal(snap.cabinLit,false);assert.equal(snap.liveryInfo.approximate,true);assert.match(snap.model,/非 A330-200F/);
+const wingtipPoints=[new T.Vector3(-14,-5.45,-39.8),new T.Vector3(-14,-5.45,39.8)];api.setEmitters({type:'a380',wingtipPoints,contact:5});
+assert.deepEqual(api.state().airflow.tips.map(p=>p.toArray()),wingtipPoints.map(p=>p.toArray()),'A380 airflow uses the model-aligned wingtip points');
+assert.notEqual(api.state().airflow.tips[0],wingtipPoints[0],'airflow owns cloned vectors');
 console.log(`A330 main integration passed: 503 + paint failure/retry, superseded switch, cached model reuse, ${LIVERIES.length} paints, cabin time/cargo, door, airflow and livery race (CPU only).`);

@@ -238,10 +238,11 @@ function setEmitters(craft){
   airflow.tips=[-32.4,32.4].map(z=>new T.Vector3(-17,0,z));
   airflow.mainGear=[-4.2,4.2].map(z=>new T.Vector3(-3,-craft.contact,z));return;
  }
- const span=craft.type==='a380'?79.8:60.3;
- const positions=craft.type==='a380'?[-.27,-.15,.15,.27]:[-.22,.22];
+ const isA380=craft.type==='a380',span=isA380?79.8:60.3;
+ const positions=isA380?[-.27,-.15,.15,.27]:[-.22,.22];
  airflow.engines=positions.map(z=>new T.Vector3(0,-2,span*z));
- airflow.tips=[new T.Vector3(-17,0,-span/2),new T.Vector3(-17,0,span/2)];
+ // A380 points are raycast onto its normalized wing and shared with its nav lights.
+ airflow.tips=isA380?craft.wingtipPoints.map(p=>p.clone()):[new T.Vector3(-17,0,-span/2),new T.Vector3(-17,0,span/2)];
  airflow.mainGear=[-4.2,4.2].map(z=>new T.Vector3(-3,-craft.contact,z));
 }
 async function selectAircraft(type){
