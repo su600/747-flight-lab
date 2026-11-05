@@ -19,10 +19,6 @@ export function cameraModeForWiperToggle(cameraMode,wipersOn){
  return wipersOn&&cameraMode!=='cockpit'?'cockpit':cameraMode;
 }
 
-export function cockpitWipersVisible(cameraMode,wipersOn,lookYaw=0,lookPitch=0){
- return cameraMode==='cockpit'&&Boolean(wipersOn)&&Math.abs(lookYaw)<.65&&Math.abs(lookPitch)<.55;
-}
-
 export function cockpitWiperSweepAngle(time){
  return Math.sin((Number(time)||0)*3)*26;
 }
