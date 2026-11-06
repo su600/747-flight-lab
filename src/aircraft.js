@@ -122,7 +122,8 @@ export class Aircraft{
   if(prop.includes('compression-ft'))return this.gearCompression*2;
   if(prop.includes('compression'))return this.gearCompression;
   if(prop.includes('rollspeed'))return s.onGround?s.speed||0:0;
-  if(prop.includes('altitude-agl'))return (s.altitude||0)*3.28084;
+  // Main bogies keep their airborne tilt until wheel contact, then rotate level.
+  if(prop.includes('altitude-agl'))return s.onGround?0:100;
   if(prop.includes('flap-pos'))return (s.flaps||0)/30;
   if(prop.includes('aileron'))return (s.aileron||0)*.32;
   if(prop.includes('elevator'))return (s.elevator||0)*.35;

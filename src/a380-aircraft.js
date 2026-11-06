@@ -260,6 +260,7 @@ export class A380Aircraft extends Aircraft {
      else if(/spoiler.*key/.test(name))control='spoiler';else if(/^n1_\d_anim/.test(name))control='engine';
      else if(/^(?:door_cargo|fwd_door_cargo|aft_door_cargo)$/.test(name))control='door';
      else if(/gear.*comp|comp.*gear/.test(name))control='gearCompression';
+     else if(/gear.*tilt|tilt.*gear/.test(name))control='gearTilt';
      else if(/gear|blg_inner_door/.test(name)&&!/wheel|tire/.test(name))control='gear';
      else if(/elevator.*deflection|trimtab_elevator/.test(name))control='elevator';
      else if(/aileron.*percent/.test(name))control='aileron';
@@ -303,7 +304,7 @@ export class A380Aircraft extends Aircraft {
   // opposite deflections. Elevator clip direction is reversed relative to the
   // simulation: negative elevator (pull up) raises the trailing edge.
   for(const b of this.bindings){
-   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
+   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='gearTilt'?(s.onGround&&(s.gear??1)>.95?1:0):b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
    b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;
   }
   for(const mixer of this.mixers)mixer.update(0);

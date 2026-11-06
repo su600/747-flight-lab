@@ -60,17 +60,27 @@ for (let i = 0; i < 2; i++) {
  checkMarker(b747.root, b747.wingSurface, b747.wingtipPoints[i], .16, `747 wingtip ${i}`);
  assert(b747.lights[i].position.distanceTo(b747.wingtipPoints[i]) < 1e-6);
 }
-const wheels = b747.root.getObjectByName('GearWingLeftWheels');
-assert(wheels, '747 main-gear wheel group exists');
-b747.update({gear: 1, onGround: false}, 0);
-b747.root.updateMatrixWorld(true);
-const airborneWheelY = new T.Box3().setFromObject(wheels, true).min.y;
-b747.update({gear: 1, onGround: true}, 0);
-b747.root.updateMatrixWorld(true);
-const loadedWheelY = new T.Box3().setFromObject(wheels, true).min.y;
+const wheelTilt = b747.animations.filter(animation => animation.prop?.includes('altitude-agl'));
+assert.equal(wheelTilt.length, 4, '747 wing/body main bogies have touchdown-leveling animations');
+for (const onGround of [false, true]) {
+ b747.update({gear: 1, altitude: 0, onGround}, 0);
+ for (const animation of wheelTilt) {
+  const degrees = onGround ? 0 : animation.table.at(-1)[1] * animation.factor + animation.offset;
+  const expected = new T.Quaternion().setFromAxisAngle(animation.axis, degrees * Math.PI / 180);
+  assert(animation.wrappers.every(wrapper => wrapper.quaternion.angleTo(expected) < 1e-6),
+   `747 bogie remains tilted airborne and levels only after contact (${animation.prop}, ground=${onGround})`);
+ }
+}
+assert(b747.root.getObjectByName('GearWingLeftWheels'), '747 main-gear wheel group exists');
+b747.update({gear: 1, altitude: 0, onGround: false}, 0);
+assert.equal(b747.gearCompression, 0, 'airborne gear struts are extended');
+b747.update({gear: 1, altitude: 0, onGround: true}, 0);
 assert.equal(b747.gearCompression, .25, '747 struts use a partial, loaded compression rather than no compression');
-assert(Math.abs((loadedWheelY - airborneWheelY) - b747.groundSettle) < .002, `747 tire compression (${loadedWheelY - airborneWheelY}) is balanced by ground settle (${b747.groundSettle})`);
 assert(Math.abs(b747.groundSettle - .15 * b747.native.scale.y) < 1e-6);
+const compression = b747.animations.find(animation => animation.prop?.includes('gear[1]') && animation.prop.includes('compression-ft'));
+assert(compression, '747 wing gear compression animation is bound');
+assert(Math.abs(compression.wrappers[0].position.y * b747.native.scale.y - b747.groundSettle) < .002,
+ '747 tire compression is balanced by aircraft ground settle');
 
 const a330 = await new AccurateA330({resourceTimeoutMs: 20000, textureTimeoutMs: 20000}).load();
 assert.equal(a330.wingtipPoints.length, 2);
