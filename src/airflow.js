@@ -3,6 +3,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const D2R=Math.PI/180;
 const Y=new T.Vector3(0,1,0);
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
+export const TYRE_SMOKE_RGB=Object.freeze([.84,.93,.98]);
 
 // Round-robin particle pool drawn as soft points, with per-particle colour + alpha.
 class Pool{
@@ -51,7 +52,8 @@ export class Airflow{
   this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
   this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
   // Tyre smoke: rubber vaporised when the main wheels spin up at touchdown, and a thin wisp under hard braking.
-  this.smoke=new Pool(scene,{count:1100,size:15,color:[.9,.9,.88],map:dot});
+  // A subtle cool-cyan tint distinguishes burnt-rubber smoke from white contrails.
+  this.smoke=new Pool(scene,{count:1100,size:15,color:TYRE_SMOKE_RGB,map:dot});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
