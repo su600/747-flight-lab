@@ -240,7 +240,7 @@ export class A380Aircraft extends Aircraft {
      // light, without emissive paint or changing shadows or other aircraft.
      // Keep the portable source colours, diffuse UVs and PBR factors; omit the
      // converted normal maps to retain the lower-cost material path.
-     const simplify=m=>{if(!materials.has(m)){const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
+     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
      o.material=Array.isArray(o.material)?mats.map(simplify):simplify(mats[0]);
      if(o.name==='MAIN_FUSELAGE030'){
       // The exterior GLB has no cockpit interior; keep the windshield pane solidly tinted, not hollow.

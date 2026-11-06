@@ -30,6 +30,14 @@ const loadMs=performance.now()-started;
 assert.deepEqual(requested,['fuselage.glb','wings.glb','nose.glb','wing-left.glb','wing-right.glb','body-left.glb','body-right.glb']);
 const root=aircraft.root;
 root.updateMatrixWorld(true);
+const tireMeshes=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_EXTERIOR_TYRES'))tireMeshes.push(o);});
+assert.equal(tireMeshes.length,14,'all A380 tires use the real exterior tire material');
+for(const tire of tireMeshes){
+ const material=[tire.material].flat().find(m=>m?.name==='A380_EXTERIOR_TYRES'),uv=tire.geometry.getAttribute('uv');
+ assert(material?.map,'tire base-color texture is retained');
+ assert(Math.abs(material.map.repeat.x-1/16383)<1e-12&&Math.abs(material.map.repeat.y-1/16383)<1e-12,'14-bit tire UVs are dequantized for the texture');
+ assert(uv.getX(0)>100,'source tire UVs remain quantized and depend on the texture scale');
+}
 assert.equal(aircraft.wingtipPoints.length,2,'A380 wingtip emitters discovered');
 assert(aircraft.wingSurface,'A380 wing surface retained for placement checks');
 const wingBounds=new T.Box3().setFromObject(aircraft.wingSurface,true),ray=new T.Raycaster(),down=new T.Vector3(0,-1,0),wingtipClearances=[];
