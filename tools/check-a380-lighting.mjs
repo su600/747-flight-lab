@@ -52,11 +52,13 @@ const passengerWindows=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().som
 assert.equal(passengerWindows.length,18,'passenger glazing is retained');assert(passengerWindows.every(o=>o.visible),'passenger glass meshes are visible');
 const compression=aircraft.bindings.find(b=>b.control==='gearCompression');
 assert(compression,'A380 nose-gear compression clip is bound');assert.equal(compression.action.getClip().name,'c_gear_comp');
-const lowerStrut=root.getObjectByName('NLG_LOWER_STRUT');assert(lowerStrut,'nose gear lower strut exists');const extended=lowerStrut.position.clone();
+const lowerStrut=root.getObjectByName('NLG_LOWER_STRUT'),noseWheel=root.getObjectByName('NLG_RH_Wheel001');assert(lowerStrut&&noseWheel,'nose gear strut and wheel exist');const extended=lowerStrut.position.clone();
+const noseWheelBox=new T.Box3().setFromObject(noseWheel,true);assert(Math.abs(noseWheelBox.min.y+aircraft.contact)<.02,'deployed nose tyres align with the main-gear ground plane');
 aircraft.update({gear:1,flaps:0,engine:0,onGround:false},.1);assert.equal(aircraft.gearCompression,0);
 for(let i=0;i<20;i++)aircraft.update({gear:1,flaps:0,engine:0,onGround:true},.1);
-assert(aircraft.gearCompression>.99,'gear settles under ground load');assert(compression.action.time>compression.duration*.99);
-assert(lowerStrut.position.distanceTo(extended)>.4,'nose strut compresses after touchdown');
+assert(aircraft.gearCompression>.075&&aircraft.gearCompression<.085,'nose strut uses realistic partial loaded compression');assert(compression.action.time>compression.duration*.075&&compression.action.time<compression.duration*.085);
+assert(lowerStrut.position.distanceTo(extended)>.02&&lowerStrut.position.distanceTo(extended)<.08,'nose strut compresses slightly after touchdown without lifting its tyre off the runway');
+const loadedNoseWheelBox=new T.Box3().setFromObject(noseWheel,true);assert(Math.abs(loadedNoseWheelBox.min.y+aircraft.contact)<.05,'loaded nose tyre remains close to the runway');
 for(let i=0;i<20;i++)aircraft.update({gear:1,flaps:0,engine:0,onGround:false},.1);
 assert(aircraft.gearCompression<.01,'gear strut re-extends after liftoff');assert(lowerStrut.position.distanceTo(extended)<.02);
 const fuselage=root.getObjectByName('MAIN_FUSELAGE');

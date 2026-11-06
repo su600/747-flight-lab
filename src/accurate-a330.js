@@ -2,6 +2,7 @@
 // integration gates in assets/accurate-a330/NOTICE. GPL-2.0 source assets.
 import * as T from 'three';
 import {Aircraft, LIVERIES, parseAC} from './aircraft.js';
+import {projectA330WingtipPoints} from './navigation-lights.js';
 
 const ROOT='/747/assets/accurate-a330/Models/';
 // parseAC resolves relative to /747/assets/aircraft/. URL normalization yields
@@ -288,6 +289,7 @@ export class AccurateA330Research extends Aircraft{
   const bounds=new T.Box3().setFromObject(this.root,true);
   this.contact=-bounds.min.y;this.dimensions=bounds.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
   this.cabinWindowLights=addA330CabinLights(this,JSON.parse(raw[4]));
+  this.wingtipPoints=projectA330WingtipPoints(this.root);
   this.cargoDoor=prepareA330CargoDoor(this);
   // SF markings use the exact hull UVs on a transparent, unlit skin layer.
   // This avoids losing contrast in the main scene's bright environment while
@@ -313,8 +315,8 @@ export class AccurateA330Research extends Aircraft{
   for(const o of a330PaintTargets(this.root).engines)for(const m of [o.material].flat())if(m?.color)this.engineMaterials.set(m,{color:m.color.clone(),map:m.map});
   if(!this.paintMaterials.size||!this.engineMaterials.size)throw Error('A330 paint material binding missing');
   this.setCargoMode(false);this.setCabinTime('day');
-  for(const [pos,color] of [[[-12.764,.916,-28.821],0xff3333],[[-12.764,.916,28.821],0x33ff99],[[-7.34,3.16,0],0xff4422]]){
-   const light=new T.Mesh(new T.SphereGeometry(.13,8,8),new T.MeshBasicMaterial({color}));light.position.fromArray(pos);this.root.add(light);this.lights.push(light);
+  for(const [pos,color] of [[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99],[new T.Vector3(-7.34,3.16,0),0xff4422]]){
+   const light=new T.Mesh(new T.SphereGeometry(.13,8,8),new T.MeshBasicMaterial({color}));light.position.copy(pos);this.root.add(light);this.lights.push(light);
   }
   this.loaded=true;return this;
   }catch(error){this.dispose();throw error;}finally{clearTimeout(timer);this.loading=false;}

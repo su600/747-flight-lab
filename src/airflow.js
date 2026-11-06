@@ -59,7 +59,7 @@ export class Airflow{
   this.streakSeeded=false;
   // Emitter points in the aircraft's own frame (x nose, y up, z right wing).
   this.engines=[[4.83,-21.23,-1.99],[-2.67,-13.46,-2.60],[-2.67,13.46,-2.60],[4.83,21.23,-1.99]].map(([x,y,z])=>fg(x,y,z).multiply(plane.native.scale).applyAxisAngle(Y,Math.PI));
-  this.tips=[new T.Vector3(-14,2.6,-32),new T.Vector3(-14,2.6,32)];
+  this.tips=plane.wingtipPoints?.map(p=>p.clone())||[new T.Vector3(-14,2.6,-32),new T.Vector3(-14,2.6,32)];
   // Main-gear bogie contact points (wing gear x -2.3, body gear x -5.7), measured from the gear model; nose is +x.
   const sc=plane.native.scale;
   this.mainGear=[[-2.3,5.25],[-2.3,-5.25],[-5.7,1.64],[-5.7,-1.64]].map(([x,z])=>new T.Vector3(x*sc.x,-plane.contact,z*sc.z));

@@ -2,6 +2,7 @@ import * as T from 'three';
 import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {liveryForModel} from './livery-for-model.js';
+import {projectWingtipPoints} from './navigation-lights.js';
 const ROOT='/747/assets/aircraft/';
 const LIVERY_TEXTURE_VERSION='20261104-1';
 const VERSIONED_LIVERIES=new Set(['CEA.png','CHH.png','CSN.png']);
@@ -78,11 +79,11 @@ export const LIVERIES=[
 
 export class Aircraft{
  static liveryForModel(id,type){return liveryForModel(LIVERIES.find(x=>x.id===id),type);}
- constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
+ constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;this.groundSettle=0;this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
-  for(const part of raw.slice(0,3)){const group=parseAC(part.ac);this.native.add(group);this.bind(group,part.doc);}
+  for(const part of raw.slice(0,3)){const group=parseAC(part.ac);this.native.add(group);if(part.n==='747-400_wings')this.wingSurface=group;this.bind(group,part.doc);}
   const engineBase=parseAC(raw[3].ac);
   for(const [x,y,z] of [[4.83,-21.23,-1.99],[-2.67,-13.46,-2.60],[-2.67,13.46,-2.60],[4.83,21.23,-1.99]]){const g=engineBase.clone(true);g.position.copy(fg(x,y,z));this.native.add(g);this.bind(g,raw[3].doc);}
   this.native.traverse(o=>{if(o.isMesh&&o.userData.texture==='BOE.png'){const mats=Array.isArray(o.material)?o.material:[o.material];this.liveryMats.push(...mats);}});
@@ -90,7 +91,8 @@ export class Aircraft{
   this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root);this.rawDimensions=box.getSize(new T.Vector3());
   this.native.scale.set(70.67/this.rawDimensions.x,19.41/this.rawDimensions.y,64.44/this.rawDimensions.z);
   this.root.updateMatrixWorld(true);box.setFromObject(this.root);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());
-  for(const [pos,color] of [[[ -16,2.5,-32],0xff3333],[[-16,2.5,32],0x33ff99],[[15.7,5.2,0],0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.fromArray(pos);this.root.add(m);this.lights.push(m);}
+  this.wingtipPoints=projectWingtipPoints(this.root,this.wingSurface,{xInset:2.4,spanInset:.8,clearance:.16});
+  for(const [pos,color] of [[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99],[new T.Vector3(15.7,5.2,0),0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.copy(pos);this.root.add(m);this.lights.push(m);}
   this.update({gear:1,flaps:0,speed:0,altitude:0,engine:0,lights:true},0);
   return this;
  }
@@ -117,7 +119,8 @@ export class Aircraft{
  value(prop,s){
   if(prop.includes('position-norm')&&prop.includes('gear/'))return s.gear??1;
   if(prop.includes('steering'))return s.rudder||0;
-  if(prop.includes('compression'))return 0;
+  if(prop.includes('compression-ft'))return this.gearCompression*2;
+  if(prop.includes('compression'))return this.gearCompression;
   if(prop.includes('rollspeed'))return s.onGround?s.speed||0:0;
   if(prop.includes('altitude-agl'))return (s.altitude||0)*3.28084;
   if(prop.includes('flap-pos'))return (s.flaps||0)/30;
@@ -132,6 +135,11 @@ export class Aircraft{
   return 0;
  }
  update(s,dt){
+  if(this.type==='b747'){
+   const compressionTarget=s.onGround&&(s.gear??1)>.95?.25:0;
+   this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
+   this.groundSettle=this.gearCompression*.6*this.native.scale.y;
+  }else this.groundSettle=0;
   for(const a of this.animations){
    if(a.type==='visibility'){a.targets.forEach(o=>o.visible=(s.gear??1)>.01);continue;}
    let v=this.value(a.prop,s);if(a.table.length){const t=a.table;if(v<=t[0][0])v=t[0][1];else if(v>=t.at(-1)[0])v=t.at(-1)[1];else for(let i=1;i<t.length;i++)if(v<=t[i][0]){v=T.MathUtils.lerp(t[i-1][1],t[i][1],(v-t[i-1][0])/(t[i][0]-t[i-1][0]));break;}}

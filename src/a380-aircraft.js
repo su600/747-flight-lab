@@ -12,6 +12,9 @@ const MODEL_ROOT='/747/assets/a380/';
 // can still be overridden for tests. Parts load serially to bound memory and
 // avoid splitting a slow connection among simultaneous large downloads.
 const PART_TIMEOUT_MS=180000;
+// In the normalized GLB pose the nose tyres sit 0.283 m above the lowest body bogie.
+const NOSE_GEAR_GROUND_CORRECTION=.283;
+const NOSE_GEAR_LOADED_COMPRESSION=.08;
 // The converted A380X GLBs have outward vertex normals but predominantly
 // inward triangle winding. With double-sided materials Three flips the normal
 // on exterior back faces, making upward surfaces respond to ground lighting.
@@ -263,12 +266,18 @@ export class A380Aircraft extends Aircraft {
      if(control){const action=mixer.clipAction(clip);action.play();action.paused=true;this.bindings.push({action,duration:clip.duration,control});}
     }
    }
+   const upperStrut=model.getObjectByName('NLG_UPPER_STRUT');
+   if(upperStrut?.parent){
+    // Keep the retracted pose untouched; lower the complete nose assembly only as it deploys.
+    this.noseGearMount=new T.Group();this.noseGearMount.name='nose-gear-ground-correction';
+    upperStrut.parent.add(this.noseGearMount);this.noseGearMount.add(upperStrut);
+   }
    addMissingRightFlaps(model);
    bakeSlatOnlyRightSkins(model);
    this.update({gear:1,flaps:0,engine:0},0);this.root.updateMatrixWorld(true);
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
-   this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
+   this.root.updateMatrixWorld(true);this.update({gear:1,flaps:0,engine:0,onGround:false},0);this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
    if(!this.wingSurface)throw Error('A380 wing surface missing');
    // Root coordinates, not GLB-source coordinates: probe just inboard of the
    // span tip and place the light center 16 cm above the actual upper surface.
@@ -288,7 +297,7 @@ export class A380Aircraft extends Aircraft {
  update(s,dt){
   super.update(s,dt);this.paint?.sync();this.fanPhase=(this.fanPhase+(s.engine||0)*dt*1.8)%1;
   // Drive the GLB's c_gear_comp nose-strut clip from wheel contact, smoothing touchdown and liftoff.
-  const compressionTarget=s.onGround&&(s.gear??1)>.95?1:0;
+  const compressionTarget=s.onGround&&(s.gear??1)>.95?NOSE_GEAR_LOADED_COMPRESSION:0;
   this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
   // Source clips are centred at 50%. Left/right aileron clips already encode
   // opposite deflections. Elevator clip direction is reversed relative to the
@@ -298,6 +307,13 @@ export class A380Aircraft extends Aircraft {
    b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;
   }
   for(const mixer of this.mixers)mixer.update(0);
+  if(this.noseGearMount?.parent){
+   const deployed=T.MathUtils.clamp(s.gear??1,0,1),parent=this.noseGearMount.parent;
+   this.root.updateMatrixWorld(true);
+   const origin=parent.worldToLocal(this.root.localToWorld(new T.Vector3()));
+   const lowered=parent.worldToLocal(this.root.localToWorld(new T.Vector3(0,-NOSE_GEAR_GROUND_CORRECTION*deployed,0)));
+   this.noseGearMount.position.copy(lowered.sub(origin));
+  }
  }
  // Textures load asynchronously; a newer request supersedes an older one.
  async setLivery(id){
