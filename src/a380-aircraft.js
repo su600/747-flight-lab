@@ -4,6 +4,7 @@ import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {Aircraft} from './aircraft.js';
 import {installA380Paint} from './a380-paint.js';
 import {A380_STYLE} from './a380-liveries.js';
+import {projectSurfacePoint} from './navigation-lights.js';
 
 // FlyByWire A380X, CC BY-NC 4.0. See assets/a380/CREDITS.txt.
 const MODEL_ROOT='/747/assets/a380/';
@@ -12,8 +13,6 @@ const MODEL_ROOT='/747/assets/a380/';
 // can still be overridden for tests. Parts load serially to bound memory and
 // avoid splitting a slow connection among simultaneous large downloads.
 const PART_TIMEOUT_MS=180000;
-// In the normalized GLB pose the nose tyres sit 0.283 m above the lowest body bogie.
-const NOSE_GEAR_GROUND_CORRECTION=.283;
 const NOSE_GEAR_LOADED_COMPRESSION=.08;
 // The converted A380X GLBs have outward vertex normals but predominantly
 // inward triangle winding. With double-sided materials Three flips the normal
@@ -267,18 +266,12 @@ export class A380Aircraft extends Aircraft {
      if(control){const action=mixer.clipAction(clip);action.play();action.paused=true;this.bindings.push({action,duration:clip.duration,control});}
     }
    }
-   const upperStrut=model.getObjectByName('NLG_UPPER_STRUT');
-   if(upperStrut?.parent){
-    // Keep the retracted pose untouched; lower the complete nose assembly only as it deploys.
-    this.noseGearMount=new T.Group();this.noseGearMount.name='nose-gear-ground-correction';
-    upperStrut.parent.add(this.noseGearMount);this.noseGearMount.add(upperStrut);
-   }
    addMissingRightFlaps(model);
    bakeSlatOnlyRightSkins(model);
    this.update({gear:1,flaps:0,engine:0},0);this.root.updateMatrixWorld(true);
    const source=new T.Box3().setFromObject(this.root,true),size=source.getSize(new T.Vector3());model.scale.setScalar(79.8/size.z);
    this.root.updateMatrixWorld(true);const box=new T.Box3().setFromObject(this.root,true),centre=box.getCenter(new T.Vector3());model.position.sub(centre);
-   this.root.updateMatrixWorld(true);this.update({gear:1,flaps:0,engine:0,onGround:false},0);this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
+   this.root.updateMatrixWorld(true);this.update({gear:1,flaps:0,engine:0,onGround:true},0);this.root.updateMatrixWorld(true);box.setFromObject(this.root,true);this.contact=-box.min.y;this.dimensions=box.getSize(new T.Vector3());this.rawDimensions=this.dimensions.clone();
    if(!this.wingSurface)throw Error('A380 wing surface missing');
    // Root coordinates, not GLB-source coordinates: probe just inboard of the
    // span tip and place the light center 16 cm above the actual upper surface.
@@ -288,10 +281,16 @@ export class A380Aircraft extends Aircraft {
     const hit=ray.intersectObject(this.wingSurface,true)[0];if(!hit)throw Error('A380 wingtip attachment point not found');
     const point=this.root.worldToLocal(hit.point.clone());point.y+=.16;return point;
    });
+   const fuselageSurface=model.getObjectByName('MAIN_FUSELAGE');
+   if(fuselageSurface&&!new T.Box3().setFromObject(fuselageSurface,true).isEmpty()){
+    this.beaconPoint=projectSurfacePoint(this.root,fuselageSurface,{x:0,z:0,clearance:.12});
+   }else if(!this.loadOptions.loader)throw Error('A380 fuselage surface missing for beacon placement');
    clearDoorPanelsFromSkin(model,this.root.getWorldPosition(new T.Vector3()));
    this.paint=installA380Paint(this,{sideY:-4.2,loadTexture:this.loadOptions.loadTexture,timeoutMs:this.liveryTimeoutMs});
    this.paintLivery=livery=>this.setLivery(livery.id);
-   for(const [pos,color] of [[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99],[new T.Vector3(0,5,0),0xff4422]]){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.copy(pos);this.root.add(m);this.lights.push(m);}
+   const lightPoints=[[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99]];
+   if(this.beaconPoint)lightPoints.push([this.beaconPoint,0xff4422]);
+   for(const [pos,color] of lightPoints){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.copy(pos);this.root.add(m);this.lights.push(m);}
    return this;
   }catch(error){this.dispose();throw error;}
  }
@@ -304,17 +303,10 @@ export class A380Aircraft extends Aircraft {
   // opposite deflections. Elevator clip direction is reversed relative to the
   // simulation: negative elevator (pull up) raises the trailing edge.
   for(const b of this.bindings){
-   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='gearTilt'?(s.onGround&&(s.gear??1)>.95?1:0):b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
+   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='gearTilt'?(s.onGround&&(s.gear??1)>.95?0:1):b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
    b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;
   }
   for(const mixer of this.mixers)mixer.update(0);
-  if(this.noseGearMount?.parent){
-   const deployed=T.MathUtils.clamp(s.gear??1,0,1),parent=this.noseGearMount.parent;
-   this.root.updateMatrixWorld(true);
-   const origin=parent.worldToLocal(this.root.localToWorld(new T.Vector3()));
-   const lowered=parent.worldToLocal(this.root.localToWorld(new T.Vector3(0,-NOSE_GEAR_GROUND_CORRECTION*deployed,0)));
-   this.noseGearMount.position.copy(lowered.sub(origin));
-  }
  }
  // Textures load asynchronously; a newer request supersedes an older one.
  async setLivery(id){
