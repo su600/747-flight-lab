@@ -31,7 +31,7 @@ try{
  if(!context)throw Error('WebGL2 unavailable');
  renderer=new T.WebGLRenderer({canvas,context,alpha:false,logarithmicDepthBuffer:true});
 }catch(e){$('#loadingText').textContent='浏览器暂时不能显示三维画面。请用 Chrome 或 Edge，并开启硬件加速后重试。';throw e;}
-renderer.setClearColor(0xb9d2db,1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.83;$('#viewport').appendChild(renderer.domElement);
+renderer.setClearColor(0xa9c6da,1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.83;$('#viewport').appendChild(renderer.domElement);
 const display=new StableDisplay(renderer,$('#viewport'));display.beginFrame();
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeight,.2,120000);
 const world=new World(scene,renderer),sim=new Flight();

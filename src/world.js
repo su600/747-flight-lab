@@ -123,7 +123,7 @@ export class World{
   this.waterNormal=waterNormalTexture();this.waterNormal.repeat.set(420,95);const sea=new T.MeshStandardMaterial({color:'#2d6a84',roughness:.07,metalness:.0,normalMap:this.waterNormal,normalScale:new T.Vector2(.55,.55),envMapIntensity:1.2});this.ground(0,16000,100000,22000,sea,.02);this.ground(0,4970,100000,140,mat('#d2c5a2'),.03);
   const asphalt=mat('#343e42',.88);asphalt.map=pavementTexture('#4a5254',14,{stains:26});this.ground(0,0,3900,82,asphalt,.03);
   const runway=mat('#424c51',.82);runway.map=pavementTexture('#50575a',16,{stains:30});this.ground(0,0,3800,60,runway,.05);
-  const concrete=mat('#ffffff',.92);concrete.map=pavementTexture('#b8b5aa',10,{joints:8,stains:22});this.ground(-300,-380,2200,410,concrete,.035);
+  const concrete=mat('#ffffff',.92);concrete.map=pavementTexture('#aaa89f',10,{joints:8,stains:22});this.ground(-300,-380,2200,410,concrete,.035);
   const taxi=mat('#555e5d',.86);taxi.map=pavementTexture('#626866',12,{stains:20});this.ground(0,-130,3850,30,taxi,.045);
   for(const x of [-1750,-850,200,1550])this.ground(x,-75,34,160,taxi,.06);
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
@@ -456,8 +456,8 @@ export class World{
  envFor(mode){
   if(this.envs[mode])return this.envs[mode];
   const night=mode==='night',dusk=mode==='dusk',s=new T.Scene(),sky=new Sky();sky.scale.setScalar(10000);const u=sky.material.uniforms;
-  u.turbidity.value=dusk?8:3;u.rayleigh.value=dusk?2.4:1.6;u.mieCoefficient.value=dusk?.02:.004;u.mieDirectionalG.value=.82;
-  u.sunPosition.value.set(300,night?-160:dusk?90:500,-250).normalize();s.add(sky);
+  u.turbidity.value=dusk?8:2.2;u.rayleigh.value=dusk?2.4:2.3;u.mieCoefficient.value=dusk?.02:.003;u.mieDirectionalG.value=.82;
+  u.sunPosition.value.set(300,night?-160:dusk?90:360,-250).normalize();s.add(sky);
   const floor=new T.Mesh(new T.CircleGeometry(95,32),new T.MeshBasicMaterial({color:night?0x070b12:dusk?0x6a5a50:0x7c9368}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.5;s.add(floor);
   const pmrem=new T.PMREMGenerator(this.renderer),tex=pmrem.fromScene(s,.02).texture;pmrem.dispose();this.envs[mode]=tex;return tex;
  }
@@ -485,10 +485,12 @@ export class World{
   this.time=mode;const night=mode==='night',dusk=mode==='dusk',u=this.sky.material.uniforms;
   this.sun.intensity=night?.35:dusk?2.6:3.2;this.sun.color.set(night?0x9db4ff:dusk?0xffa868:0xfff5de);
   this.hemi.intensity=night?.45:dusk?.75:1.15;this.scene.environment=this.envFor(mode);this.scene.environmentIntensity=night?.55:dusk?.8:1;this.hemi.color.set(night?0x6b86bf:dusk?0xffcfa8:0xcde9ff);this.hemi.groundColor.set(night?0x1e2a3a:dusk?0x6a5a56:0x758466);
-  this.sunOffset=new T.Vector3(300,night?160:dusk?90:500,-250);
-  u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:3;u.rayleigh.value=dusk?2.4:1.6;u.mieCoefficient.value=dusk?.02:.004;
+  // Daylight: a slightly lower sun models the airframe with longer shadows, and a cleaner,
+  // bluer sky/haze keeps the white fuselage from merging into a washed-out horizon.
+  this.sunOffset=new T.Vector3(300,night?160:dusk?90:360,-250);
+  u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:2.2;u.rayleigh.value=dusk?2.4:2.3;u.mieCoefficient.value=dusk?.02:.003;
   this.sky.visible=!night;this.stars.visible=night;this.scene.background=night?new T.Color('#081426'):null;
-  this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0xb9d2db);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
+  this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0xa9c6da);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
   this.renderer.toneMappingExposure=night?1:dusk?.95:.83;
   this.cloudMat.color.set(night?0x2c3a58:dusk?0xffb890:0xffffff);this.cloudMat.opacity=night?.7:dusk?.8:.85;
   this.cityMat.emissiveIntensity=night?1.1:dusk?.35:0;
