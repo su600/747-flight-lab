@@ -70,7 +70,7 @@ export const AIRCRAFT={
  noseGearShare:.035,
  noseGearArm:20,
  wheelbase:22,
- vmo:188,                   // m/s, ~365 kt
+ vmo:188,                   // m/s indicated (equivalent) airspeed, ~365 KIAS
  mmo:.92,
  maxAltitude:12500
 };
@@ -80,13 +80,14 @@ const RHO0=AIRCRAFT.rho0;
 const AR=AIRCRAFT.wingSpan*AIRCRAFT.wingSpan/S;
 const INDUCED=1/(Math.PI*AR*AIRCRAFT.oswald);
 const FLAP_DRAG=[0,.006,.013,.030,.045,.062];
+const P_TROPOPAUSE=101325*Math.pow(216.65/288.15,G/(287.053*.0065));
 
 export function atmosphere(altitude){
- const h=clamp(altitude,-500,20000);
- const hTrop=Math.min(h,11000);
- const temperature=288.15-.0065*hTrop;
- const pressure=101325*Math.pow(temperature/288.15,G/(287.053*.0065));
- return pressure/(287.053*temperature);
+ const h=clamp(altitude,-500,20000),t=temperature(h);
+ // ISA troposphere (lapse rate) and lower stratosphere (isothermal, exponential pressure).
+ const pressure=h<=11000?101325*Math.pow(t/288.15,G/(287.053*.0065))
+  :P_TROPOPAUSE*Math.exp(-G*(h-11000)/(287.053*216.65));
+ return pressure/(287.053*t);
 }
 export function temperature(altitude){
  return 288.15-.0065*Math.min(clamp(altitude,-500,20000),11000);
@@ -141,24 +142,26 @@ export class Flight{
  }
  say(text){this.events.push(text);}
  control(name,value){
+  // Placard limits (gear, flaps, spoilers, VMO) are indicated airspeeds, not true airspeed.
+  const ias=Math.max(0,this.speed)*Math.sqrt(this.atmosphere()/RHO0);
   if(['throttle','pitch','roll','yaw'].includes(name)&&['takeoff','land'].includes(this.mode)){this.mode='manual';this.complete=false;}
   if(name==='gear'){
    if(this.onGround&&this.mode!=='inspect')return '地面滑行时要放下起落架';
-   if(value===0&&this.speed>270*KNOT)return '速度超过 270 节，请先减速';
+   if(value===0&&ias>270*KNOT)return '速度超过 270 节，请先减速';
    this.gearTarget=value;
   }
   if(name==='flaps'){
    const maxKts=value<=1?280:value<=5?260:value<=10?240:value<=20?230:value<=25?205:180;
-   if(value>this.flapTarget&&this.speed>maxKts*KNOT)return `当前襟翼档位速度限制约 ${Math.round(maxKts)} 节，请减速`;
+   if(value>this.flapTarget&&ias>maxKts*KNOT)return `当前襟翼档位速度限制约 ${Math.round(maxKts)} 节，请减速`;
    this.flapTarget=value;
   }
   if(name==='door'){if(!this.onGround||this.speed>1)return '请停稳飞机后再开货舱门';this.doorTarget=value;}
   if(name==='reverse'){
    if(!this.onGround)return '落地后才能使用反推';
-   if(this.speed>170*KNOT)return '速度太高，先接地后再开反推';
+   if(ias>170*KNOT)return '速度太高，先接地后再开反推';
    this.reverseTarget=value;
   }
-  if(name==='spoiler'){if(!this.onGround&&value&&this.speed>230*KNOT)return '高速飞行时不能完全打开扰流板';this.spoilerTarget=value;}
+  if(name==='spoiler'){if(!this.onGround&&value&&ias>230*KNOT)return '高速飞行时不能完全打开扰流板';this.spoilerTarget=value;}
   if(name==='throttle'){
    if(this.door>.02)return '请先关闭货舱门';
    this.throttle=clamp(value,0,1);
@@ -381,9 +384,15 @@ export class Flight{
   else this.speed=Math.max(0,this.speed+this.acceleration*dt);
   if(this.park&&this.speed<.3)this.speed=0;
   this.brakePressure=brakePressure;
+  // Wheels on the runway hold the wings level.
+  this.bank=approach(this.bank,0,8,dt);this.rollRate=0;
+  // Nose-wheel steering is limited by tyre side force: cap the turn so the
+  // lateral acceleration stays near 0.3 g at runway speeds while taxi turns stay tight.
   const steerLimit=clamp((40-this.speed)/40,.12,1)*70*D2R;
   const steer=(this.rudder*steerLimit);
-  this.heading=(this.heading+this.speed*Math.tan(steer)/AIRCRAFT.wheelbase*R2D*dt+360)%360;
+  const maxTan=this.speed>1?.3*G*AIRCRAFT.wheelbase/(this.speed*this.speed):Infinity;
+  const steerTan=clamp(Math.tan(steer),-maxTan,maxTan);
+  this.heading=(this.heading+this.speed*steerTan/AIRCRAFT.wheelbase*R2D*dt+360)%360;
   const heading=(this.heading-90)*D2R;
   this.x+=Math.cos(heading)*this.speed*dt;
   this.z+=Math.sin(heading)*this.speed*dt;
@@ -453,7 +462,9 @@ export class Flight{
   const heading=(this.heading-90)*D2R;
   this.x+=Math.cos(heading)*groundSpeed*dt;
   this.z+=Math.sin(heading)*groundSpeed*dt;
-  if(nextAltitude<=0&&oldAltitude>0)this.touchdownOrCrash(-this.vs);
+  // Also catch a descent that starts at exactly 0 m (just after lift-off), so the
+  // aircraft can never sink beneath the runway.
+  if(nextAltitude<0||(nextAltitude<=0&&oldAltitude>0))this.touchdownOrCrash(-this.vs);
   else this.altitude=nextAltitude;
   if(this.altitude>AIRCRAFT.maxAltitude){
    this.altitude=AIRCRAFT.maxAltitude;this.gamma=Math.min(this.gamma,0);
@@ -494,8 +505,8 @@ export class Flight{
  updateWarnings(){
   this.stallWarning=!this.onGround&&this.alpha>this.stallAngle-2.5&&this.speed>22;
   this.buffet=!this.onGround&&this.alpha>this.stallAngle-1.2;
-  this.overspeed=this.speed>AIRCRAFT.vmo*1.02||this.mach>AIRCRAFT.mmo*1.01;
-  this.gearOverspeed=this.gear>.02&&this.speed>270*KNOT;
+  this.overspeed=this.indicatedSpeed>AIRCRAFT.vmo*1.02||this.mach>AIRCRAFT.mmo*1.01;
+  this.gearOverspeed=this.gear>.02&&this.indicatedSpeed>270*KNOT;
   if(this.stallWarning&&!this.calls.stall){this.calls.stall=true;this.say('机翼快失速了，松杆并加推力');}
   if(this.overspeed&&!this.calls.overspeed){this.calls.overspeed=true;this.say('速度太快了，收一点油门');}
  }
