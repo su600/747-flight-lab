@@ -22,6 +22,12 @@ assert.equal(DLH100_CRANE_CENTER_Y_METERS,-4.25,'the crane center keeps its uppe
 assert(DLH100_CRANE_CENTER_Y_METERS+DLH100_CRANE_HEIGHT_METERS/2<-1.06,'the crane stays below the measured fuselage roofline');
 assert.equal(A380_NATIVE.DLH100,undefined,'the teaser-era atlas is not used for the revealed D-AIMH livery');
 
+const artwork=await readFile(new URL('../assets/a380-liveries/liveries.mjs',import.meta.url),'utf8');
+const dlhBlock=artwork.match(/DLH:\{real:true,draw\(s\)\{([\s\S]*?)\n \}\},\n DLH100:/)?.[1];
+assert(dlhBlock,'standard Lufthansa artwork block exists');
+assert.match(dlhBlock,/s\.imageFacing\('lufthansa\.png',cx,cy,6\.9,6\.9,\{flip:true\}\)/,'standard DLH tail crane faces the nose on both side atlases');
+assert.match(artwork,/DLH100:\{real:true,draw\(s\)\{[\s\S]*?s\.imageFacing\('lufthansa-white\.png',cx,cy,6\.9,6\.9,\{flip:true\}\)/,'DLH100 tail crane keeps its correct forward-facing orientation');
+
 const names=['fuselage','wings','nose','wing-left','wing-right','body-left','body-right'];
 const files={};for(const f of names)files[f]=await readFile(new URL(`../assets/a380/${f}.glb`,import.meta.url));
 const loader={parseAsync:(data,path)=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(keepBaseColorMapsOnly(data),path)};

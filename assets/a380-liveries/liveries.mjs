@@ -61,7 +61,8 @@ export const ART={
   s.poly([[-17.2,-1.4],[-24,-1.4],[-24,-.5],[-19,-.5]],NAVY);
   const [cx,cy]=FIN.pt(4.7,.5);
   s.circle(cx,cy,2.62,'#f9ad00');
-  s.imageFacing('lufthansa.png',cx,cy,6.9,6.9);
+  // The source crane points left; flip it so the beak faces the nose on both sides.
+  s.imageFacing('lufthansa.png',cx,cy,6.9,6.9,{flip:true});
   s.text('Lufthansa',22.7,-5.2,{cap:1.8,font:'Arial',fill:NAVY,width:12.2});
   s.text('D-AIMA',-29,-4.55,{cap:.4,font:'Arial',fill:NAVY,width:2.8});
  }},
