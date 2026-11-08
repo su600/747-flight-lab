@@ -6,11 +6,27 @@ import {readFile} from 'node:fs/promises';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
-import {A380Aircraft,keepBaseColorMapsOnly} from '../src/a380-aircraft.js';
+import {A380Aircraft,keepBaseColorMapsOnly,pinSpoilerSkinToNeighbours} from '../src/a380-aircraft.js';
 
 globalThis.self??=globalThis;
 globalThis.createImageBitmap??=async()=>({width:1,height:1,close(){}});
 globalThis.ProgressEvent??=class ProgressEvent{constructor(type,props){this.type=type;Object.assign(this,props);}};
+
+// A small spatially separated fixture verifies exact nearest-donor remapping.
+{
+ const geometry=new T.BufferGeometry();
+ geometry.setAttribute('position',new T.Float32BufferAttribute([.01,0,0,0,0,0,100,10,-20,100.01,10,-20],3));
+ geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute([0,0,0,0,1,0,0,0,2,0,0,0,0,0,0,0],4));
+ geometry.setAttribute('skinWeight',new T.Float32BufferAttribute([1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0],4));
+ const bones=['WING_SPOILER_TEST','NEAR_DONOR','FAR_DONOR'].map(name=>{const bone=new T.Bone();bone.name=name;return bone;});
+ const mesh=new T.SkinnedMesh(geometry,new T.MeshBasicMaterial());mesh.skeleton=new T.Skeleton(bones);
+ assert.equal(pinSpoilerSkinToNeighbours(mesh),true);
+ const index=geometry.getAttribute('skinIndex'),weight=geometry.getAttribute('skinWeight');
+ assert.equal(index.getComponent(0,0),1,'left target copies its closest donor');
+ assert.equal(index.getComponent(3,0),2,'distant target copies its closest donor');
+ assert.equal(weight.getComponent(0,0),1);assert.equal(weight.getComponent(3,0),1);
+ geometry.dispose();mesh.material.dispose();
+}
 
 const names=['fuselage','wings','nose','wing-left','wing-right','body-left','body-right'];
 const files={};for(const f of names)files[f]=await readFile(new URL(`../assets/a380/${f}.glb`,import.meta.url));

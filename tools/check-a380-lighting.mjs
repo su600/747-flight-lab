@@ -28,6 +28,7 @@ const started=performance.now();
 const aircraft=await new A380Aircraft({fetchImpl}).load();
 const loadMs=performance.now()-started;
 assert.deepEqual(requested,['fuselage.glb','wings.glb','nose.glb','wing-left.glb','wing-right.glb','body-left.glb','body-right.glb']);
+assert.equal(aircraft.discarded.length,0,'successful A380 load releases detached viewer-only meshes');
 const root=aircraft.root;
 root.updateMatrixWorld(true);
 const tireMeshes=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_EXTERIOR_TYRES'))tireMeshes.push(o);});

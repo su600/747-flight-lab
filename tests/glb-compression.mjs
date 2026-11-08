@@ -1,12 +1,14 @@
 // Run: node tests/glb-compression.mjs. Starts only a loopback server on an OS-selected port.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {readFile} from 'node:fs/promises';
+import {readFile,stat,unlink,utimes,writeFile} from 'node:fs/promises';
 import http from 'node:http';
 import {gunzipSync} from 'node:zlib';
 import {fileURLToPath} from 'node:url';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
+const hiddenName=`.hidden-path-${process.pid}.txt`,hiddenFile=new URL('../'+hiddenName,import.meta.url);
+const etagName=`etag-probe-${process.pid}.txt`,etagFile=new URL('../'+etagName,import.meta.url);
 const child=spawn(process.execPath,['server.mjs'],{cwd:root,env:{...process.env,HOST:'127.0.0.1',PORT:'0'},stdio:['ignore','pipe','pipe']});
 let stdout='',stderr='';
 child.stdout.setEncoding('utf8');child.stderr.setEncoding('utf8');
@@ -34,6 +36,18 @@ try{
  });
  const vary=response=>assert.match(response.headers.vary||'',/\baccept-encoding\b/i);
  const empty=response=>assert.equal(response.body.length,0);
+ await writeFile(hiddenFile,'hidden sentinel');
+ const etagTime=Math.floor(Date.now()/1000)+.2501;
+ await writeFile(etagFile,'first');await utimes(etagFile,etagTime,etagTime);
+ const firstEtagStat=await stat(etagFile,{bigint:true}),firstEtagResponse=await request('/'+etagName);
+ await writeFile(etagFile,'other');await utimes(etagFile,etagTime+.0002,etagTime+.0002);
+ const secondEtagStat=await stat(etagFile,{bigint:true}),secondEtagResponse=await request('/'+etagName);
+ assert.equal(firstEtagStat.size,secondEtagStat.size,'ETag regression uses same-size content');
+ assert.equal(firstEtagStat.mtimeNs/1000000n,secondEtagStat.mtimeNs/1000000n,'ETag regression updates within the same millisecond');
+ assert.notEqual(firstEtagStat.mtimeNs,secondEtagStat.mtimeNs);
+ assert.notEqual(firstEtagResponse.headers.etag,secondEtagResponse.headers.etag,'same-size same-millisecond content changes must get a new ETag');
+ const staleEtag=await request('/'+etagName,{headers:{'if-none-match':firstEtagResponse.headers.etag}});
+ assert.equal(staleEtag.status,200,'old validator must not produce a stale 304');
  const path='/747/assets/a380/fuselage.glb';
  const original=await readFile(new URL('../assets/a380/fuselage.glb',import.meta.url));
  const raw=await request(path);
@@ -119,7 +133,7 @@ try{
  assert.equal(png.status,200);assert.equal(png.headers['content-type'],'image/png');
  assert.equal(png.headers['content-encoding'],undefined);assert.equal(png.headers['content-length'],String(pngBytes.length));
  assert.equal(png.headers['cache-control'],'public, max-age=86400');vary(png);assert.deepEqual(png.body,pngBytes);
- for(const unsafe of ['/747/%2e%2e%2fserver.mjs','/%2egit/config','/assets/%2ehidden.glb']){
+ for(const unsafe of ['/747/%2e%2e%2fserver.mjs','/%2egit/config','/assets/%2ehidden.glb','/%5c'+hiddenName]){
   const response=await request(unsafe,{headers:{'accept-encoding':'gzip'}});
   assert.equal(response.status,404,unsafe);assert.notEqual(response.headers['content-encoding'],'gzip');
  }
@@ -129,4 +143,5 @@ try{
 }finally{
  child.kill('SIGTERM');
  await exited;
+ await Promise.all([unlink(hiddenFile).catch(()=>{}),unlink(etagFile).catch(()=>{})]);
 }

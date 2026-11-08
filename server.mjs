@@ -31,17 +31,19 @@ const port=process.env.PORT==='0'?0:Number(process.env.PORT)||8748;
 const server=http.createServer(async(req,res)=>{
  try{
   const requestPath=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
+  // Backslashes are path separators on Windows; reject them before hidden-file and root checks.
+  if(requestPath.includes('\\')){res.writeHead(404).end('Not found');return;}
   // The production proxy strips /747; accept it here too for local standalone use.
   const pathname=requestPath==='/747'?'/':requestPath.startsWith('/747/')?requestPath.slice(4):requestPath;
   // Never publish local configuration, Git metadata or other hidden files.
   if(pathname.split('/').some(part=>part.startsWith('.'))){res.writeHead(404).end('Not found');return;}
   const target=path.resolve(root,'.'+(pathname==='/'?'/index.html':pathname));
   if(!target.startsWith(root+path.sep)){res.writeHead(403).end();return;}
-  const stat=await fs.promises.stat(target);
+  const stat=await fs.promises.stat(target,{bigint:true});
   if(!stat.isFile()){res.writeHead(404).end('Not found');return;}
-  const ext=path.extname(target),etag=`W/"${stat.size.toString(16)}-${Math.floor(stat.mtimeMs).toString(16)}"`;
-  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':longCache(pathname)?'public, max-age=86400':'no-cache',Vary:'Accept-Encoding','X-Raw-Length':stat.size};
-  const gzip=(ext==='.glb'||(compressible.has(ext)&&stat.size>1024))&&acceptsGzip(req.headers['accept-encoding']);
+  const ext=path.extname(target),etag=`W/"${stat.size.toString(16)}-${stat.mtimeNs.toString(16)}"`;
+  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':longCache(pathname)?'public, max-age=86400':'no-cache',Vary:'Accept-Encoding','X-Raw-Length':stat.size.toString()};
+  const gzip=(ext==='.glb'||(compressible.has(ext)&&stat.size>1024n))&&acceptsGzip(req.headers['accept-encoding']);
   if(gzip)headers['Content-Encoding']='gzip';
   // The weak ETag identifies equivalent raw/gzip representations; Vary separates CDN variants.
   const ifNoneMatch=req.headers['if-none-match'];
@@ -49,7 +51,7 @@ const server=http.createServer(async(req,res)=>{
    tag=tag.trim();return tag==='*'||tag.replace(/^W\//,'')===etag.slice(2);
   });
   if(ifNoneMatch===etag||revalidated){res.writeHead(304,headers).end();return;}
-  if(!gzip)headers['Content-Length']=stat.size;
+  if(!gzip)headers['Content-Length']=stat.size.toString();
   res.writeHead(200,headers);
   if(req.method==='HEAD'){res.end();return;}
   const stream=fs.createReadStream(target);

@@ -136,9 +136,11 @@ run(s,3,{yaw:1});
 assert(Math.abs(((s.heading-taxiHeading+540)%360)-180)>5,`taxi turn ${s.heading}`);
 pass('ground steering',{headingChange:s.heading-taxiHeading});
 
-// 16. Maximum altitude and structural limits are honoured.
-s=new Flight();s.reset('free');s.altitude=AIRCRAFT.maxAltitude+500;s.updateAirData();
-assert(s.altitude<=AIRCRAFT.maxAltitude+500);
+// 16. The airborne integrator clamps a real climb at the service ceiling.
+s=new Flight();s.reset('free');s.altitude=AIRCRAFT.maxAltitude-1;s.speed=100;s.gamma=3*Math.PI/180;s.pitch=3;s.alphaTrimRad=0;
+s.integrateAirborne(1,{}, {thrust:0,drag:0,lift:2*s.weight,alpha:0,qbar:0});
+assert.equal(s.altitude,AIRCRAFT.maxAltitude,'climb cannot pass the service ceiling');
+assert.equal(s.gamma,0,'climb is stopped at the ceiling');assert.equal(s.vs,0,'vertical speed is zero at the ceiling');
 pass('envelope limits',{maxAltitude:AIRCRAFT.maxAltitude,vmo:AIRCRAFT.vmo,mmo:AIRCRAFT.mmo});
 
 console.log(JSON.stringify(report,null,2));

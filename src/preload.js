@@ -3,9 +3,11 @@
 // and a model switch only pays for parsing. It also reports byte progress for the loading
 // indicator and can warm the cache while the browser is idle or the user hovers a model button.
 import {CARGO_LIVERIES} from './cargo-liveries.js';
+import {BoundedStore} from './bounded-store.js';
 
 const ASSETS='/747/assets/';
 const MB=1048576;
+const MAX_PREFETCH_BODY_BYTES=48*MB;
 // [path, approximate bytes]. Sizes only seed the progress bar until the server reports the real length.
 const A380=[['a380/fuselage.glb',10.4*MB],['a380/wings.glb',7.8*MB],['a380/body-right.glb',3.9*MB],['a380/wing-right.glb',3.6*MB],['a380/body-left.glb',3.3*MB],['a380/wing-left.glb',2.6*MB],['a380/nose.glb',2.5*MB]];
 const A330_MODELS=['a330-300-main.ac','cf6-80e1.ac','a333-animations.xml','cf6-80e1.xml','323_blank.png','303_blank.png','landing-gears.png','pw_extra.png','windshield_pane.png','windshield.png','wings_main.png','wings_tail.png','ge_extra.png','ge_fan.png','pw_inside.png'];
@@ -27,7 +29,7 @@ const jobs=new Map();
 const MAX_PARALLEL=4;
 // Downloaded bodies wait here until the model loader asks for the same URL. This does not rely on the
 // browser keeping multi-megabyte entries in its HTTP cache, which private windows do not.
-const store=new Map();
+const store=new BoundedStore(MAX_PREFETCH_BODY_BYTES);
 const nativeFetch=globalThis.fetch?.bind(globalThis);
 
 async function pull(path,estimate,job,priority){

@@ -106,13 +106,32 @@ export function pinSpoilerSkinToNeighbours(mesh){
  for(let v=0;v<count;v++)for(let c=0;c<4;c++)if(spoiler.has(index.getComponent(v,c))&&weight.getComponent(v,c)>0){affected[v]=1;break;}
  const donors=[];for(let v=0;v<count;v++)if(!affected[v])donors.push(v);
  if(!donors.length||donors.length===count)return false;
+ const coordinate=(vertex,axis)=>axis===0?position.getX(vertex):axis===1?position.getY(vertex):position.getZ(vertex);
+ // Build a balanced nearest-neighbour tree once; a full donor scan for every
+ // affected tire/flap vertex scales quadratically on the detailed A380 meshes.
+ const buildTree=vertices=>{
+  if(!vertices.length)return null;
+  const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];
+  for(const vertex of vertices)for(let axis=0;axis<3;axis++){const value=coordinate(vertex,axis);min[axis]=Math.min(min[axis],value);max[axis]=Math.max(max[axis],value);}
+  const spans=max.map((value,axis)=>value-min[axis]);let axis=spans.indexOf(Math.max(...spans));
+  vertices.sort((a,b)=>coordinate(a,axis)-coordinate(b,axis)||a-b);
+  const middle=vertices.length>>1;
+  return {vertex:vertices[middle],axis,left:buildTree(vertices.slice(0,middle)),right:buildTree(vertices.slice(middle+1))};
+ };
+ const tree=buildTree(donors.slice()),nearestDonor=target=>{
+  const point=[position.getX(target),position.getY(target),position.getZ(target)];let best=-1,bestDistance=Infinity;
+  const visit=node=>{
+   if(!node)return;
+   const dx=coordinate(node.vertex,0)-point[0],dy=coordinate(node.vertex,1)-point[1],dz=coordinate(node.vertex,2)-point[2],distance=dx*dx+dy*dy+dz*dz;
+   if(distance<bestDistance||(distance===bestDistance&&node.vertex<best)){best=node.vertex;bestDistance=distance;}
+   const delta=point[node.axis]-coordinate(node.vertex,node.axis),near=delta<=0?node.left:node.right,far=delta<=0?node.right:node.left;
+   visit(near);if(delta*delta<=bestDistance)visit(far);
+  };
+  visit(tree);return best;
+ };
  const newIndex=new Uint16Array(count*4),newWeight=new Float32Array(count*4);
  for(let v=0;v<count;v++){
-  let source=v;
-  if(affected[v]){
-   let best=Infinity;const px=position.getX(v),py=position.getY(v),pz=position.getZ(v);
-   for(const d of donors){const dx=position.getX(d)-px,dy=position.getY(d)-py,dz=position.getZ(d)-pz,dist=dx*dx+dy*dy+dz*dz;if(dist<best){best=dist;source=d;}}
-  }
+  const source=affected[v]?nearestDonor(v):v;
   for(let c=0;c<4;c++){newIndex[v*4+c]=index.getComponent(source,c);newWeight[v*4+c]=weight.getComponent(source,c);}
  }
  geometry.setAttribute('skinIndex',new T.Uint16BufferAttribute(newIndex,4));
@@ -291,6 +310,12 @@ export class A380Aircraft extends Aircraft {
    const lightPoints=[[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99]];
    if(this.beaconPoint)lightPoints.push([this.beaconPoint,0xff4422]);
    for(const [pos,color] of lightPoints){const m=new T.Mesh(new T.SphereGeometry(.19,8,8),new T.MeshBasicMaterial({color}));m.position.copy(pos);this.root.add(m);this.lights.push(m);}
+   // Detached source-only meshes are retained only until a successful load,
+   // so failed loads can still clean them up in dispose().
+   this.discarded.length=0;
+   // Detached source-only meshes are retained only until a successful load,
+   // so failed loads can still clean them up in dispose().
+   this.discarded.length=0;
    return this;
   }catch(error){this.dispose();throw error;}
  }

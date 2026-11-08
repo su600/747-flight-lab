@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import http from 'node:http';
+import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
 
 const root=fileURLToPath(new URL('../',import.meta.url));
@@ -39,6 +40,10 @@ try{
  const svg=await get('/assets/pwa/plane.svg');assert.equal(svg.status,200);assert.match(svg.headers['content-type'],/^image\/svg\+xml/);assert(svg.body.toString().includes('747'));
  const index=await get('/');assert.equal(index.status,200);assert.match(index.body.toString(),/rel="manifest"[^>]+manifest\.webmanifest/);assert.match(index.body.toString(),/apple-touch-icon/);assert.match(index.body.toString(),/<a class="brand" href="\/"/);assert.match(index.body.toString(),/serviceWorker\.register\('\/sw\.js',\{scope:'\/'\}/);
  const worker=await get('/sw.js');assert.equal(worker.status,200);assert.match(worker.headers['content-type'],/^text\/javascript/);assert.match(worker.body.toString(),/addEventListener\('install'/);assert.match(worker.body.toString(),/addEventListener\('fetch'/);assert.match(worker.body.toString(),/offline\.html/);
+ // The root scope is required for the bare-domain PWA, but /space must remain a network passthrough.
+ const listeners=new Map(),swSelf={location:{href:'http://127.0.0.1/sw.js',origin:'http://127.0.0.1'},addEventListener:(name,fn)=>listeners.set(name,fn)};
+ vm.runInNewContext(worker.body.toString(),{self:swSelf,URL});const fetchHandler=listeners.get('fetch');assert(fetchHandler);
+ for(const pathname of ['/space/','/space/app.js']){let intercepted=false;fetchHandler({request:{method:'GET',mode:pathname.endsWith('/')?'navigate':'same-origin',url:'http://127.0.0.1'+pathname},respondWith(){intercepted=true;}});assert.equal(intercepted,false,`${pathname} stays outside Flight Lab service-worker routing`);}
  const offline=await get('/offline.html');assert.equal(offline.status,200);assert(offline.body.toString().includes('恢复网络'));
  const legacy=await get('/747/');assert.equal(legacy.status,200,'legacy /747/ alias remains available');
  console.log('Root-domain PWA manifest, 180/192/512 PNG icons, maskable icon, worker, offline fallback, and legacy /747/ alias passed.');

@@ -8,7 +8,7 @@ export const TYRE_SMOKE_RGB=Object.freeze([.84,.93,.98]);
 // Round-robin particle pool drawn as soft points, with per-particle colour + alpha.
 class Pool{
  constructor(scene,{count,size,color,additive=false,map=null}){
-  this.n=count;this.next=0;this.alive=0;
+  this.n=count;this.next=0;this.alive=0;this.activeIndices=new Int32Array(count);this.activePosition=new Int32Array(count).fill(-1);this.activeCount=0;
   this.pos=new Float32Array(count*3);this.col=new Float32Array(count*4);
   this.vel=new Float32Array(count*3);this.age=new Float32Array(count).fill(1e3);this.life=new Float32Array(count).fill(1);this.alpha=new Float32Array(count);
   for(let i=0;i<count;i++){this.col.set([color[0],color[1],color[2],0],i*4);}
@@ -19,23 +19,30 @@ class Pool{
  }
  emit(p,v,life,alpha){
   const i=this.next;this.next=(i+1)%this.n;
-  if(this.age[i]>=this.life[i])this.alive++;
+  if(this.activePosition[i]<0){const slot=this.activeCount++;this.activeIndices[slot]=i;this.activePosition[i]=slot;this.alive=this.activeCount;}
   this.points.visible=true;
   const k=i*3;this.pos[k]=p.x;this.pos[k+1]=p.y;this.pos[k+2]=p.z;
   this.vel[k]=v?v.x:0;this.vel[k+1]=v?v.y:0;this.vel[k+2]=v?v.z:0;
   this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;
  }
  update(dt){
-  // Idle pools cost nothing: no per-particle loop and no GPU buffer upload.
-  if(this.alive===0){if(this.wasLive){this.points.visible=false;this.wasLive=false;}return;}
-  let live=false;
-  for(let i=0;i<this.n;i++){
-   const prev=this.age[i],age=this.age[i]=prev+dt;
-   if(age>=this.life[i]){if(prev<this.life[i])this.alive--;this.col[i*4+3]=0;continue;}
-   live=true;const k=i*3;this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
-   const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);
+  // Empty or paused pools must not scan slots or upload unchanged particle buffers.
+  if(this.activeCount===0){if(this.wasLive){this.points.visible=false;this.wasLive=false;}this.alive=0;return;}
+  if(dt<=0)return;
+  let slot=0;
+  while(slot<this.activeCount){
+   const i=this.activeIndices[slot],prev=this.age[i],age=this.age[i]=prev+dt;
+   if(age>=this.life[i]){
+    this.col[i*4+3]=0;this.activePosition[i]=-1;
+    const last=--this.activeCount;
+    if(slot<last){const moved=this.activeIndices[last];this.activeIndices[slot]=moved;this.activePosition[moved]=slot;}
+    continue;
+   }
+   const k=i*3;this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
+   const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);slot++;
   }
-  this.points.visible=live||this.wasLive;this.wasLive=live;
+  this.alive=this.activeCount;
+  const live=this.activeCount>0;this.points.visible=live||this.wasLive;this.wasLive=live;
   this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.color.needsUpdate=true;
  }
 }
@@ -119,6 +126,7 @@ export class Airflow{
 
   // Wind streaks.
   const strength=(flying||speed>55?clamp((speed-40)/70,0,1):0)*(mode==='cockpit'?.5:1)*q;
+  if(strength<=.02){this.streaks.visible=false;this.streakSeeded=false;return;}
   const night=timeOfDay==='night',base=(night?.2:timeOfDay==='dusk'?.5:.6)*strength;
   const len=clamp(speed*.1,0,15);
   if(!this.streakSeeded){for(let i=0;i<this.streakN;i++)this.respawn(i,planePos,dir,60);this.streakSeeded=true;}
