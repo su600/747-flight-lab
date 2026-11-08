@@ -406,6 +406,7 @@ function warningList(){
  return list;
 }
 function updateUI(){
+ document.body.classList.toggle('ground-inspect',sim.mode==='inspect');
  setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[plane.type].name:sim.phase);$('#takeControl').hidden=!['takeoff','land'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
  setHTML($('#speedValue'),Math.round(sim.speed*3.6)+'<small> km/h</small>');setText($('#speedKts'),Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
  setHTML($('#altValue'),Math.round(sim.altitude)+'<small> m</small>');setText($('#verticalValue'),'垂直速度 '+(sim.vs>=0?'+':'')+sim.vs.toFixed(1)+' m/s');

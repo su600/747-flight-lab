@@ -229,7 +229,8 @@ export class World{
   this.box(towerX,78,towerZ,.5,5,.5,dark,true);this.box(towerX,81,towerZ,1.4,1.4,1.4,mat('#d34a40',.5,.05));
   // Airport hangars.
   for(let i=0;i<3;i++){this.box(1120+i*210,18,-560,170,36,130,mat('#c8cabe'),true);this.box(1120+i*210,14,-493,140,25,1,mat('#607477'));this.label('HANGAR '+(i+1),1120+i*210,31,-492,85,6,false,'#35515c');}
-  for(const x of [-1300,-800,-300,200,700]){this.box(x,15,-225,.5,30,.5,dark,true);this.box(x,30,-225,9,.4,2,dark);}
+  // Floodlight masts stand behind the terminal, not in the default presentation shot.
+  for(const x of [-1300,-800,-300,200,700]){this.box(x,15,-760,.5,30,.5,dark,true);this.box(x,30,-760,9,.4,2,dark);}
   this.buildServiceVehicles(dark);
   // Distant urban edge and tree belts use instancing to keep the airport responsive.
   const temp=new T.Object3D(),col=new T.Color();

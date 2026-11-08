@@ -74,10 +74,10 @@ body.cockpit-mode .craft-chip{display:none}
 .tick-label{position:absolute;bottom:5px;transform:translateX(-50%);font:600 11px/1 var(--mono);color:var(--t2);letter-spacing:.04em}
 .tick-label.card{color:var(--amber);font-size:13px;font-weight:800}
 .compass-needle{position:absolute;left:50%;top:-1px;width:0;height:0;margin-left:-6px;border:6px solid transparent;border-top:9px solid var(--amber);filter:drop-shadow(0 0 6px rgba(255,178,62,.8))}
-.compass-box{position:absolute;left:50%;bottom:-19px;transform:translateX(-50%);display:flex;align-items:baseline;gap:7px;padding:5px 14px;border-radius:999px;background:linear-gradient(180deg,rgba(14,30,43,.92),rgba(6,15,23,.95));border:1px solid var(--line-2);box-shadow:0 8px 20px rgba(0,8,16,.4)}
+.compass-box{position:absolute;left:50%;bottom:-19px;transform:translateX(-50%);display:flex;align-items:baseline;gap:7px;padding:5px 14px;border-radius:999px;background:linear-gradient(180deg,rgba(14,30,43,.92),rgba(6,15,23,.95));border:1px solid var(--line-2);box-shadow:0 8px 20px rgba(0,8,16,.4);white-space:nowrap}
 .compass-box span{font:600 9px/1 var(--mono);letter-spacing:.22em;color:var(--cyan)}
-.compass-box strong{font:600 20px/1 var(--num);letter-spacing:.04em;font-variant-numeric:tabular-nums}
-.compass-box small{font-size:12px;color:var(--t2)}
+.compass-box strong{display:inline-flex;align-items:baseline;gap:2px;white-space:nowrap;font:600 20px/1 var(--num);letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.compass-box small{display:inline;font-size:12px;line-height:1;white-space:nowrap;color:var(--t2)}
 .craft-chip{position:fixed;z-index:4;top:max(86px,calc(env(safe-area-inset-top) + 72px));left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;font-size:12px;color:var(--t1);text-shadow:0 1px 10px rgba(0,0,0,.6);white-space:nowrap;pointer-events:none}
 .craft-chip b{font:700 11px/1 var(--mono);letter-spacing:.22em}
 .craft-chip i{width:3px;height:3px;border-radius:50%;background:var(--amber)}
@@ -389,6 +389,19 @@ dialog .primary-btn{margin-top:14px}
  #touchControls{right:max(10px,env(safe-area-inset-right));bottom:calc(var(--deck-b) + env(safe-area-inset-bottom) + var(--deck-h) + 12px);grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,44px);gap:6px}
  #touchControls button{border-radius:14px}
 }
+/* Portrait phones with room for it: three top rows (header, missions, camera views);
+   the tool rail becomes a slim right-hand column so the aircraft keeps the centre. */
+@media(max-width:760px) and (orientation:portrait){
+ .cam-dock{top:calc(max(10px,env(safe-area-inset-top)) + 112px)}
+ .rail{top:calc(max(10px,env(safe-area-inset-top)) + 168px);left:auto;right:max(10px,env(safe-area-inset-right));flex-direction:column;gap:6px}
+ .rail button{width:42px;height:42px;border-radius:13px;font-size:19px}
+ #drawer{right:calc(max(10px,env(safe-area-inset-right)) + 50px)}
+ .compass-box{gap:5px;padding:4px 9px}
+ .compass-box strong{font-size:18px}
+ .compass-box small{font-size:10px}
+}
+/* The arrow pad flies the aircraft; it has nothing to do during ground observation. */
+@media(pointer:coarse),(any-pointer:coarse),(max-width:760px){body.ground-inspect #touchControls,body:has(.mode[data-mode="inspect"].active) #touchControls{display:none}}
 @media(max-width:950px) and (orientation:landscape) and (max-height:500px){
  :root{--deck-h:112px}
  .modes{right:calc(max(10px,env(safe-area-inset-right)) + 210px)}
