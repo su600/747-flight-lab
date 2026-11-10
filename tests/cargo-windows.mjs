@@ -82,13 +82,18 @@ function readPng(path){
  return {w,h,data:out};
 }
 const pixelAt=(img,x,y)=>{assert(x>=0&&y>=0&&x<img.w&&y<img.h,`pixel ${x},${y} outside ${img.w}x${img.h}`);const i=(y*img.w+x)*3;return [img.data[i],img.data[i+1],img.data[i+2]];};
-// Passenger window artwork is neutral grey/dark. Painted freight colours
-// (purple, orange, white body, red) are saturated or bright and never match.
-const windowGrey=([r,g,b])=>Math.max(r,g,b)<205&&Math.max(r,g,b)-Math.min(r,g,b)<16;
-// Count window-grey pixels in a small core around each footprint centre.
-function windowPixelsAt(img,cx,cy,rx=2,ry=1){
- let n=0;for(let dy=-ry;dy<=ry;dy++)for(let dx=-rx;dx<=rx;dx++)if(windowGrey(pixelAt(img,cx+dx,cy+dy)))n++;
- return n;
+// Passenger window artwork is a small neutral-grey rectangle. A livery
+// cheatline is also neutral but runs the full width, and painted freight
+// colours (purple, orange, red) are saturated, so neither is window art.
+const windowGrey=([r,g,b])=>Math.max(r,g,b)<205&&Math.max(r,g,b)-Math.min(r,g,b)<40;
+// Count window art at a footprint centre: a neutral pixel whose horizontal run
+// is short enough to be a window rather than a full-width livery band.
+function windowPixelsAt(img,cx,cy,limit=30,thr=24){
+ if(!windowGrey(pixelAt(img,cx,cy)))return 0;
+ let left=0,right=0;
+ while(left<limit&&windowGrey(pixelAt(img,cx-left-1,cy)))left++;
+ while(right<limit&&windowGrey(pixelAt(img,cx+right+1,cy)))right++;
+ return (left+right)<thr?1:0;
 }
 // Texture loads become in-memory textures whose image dimensions come from the
 // real PNG header; the URL is kept so tests can read exactly what was bound.
