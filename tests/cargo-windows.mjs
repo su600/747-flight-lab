@@ -148,7 +148,7 @@ async function check747(){
   assert.equal(lights.visible,false,`747 ${id}: night cabin-window overlay hidden`);
   updateCabinLights(plane,'day');assert.equal(lights.visible,false,`747 ${id}: overlay hidden by day`);
   const atlas=atlasFileFor(plane.liveryMats[0].map);
-  assert.match(plane.liveryMats[0].map.userData.url,new RegExp(`${id==='fedex'?'fedex-v2':'sf'}\\.png$`),'freight atlas bound');
+  assert.match(plane.liveryMats[0].map.userData.url,new RegExp(`${id==='fedex'?'fedex-v2':'sf'}\\.png(?:\\?.*)?$`),'freight atlas bound');
   // Every passenger window footprint, on both decks, must be free of window art.
   // (Pre-fix, the upper-deck rows at y=60 and y=338 still carried window art.)
   for(const [y] of WINDOW_ROWS){
