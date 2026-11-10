@@ -33,6 +33,6 @@ export const CARGO_LIVERIES = [
       accent: '#c8102e',
     },
     markText: 'AIRLINES · 顺丰航空 · SF',
-    description: '白/浅灰机身、黑色垂尾与白色环状 SF 标志；下腹多道黑灰线、向尾部延伸的红色斜带及深色发动机罩。字样与环形图案为原创绘制。',
+    description: '白色机身、深灰下腹与多道黑/白细线、红色腰线；黑色垂尾与白色 SF 圆标，深色发动机罩配白色 SF 圆标。字样与环形图案为原创绘制。',
   },
 ];
