@@ -12,11 +12,8 @@ import {setCockpitAirframeVisibility,cameraModeForWiperToggle} from './cockpit-v
 import {StableDisplay} from './display.js';
 import {Airflow} from './airflow.js';
 import {createCameraGestures} from './camera-gestures.js';
-const domCache=new Map();
-const $=s=>{let e=domCache.get(s);if(!e){e=document.querySelector(s);if(e)domCache.set(s,e);}return e;},all=s=>Array.from(document.querySelectorAll(s));
-const lastText=new WeakMap();
-const setText=(el,v)=>{if(lastText.get(el)!==v){lastText.set(el,v);el.textContent=v;}};
-const setHTML=(el,v)=>{if(lastText.get(el)!==v){lastText.set(el,v);el.innerHTML=v;}};
+import {createCourseProgress,advanceCourse} from './lesson-course.js';
+import {$,all,setText,setHTML} from './ui/dom.js';
 const _quat=new T.Quaternion(),_euler=new T.Euler(0,0,0,'YZX'),_yAxis=new T.Vector3(0,1,0),_off=new T.Vector3(),_v1=new T.Vector3(),_shake=new T.Vector3();
 const COCKPIT_EYE=new T.Vector3(24.05,3.8,-.55),COCKPIT_LOOK=new T.Vector3(124.05,-13.83,-.55),CHASE_LOOK=new T.Vector3(22,4,0),CHASE_POS=new T.Vector3(-115,35,7),WING_POS=new T.Vector3(3,1.3,3.5),WING_LOOK=new T.Vector3(-12,1,35);
 const radians=x=>x*Math.PI/180;
@@ -37,13 +34,7 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeig
 const world=new World(scene,renderer),sim=new Flight();
 let plane=new Aircraft(),cockpit=null,airflow=null;
 const aircraftCache=new Map();const parkedAircraft=[];let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
-const REALITY_TAGS={real:'真机',family:'同系列',none:'无真机'};
-const AIRCRAFT_INFO={
- b747:{name:'BOEING 747–400',gear:'18 个轮子，5 组支撑',engines:4,engine:'GE CF6 · N1 %'},
- a380:{name:'AIRBUS A380–800',gear:'22 个轮子，5 组支撑',engines:4,engine:'TRENT 900 · N1 %',description:'全长双层客舱和四台发动机。外形采用 FlyByWire A380X 模型，非商业用途。'},
- a330:{name:'AIRBUS A330–303',gear:'10 个轮子，3 组支撑',engines:2,engine:'GE CF6-80E1 · N1 %',description:'FlightGear A330-303 外部几何与 GE CF6-80E1 发动机，包含按本模拟器状态映射的简化部件动画。'},
- b777:{name:'BOEING 777–200LR',gear:'14 个轮子，3 组支撑',engines:2,engine:'GE90 · N1 %',description:'FlightGear 777-200LR 客机和 777F 货机外形，双发宽体及六轮主起落架。部件运动为简化模拟。'}
-};
+import {REALITY_TAGS,AIRCRAFT_INFO} from './ui/aircraft-info.js';
 let originalAbout='',originalEmitters=null;
 let camMode='orbit',orbitAngle=.87,orbitHeight=.29,orbitDistance=137,focus=new T.Vector3(0,2,0),firstCamera=true,rate=1,panel=null,toastTimer,frameCount=0,elapsed=0,fps=0;
 let orbitOverview=true,overviewCraft=null;
@@ -52,6 +43,7 @@ let lookYaw=0,lookPitch=0,viewFov=43,towerZoom=1,cancelCameraGestures=()=>{};
 let lastViewX=NaN,lastW=0,lastH=0,lastFov=0,lastNear=0;
 const keys=new Set(),touch=new Set(),surface={roll:0,pitch:0,yaw:0};
 let manualTakeoffGuide=false;
+let courseProgress=createCourseProgress();
 const camPos=new T.Vector3(),camTarget=new T.Vector3(),targetPos=new T.Vector3(),planePos=new T.Vector3();
 const lookDir=new T.Vector3(),lookRight=new T.Vector3(),panRight=new T.Vector3(),panUp=new T.Vector3(),inverseHeading=new T.Quaternion();
 const attitude=$('#attitude').getContext('2d');
@@ -91,7 +83,7 @@ function zoomCamera(factor){
  else if(camMode==='tower')towerZoom=clamp(towerZoom*factor,.1,8);
 }
 function focusPart(part){setCam('orbit');orbitOverview=false;const specs={gear:[9,-3,0,52,.1,1.1],wing:[-5,0,17,65,.5,.9],tail:[-31,4,0,53,.25,1.0],engine:[2,-2,13,35,.12,.7]};if(plane.type==='a330'){specs.gear=[-5.8,-4.5,5,45,.1,1.1];specs.engine=[-1.5,-2.35,9.4,32,.12,.7];specs.tail=[-27,4,0,50,.25,1];}const [x,y,z,d,h,a]=specs[part];focus.set(x,y,z);orbitDistance=d;orbitHeight=h;orbitAngle=a;}
-function go(mode){manualTakeoffGuide=false;sim.reset(mode);surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);rate=1;$('#rate').textContent='1×';$('#retryDialog').close();all('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));if(mode==='inspect'){setCam('orbit');}else if(mode==='land'){setCam('chase');}else if(mode==='takeoff'){setCam('orbit');orbitAngle=2;orbitHeight=.24;}else setCam('chase');$('#drawer').hidden=true;panel=null;all('[data-panel]').forEach(b=>b.classList.remove('active'));syncThrottleUI();updateUI();}
+function go(mode){manualTakeoffGuide=false;courseProgress=createCourseProgress();sim.reset(mode);surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);rate=1;$('#rate').textContent='1×';$('#retryDialog').close();all('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));if(mode==='inspect'){setCam('orbit');}else if(mode==='land'){setCam('chase');}else if(mode==='takeoff'){setCam('orbit');orbitAngle=2;orbitHeight=.24;}else setCam('chase');$('#drawer').hidden=true;panel=null;all('[data-panel]').forEach(b=>b.classList.remove('active'));syncThrottleUI();updateUI();}
 function openPanel(name){panel=panel===name?null:name;$('#drawer').hidden=!panel;all('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panel));all('.drawer-content').forEach(s=>s.hidden=s.id!==panel+'Panel');$('#drawerTitle').textContent={aircraft:'选择飞机',parts:'可动部件',livery:'换一身新涂装',world:'天空，由你选择',about:'认识这架飞机'}[panel]||'';}
 function toggleGear(){notify(sim.control('gear',sim.gearTarget?0:1));}
 function flapStep(){const list=[0,5,10,20,25,30],i=list.indexOf(sim.flapTarget);notify(sim.control('flaps',list[(i+1)%list.length]));}
@@ -384,17 +376,8 @@ const viewHint=matchMedia('(pointer:coarse)').matches?'单指拖动环绕，双�
 const lessons={inspect:['01 / EXPLORE',viewHint],takeoff:['02 / TAKEOFF','起飞需要足够的速度：推力杆推到 TO，速度够了再轻轻抬头，机翼就产生升力。'],land:['03 / LANDING','着陆要放下襟翼和起落架。主轮轻轻接地后，扰流板、反推和脚刹一起帮你减速。'],free:['04 / YOUR TURN','方向键控制飞机，Shift 推油门、Ctrl 收油门。松开左右键，辅助驾驶会帮你把机翼放平。'],manual:['04 / YOUR TURN','你正在驾驶飞机。推力杆给能量，操纵杆改变姿态；速度太慢或抬头太高就会失速。']};
 function manualTakeoffLesson(){
  if(!manualTakeoffGuide)return null;
- if(sim.onGround){
-  if(sim.park)return ['01 / CHECKLIST','检查襟翼 20°、起落架已放下；按 P 松开停留刹车，再把推力杆推到 TO。'];
-  if(sim.speed<1)return ['01 / THRUST','停留刹车已松开。把推力杆推到 TO，发动机建立推力后开始滑跑。'];
-  if(sim.speed<74)return ['02 / ROLL','沿跑道保持方向，继续加速；速度接近 270 km/h 时准备轻轻抬头。'];
-  return ['03 / ROTATE','已接近抬轮速度，轻轻按住 ↓ / S 抬头；不要猛拉操纵杆。'];
- }
- if(sim.altitude<35)return ['04 / LIFTOFF','飞机已经离地，轻轻保持爬升姿态；确认持续爬升后按 G 收起落架。'];
- if(sim.gearTarget>.5)return ['05 / GEAR','飞机正在爬升，按 G 收起落架；保持平缓爬升。'];
- if(sim.flapTarget>0)return ['06 / FLAPS','稳定爬升后，在“部件”面板逐步将襟翼调到 0°。'];
- if(sim.altitude<500)return ['06 / CLIMB','起落架和襟翼已收起，保持平缓爬升至 500 m。'];
- return ['07 / COMPLETE','手动起飞练习完成！你已离地并完成初始爬升。'];
+ const stage=advanceCourse(courseProgress,{onGround:sim.onGround,park:sim.park,speed:sim.speed,altitude:sim.altitude,gear:sim.gear,flaps:sim.flaps});
+ return [`${stage.no} · ${stage.title}`,stage.text];
 }
 function warningList(){
  const list=[];

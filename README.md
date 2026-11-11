@@ -30,7 +30,7 @@ npm ci
 npm start
 ```
 
-然后打开 <http://localhost:8748/747/>。Windows 用户首次运行前也需在项目目录执行 `npm ci`；安装完成后可双击 `启动747模拟器.bat`。
+然后打开 <http://localhost:8748/>（旧链接 <http://localhost:8748/747/> 仍可用）。Windows 用户首次运行前也需在项目目录执行 `npm ci`；安装完成后可双击 `启动747模拟器.bat`。
 
 ### Docker Compose
 
@@ -40,7 +40,7 @@ npm start
 docker compose up -d --build
 ```
 
-打开 <http://127.0.0.1:18748/747/>。结束运行：
+打开 <http://127.0.0.1:18748/>。结束运行：
 
 ```bash
 docker compose down
@@ -106,6 +106,4 @@ node tests/a380-paint.mjs # A380 涂装加载与状态表
 本项目中的飞行力学和自动起降流程为简化教学演示；A330、A380 和 777 也复用部分 747 飞行模型或座舱逻辑。模型尺寸、涂装真实性和动画完整性不等同于工程校核或真实飞行训练。
 
 ---
-> 本项目由 **CodeX、Claude Code、Pi、Copilot** 使用 **GPT、Claude模型** 生成
-
-> MD由 **Pi coding agent** 使用 **gpt-6-luna** 生成 · 2026-11-03 16:57 CST
+> 本项目由 **CodeX、Claude Code、Pi、Copilot** 使用 **GPT、Claude模型** 生成 · MD 由 **Pi coding agent** 使用 **gpt-6-luna** 生成 · 2026-11-03 16:57 CST

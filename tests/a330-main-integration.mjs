@@ -98,7 +98,8 @@ T.TextureLoader.prototype.load=function(url,onLoad,_progress,onError){
 };
 
 const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
-const infoStart=source.indexOf('const AIRCRAFT_INFO='),infoEnd=source.indexOf('\nlet originalAbout',infoStart);
+const infoSource=await readFile(new URL('../src/ui/aircraft-info.js',import.meta.url),'utf8');
+const infoStart=infoSource.indexOf('export const AIRCRAFT_INFO='),infoEnd=infoSource.length;
 const emitterStart=source.indexOf('function setEmitters('),emitterEnd=source.indexOf('\nasync function selectAircraft',emitterStart);
 const first=source.indexOf('function syncCabinTime('),last=source.indexOf('// ---- UI',first);
 const snapshotStart=source.indexOf('snapshot(){return{'),snapshotEnd=source.indexOf('};}};',snapshotStart);
@@ -117,7 +118,7 @@ vm.runInContext(`
  let plane=new Aircraft();scene.add(plane.root);
  const originalEmitters={engines:[],tips:[],mainGear:[]};let originalAbout='<p>747</p>';
  const aircraftCache=new Map([['b747',Promise.resolve(plane)]]);let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
- ${source.slice(infoStart,infoEnd)}
+ ${infoSource.slice(infoStart,infoEnd).replace('export const','const')}
  ${source.slice(emitterStart,emitterEnd)}
  ${source.slice(first,last)}
  const snapshotHost={${snapshotMethod}};
