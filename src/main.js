@@ -47,7 +47,7 @@ let courseProgress=createCourseProgress();
 const camPos=new T.Vector3(),camTarget=new T.Vector3(),targetPos=new T.Vector3(),planePos=new T.Vector3();
 const lookDir=new T.Vector3(),lookRight=new T.Vector3(),panRight=new T.Vector3(),panUp=new T.Vector3(),inverseHeading=new T.Quaternion();
 const attitude=$('#attitude').getContext('2d');
-const phoneViewport=window.matchMedia('(max-width:760px)');
+const copilotHidden=()=>getComputedStyle(document.querySelector('.copilot')).display==='none';
 function notify(s){if(!s)return;$('#toast').textContent=s;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4500);}
 const sound={enabled:false,ctx:null};
 display.onSuspend=()=>{keys.clear();touch.clear();cancelCameraGestures();if(sound.ctx)sound.gain.gain.setTargetAtTime(0,sound.ctx.currentTime,.05);};
@@ -391,7 +391,7 @@ function warningList(){
 }
 function updateUI(){
  document.body.classList.toggle('ground-inspect',sim.mode==='inspect');
- setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[plane.type].name:(phoneViewport.matches&&manualTakeoffLesson()?.join(' · '))||sim.phase);$('#takeControl').hidden=!['takeoff','land'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
+ setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[plane.type].name:(copilotHidden()&&manualTakeoffLesson()?.join(' · '))||sim.phase);$('#takeControl').hidden=!['takeoff','land'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
  setHTML($('#speedValue'),Math.round(sim.speed*3.6)+'<small> km/h</small>');setText($('#speedKts'),Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
  setHTML($('#altValue'),Math.round(sim.altitude)+'<small> m</small>');setText($('#verticalValue'),'垂直速度 '+(sim.vs>=0?'+':'')+sim.vs.toFixed(1)+' m/s');
  setHTML($('#headingValue'),String(Math.round(sim.heading)%360).padStart(3,'0')+'<small> °</small>');
