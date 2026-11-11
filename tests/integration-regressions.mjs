@@ -14,7 +14,8 @@ const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve
  const cockpit=createA380GlassMaterial(new T.MeshStandardMaterial({name:'A380X_LIGHT_GLASS'}));
  assert(passenger?.isMeshPhysicalMaterial&&cockpit?.isMeshPhysicalMaterial,'A380 passenger and cockpit panes use physical glass');
  assert.equal(passenger.map,passengerMap,'passenger-window alpha/shape texture is retained');
- for(const pane of [passenger,cockpit]){assert.equal(pane.transparent,true);assert.equal(pane.depthWrite,false);assert.equal(pane.clearcoat,1);assert(pane.roughness<.15&&pane.envMapIntensity>2);}
+ assert.equal(passenger.transparent,true);assert.equal(passenger.depthWrite,false);assert.equal(passenger.clearcoat,.75);assert(passenger.roughness<.15&&passenger.envMapIntensity<1);
+ assert.equal(cockpit.transparent,false);assert.equal(cockpit.depthWrite,true);assert.equal(cockpit.clearcoat,1);assert.equal(cockpit.opacity,1);assert(cockpit.envMapIntensity<1);
  assert.equal(createA380GlassMaterial(new T.MeshStandardMaterial({name:'A380X_FUSE1'})),null,'non-glass fuselage material is untouched');
  passenger.dispose();cockpit.dispose();passengerMap.dispose();
 }

@@ -61,9 +61,12 @@ const windshieldMeshes=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().som
 assert(windshieldMeshes.length>0&&windshieldMeshes.every(o=>o.visible),'windshield source material resolves to visible physical glass meshes');
 const windshieldMaterial=[...new Set(windshieldMeshes.flatMap(o=>[o.material].flat()))].find(m=>m?.name==='A380_COCKPIT_WINDSCREEN');
 assert(windshieldMaterial?.isMeshPhysicalMaterial,'cockpit windshield glass is physical');
-assert.equal(windshieldMaterial.transparent,true);assert.equal(windshieldMaterial.depthWrite,false);assert.equal(windshieldMaterial.clearcoat,1);
+assert.equal(windshieldMaterial.transparent,false);assert.equal(windshieldMaterial.depthWrite,true);assert.equal(windshieldMaterial.opacity,1);assert.equal(windshieldMaterial.color.getHex(),0x061927);assert.equal(windshieldMaterial.clearcoat,1);assert(windshieldMaterial.envMapIntensity<1,'bright environment reflections cannot wash out the dark windshield');
 const passengerWindows=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_PAX_WINDOW'))passengerWindows.push(o);});
 assert.equal(passengerWindows.length,18,'passenger glazing is retained');assert(passengerWindows.every(o=>o.visible),'passenger glass meshes are visible');
+const passengerMaterial=[...new Set(passengerWindows.flatMap(o=>[o.material].flat()))][0],uv=passengerWindows[0].geometry.getAttribute('uv');
+assert(passengerMaterial?.map,'passenger panes retain their alpha glass texture');assert(Math.abs(passengerMaterial.map.repeat.x-1/32767)<1e-12&&Math.abs(passengerMaterial.map.repeat.y-1/32767)<1e-12,'raw 16-bit window UVs are scaled back into the glass texture');
+assert(uv.getX(0)*passengerMaterial.map.repeat.x>.35&&uv.getX(0)*passengerMaterial.map.repeat.x<.66,'scaled passenger UV samples the dark glass region, not a transparent texture edge');
 const compression=aircraft.bindings.find(b=>b.control==='gearCompression');
 assert(compression,'A380 nose-gear compression clip is bound');assert.equal(compression.action.getClip().name,'c_gear_comp');
 const gearTilts=aircraft.bindings.filter(b=>b.control==='gearTilt');assert.equal(gearTilts.length,4,'all main-gear bogie tilt clips are bound');

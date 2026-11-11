@@ -243,12 +243,17 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
 export function createA380GlassMaterial(source){
  const cockpit=source.name==='A380X_LIGHT_GLASS',passenger=source.name==='A380_PAX_WINDOW';
  if(!cockpit&&!passenger)return null;
+ if(cockpit)return new T.MeshPhysicalMaterial({
+  name:'A380_COCKPIT_WINDSCREEN',color:0x061927,map:null,
+  transparent:false,opacity:1,side:T.DoubleSide,depthWrite:true,
+  roughness:.16,metalness:.1,clearcoat:1,clearcoatRoughness:.04,
+  reflectivity:.55,envMapIntensity:.35
+ });
  return new T.MeshPhysicalMaterial({
-  name:cockpit?'A380_COCKPIT_WINDSCREEN':'A380_PAX_WINDOW',
-  color:cockpit?0x17364a:0x7898a8,map:source.map??null,
-  transparent:true,opacity:cockpit?.96:(source.opacity??1),alphaTest:source.alphaTest??0,
-  side:T.DoubleSide,depthWrite:false,roughness:cockpit?.07:.12,metalness:.12,
-  clearcoat:1,clearcoatRoughness:.025,reflectivity:.95,envMapIntensity:2.2
+  name:'A380_PAX_WINDOW',color:0x7898a8,map:source.map??null,
+  transparent:true,opacity:source.opacity??1,alphaTest:source.alphaTest??0,
+  side:T.DoubleSide,depthWrite:false,roughness:.12,metalness:.08,
+  clearcoat:.75,clearcoatRoughness:.05,reflectivity:.55,envMapIntensity:.6
  });
 }
 export class A380Aircraft extends Aircraft {
@@ -270,7 +275,7 @@ export class A380Aircraft extends Aircraft {
      // light, without emissive paint or changing shadows or other aircraft.
      // Keep the portable source colours, diffuse UVs and PBR factors; omit the
      // converted normal maps to retain the lower-cost material path.
-     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const glass=createA380GlassMaterial(m),simple=glass||new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
+     const simplify=m=>{if(!materials.has(m)){if(m.map&&m.name==='A380_EXTERIOR_TYRES'){/* Tire TEXCOORD_0 is quantized to 14 bits. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}if(m.map&&m.name==='A380_PAX_WINDOW'){/* Passenger-window UVs are raw signed 16-bit values: restore their authored [0,1] range. */m.map.repeat.set(1/32767,1/32767);m.map.offset.set(0,0);m.map.needsUpdate=true;}const glass=createA380GlassMaterial(m),simple=glass||new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
      o.material=Array.isArray(o.material)?mats.map(simplify):simplify(mats[0]);
      for(const m of [o.material].flat())if(m.map)m.map.anisotropy=4;
     });invisible.forEach(o=>{o.removeFromParent();this.discarded.push(o);});
