@@ -1,5 +1,6 @@
 // Procedural textures, geometry and landmark layout shared by the airport/sky scene.
 import * as T from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 let seed=747;export const rnd=()=>{seed=(1664525*seed+1013904223)>>>0;return seed/4294967296;};
 const matCache=new Map();
 export const mat=(color,roughness=.8,metalness=0)=>{const key=color+'|'+roughness+'|'+metalness;let m=matCache.get(key);if(!m){m=new T.MeshStandardMaterial({color,roughness,metalness,envMapIntensity:.4});matCache.set(key,m);}return m;};
