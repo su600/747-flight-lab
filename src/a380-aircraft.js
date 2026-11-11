@@ -243,18 +243,24 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
 export function createA380GlassMaterial(source){
  const cockpit=source.name==='A380X_LIGHT_GLASS',passenger=source.name==='A380_PAX_WINDOW';
  if(!cockpit&&!passenger)return null;
- if(cockpit)return new T.MeshPhysicalMaterial({
-  name:'A380_COCKPIT_WINDSCREEN',color:0x061927,map:null,
-  transparent:false,opacity:1,side:T.DoubleSide,depthWrite:true,
-  roughness:.16,metalness:.1,clearcoat:1,clearcoatRoughness:.04,
-  reflectivity:.55,envMapIntensity:.35
- });
- return new T.MeshPhysicalMaterial({
-  name:'A380_PAX_WINDOW',color:0x7898a8,map:source.map??null,
-  transparent:true,opacity:source.opacity??1,alphaTest:source.alphaTest??0,
-  side:T.DoubleSide,depthWrite:false,roughness:.12,metalness:.08,
-  clearcoat:.75,clearcoatRoughness:.05,reflectivity:.55,envMapIntensity:.6
- });
+ // Unlit dark glass: PBR reflections of the bright sky/environment washed both
+ // panes out to pale grey in the real renderer, so keep them reliably dark.
+ if(cockpit)return new T.MeshBasicMaterial({name:'A380_COCKPIT_WINDSCREEN',color:0x0a1a28,side:T.DoubleSide,fog:true});
+ return new T.MeshBasicMaterial({name:'A380_PAX_WINDOW',color:0x0e1822,map:source.map??null,transparent:true,opacity:source.opacity??1,alphaTest:source.alphaTest??0,side:T.DoubleSide,depthWrite:false});
+}
+// The fuselage skin has real window and windshield openings. Behind them the
+// renderer showed the bright inner side of the shell, which looked like missing
+// glass. A near-black copy of the skin, inset 12 cm, makes those openings read
+// as dark glazing without changing the skin, its paint or collisions.
+export function addA380DarkInterior(model){
+ const hulls=[];model.traverse(o=>{if(o.isSkinnedMesh&&/^Mesh_44110(?:_[12])?$/.test(o.name))hulls.push(o);});
+ for(const hull of hulls){
+  const material=new T.MeshStandardMaterial({name:'A380_INTERIOR_DARK',color:0x03070b,roughness:1,metalness:0,envMapIntensity:0});
+  material.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('#include <skinning_vertex>','#include <skinning_vertex>\n transformed-=normalize(objectNormal)*0.12;');};
+  const dark=new T.SkinnedMesh(hull.geometry,material);dark.name='a380-dark-interior';dark.bind(hull.skeleton,hull.bindMatrix);
+  dark.frustumCulled=false;dark.castShadow=dark.receiveShadow=false;hull.parent.add(dark);
+ }
+ return hulls.length;
 }
 export class A380Aircraft extends Aircraft {
  constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;}
@@ -316,6 +322,7 @@ export class A380Aircraft extends Aircraft {
     this.beaconPoint=projectSurfacePoint(this.root,fuselageSurface,{x:0,z:0,clearance:.12});
    }else if(!this.loadOptions.loader)throw Error('A380 fuselage surface missing for beacon placement');
    clearDoorPanelsFromSkin(model,this.root.getWorldPosition(new T.Vector3()));
+   addA380DarkInterior(model);
    this.paint=installA380Paint(this,{sideY:-4.2,loadTexture:this.loadOptions.loadTexture,timeoutMs:this.liveryTimeoutMs});
    this.paintLivery=livery=>this.setLivery(livery.id);
    const lightPoints=[[this.wingtipPoints[0],0xff3333],[this.wingtipPoints[1],0x33ff99]];
