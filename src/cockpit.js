@@ -6,7 +6,7 @@ export class Cockpit extends Aircraft{
   const origin=new T.Group();origin.position.set(-25.6,2.65,0);this.native.add(origin);this.native.scale.copy(scale);
   const parts=[['cockpit',[0,0,0],0],['forward',[.751,.475,0],22],['overhead',[1.46,1.374,0],-162.5],['yokes',[0,0,0],0],['seats',[0,0,0],0]];
   // Request every section at once; only parsing is sequential.
-  const sources=await Promise.all(parts.map(([name])=>Promise.all(['ac','xml'].map(ext=>fetch('/747/assets/aircraft/cockpit/'+name+'.'+ext).then(r=>{if(!r.ok)throw Error(name);return r.text();})))));
+  const sources=await Promise.all(parts.map(([name])=>Promise.all(['ac','xml'].map(ext=>fetch('/assets/aircraft/cockpit/'+name+'.'+ext).then(r=>{if(!r.ok)throw Error(name);return r.text();})))));
   for(const [index,[name,pos,angle]] of parts.entries()){
    const [ac,xml]=sources[index];const g=parseAC(ac,'cockpit/');g.position.fromArray(pos);g.rotation.z=angle*Math.PI/180;origin.add(g);this.bind(g,new DOMParser().parseFromString(xml,'text/xml').documentElement);
   }

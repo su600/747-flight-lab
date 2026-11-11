@@ -7,7 +7,7 @@ import {A380_STYLE} from './a380-liveries.js';
 import {projectSurfacePoint} from './navigation-lights.js';
 
 // FlyByWire A380X, CC BY-NC 4.0. See assets/a380/CREDITS.txt.
-const MODEL_ROOT='/747/assets/a380/';
+const MODEL_ROOT='/assets/a380/';
 // The 10.44 MB fuselage can take ~90 s on a 117 KB/s public connection.
 // This per-part deadline includes transfer and decoding, remains finite, and
 // can still be overridden for tests. Parts load serially to bound memory and

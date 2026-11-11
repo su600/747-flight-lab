@@ -1,10 +1,10 @@
 <!doctype html><meta charset="utf-8"><style>html,body{margin:0}canvas{display:block}</style>
-<script type="importmap">{"imports":{"three":"/747/node_modules/three/build/three.module.js","three/addons/":"/747/node_modules/three/examples/jsm/"}}</script>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
 <script type="module">
 import * as T from 'three';
-import {A380Aircraft} from '/747/src/a380-aircraft.js';
-import {TwinAircraft} from '/747/src/twin-aircraft.js';
-import {World} from '/747/src/world.js';
+import {A380Aircraft} from '/src/a380-aircraft.js';
+import {TwinAircraft} from '/src/twin-aircraft.js';
+import {World} from '/src/world.js';
 const renderer=new T.WebGLRenderer({antialias:false,preserveDrawingBuffer:true});renderer.setSize(640,360);renderer.setPixelRatio(1);renderer.toneMapping=T.ACESFilmicToneMapping;renderer.shadowMap.enabled=false;document.body.appendChild(renderer.domElement);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,640/360,.2,2000);camera.position.set(0,8,95);camera.lookAt(0,-2,0);
 const sun=new T.DirectionalLight(),hemi=new T.HemisphereLight();scene.add(sun,sun.target,hemi);const envOwner={envs:{},renderer};

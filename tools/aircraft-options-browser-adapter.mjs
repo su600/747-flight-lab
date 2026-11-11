@@ -8,7 +8,7 @@ import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {setTimeout as delay} from 'node:timers/promises';
 
-const APP_URL=process.env.AIRCRAFT_TEST_URL||'http://127.0.0.1:18750/747/';
+const APP_URL=process.env.AIRCRAFT_TEST_URL||'http://127.0.0.1:18750/';
 const STARTUP_TIMEOUT=Number(process.env.AIRCRAFT_TEST_STARTUP_TIMEOUT_MS||150000);
 const CDP_TIMEOUT=Number(process.env.AIRCRAFT_TEST_CDP_TIMEOUT_MS||12000);
 const OPERATION_TIMEOUT=Number(process.env.AIRCRAFT_TEST_OPERATION_TIMEOUT_MS||150000);

@@ -1,6 +1,6 @@
 // Approximate 777-200LR interpretations, not airline-authorised liveries.
 // FlightGear source/UV and GPL-2.0 attribution: assets/accurate-b777/CREDITS.txt.
-const ROOT='/747/assets/b777-liveries/passenger/';
+const ROOT='/assets/b777-liveries/passenger/';
 const ids=['BOE','CCA','CEA','CSN','CHH','UAE','BAW','KLM','DLH','DLH100','AF1_CLASSIC','AF1_2026'];
 export const B777_PASSENGER_LIVERY_IDS=Object.freeze(ids);
 export const B777_PASSENGER_LIVERY_INFO=Object.freeze(Object.fromEntries(ids.map(id=>[id,Object.freeze({

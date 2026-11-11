@@ -19,7 +19,7 @@ try{
  const port=await new Promise((resolve,reject)=>{
   const timer=setTimeout(()=>reject(Error(`server startup timed out: ${stdout} ${stderr}`)),10000);
   child.stdout.on('data',()=>{
-   const match=stdout.match(/http:\/\/localhost:(\d+)\/747\//);
+   const match=stdout.match(/http:\/\/localhost:(\d+)\//);
    if(match){clearTimeout(timer);resolve(Number(match[1]));}
   });
   exited.then(result=>{clearTimeout(timer);reject(Error(`server exited during startup: ${JSON.stringify(result)} ${stderr}`));});
@@ -48,7 +48,7 @@ try{
  assert.notEqual(firstEtagResponse.headers.etag,secondEtagResponse.headers.etag,'same-size same-millisecond content changes must get a new ETag');
  const staleEtag=await request('/'+etagName,{headers:{'if-none-match':firstEtagResponse.headers.etag}});
  assert.equal(staleEtag.status,200,'old validator must not produce a stale 304');
- const path='/747/assets/a380/fuselage.glb';
+ const path='/assets/a380/fuselage.glb';
  const original=await readFile(new URL('../assets/a380/fuselage.glb',import.meta.url));
  const raw=await request(path);
  assert.equal(raw.status,200);assert.equal(raw.headers['content-type'],'application/octet-stream');

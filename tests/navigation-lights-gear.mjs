@@ -38,7 +38,7 @@ xmlPrototype.querySelector = function (selector) { return this.querySelectorAll(
 globalThis.DOMParser = class { parseFromString(xml) { return parseXml(xml); } };
 globalThis.fetch = async url => {
  const pathname = new URL(String(url), 'http://flight-lab.test').pathname;
- const prefix = '/747/assets/';
+ const prefix = '/assets/';
  assert(pathname.startsWith(prefix), `unexpected local asset request: ${pathname}`);
  const text = await readFile(join(projectRoot, 'assets', pathname.slice(prefix.length)), 'utf8');
  return {ok: true, status: 200, text: async () => text};

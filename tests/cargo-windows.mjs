@@ -46,11 +46,11 @@ function selectAll(el,selector){
  proto.querySelectorAll=function(selector){return selectAll(this,selector);};
  proto.querySelector=function(selector){return selectAll(this,selector)[0]??null;};
 }
-// Map /747/assets/... browser URLs onto the repository's assets directory.
+// Map /assets/... browser URLs onto the repository's assets directory.
 const localPath=url=>{
  const clean=String(url).split('?')[0];
- assert(clean.startsWith('/747/assets/')||clean.startsWith(ASSETS),`unexpected URL ${url}`);
- return clean.startsWith('/747/assets/')?ASSETS+clean.slice('/747/assets/'.length):clean;
+ assert(clean.startsWith('/assets/')||clean.startsWith(ASSETS),`unexpected URL ${url}`);
+ return clean.startsWith('/assets/')?ASSETS+clean.slice('/assets/'.length):clean;
 };
 // Width/height from the IHDR of any PNG (overlays may be RGBA).
 function pngSize(path){
@@ -165,7 +165,7 @@ async function checkA380(){
  const {A380Aircraft}=await import('../src/a380-aircraft.js');
  const {addCabinLights,updateCabinLights}=await import('../src/aircraft-lighting.js');
  const fetchImpl=async(url,{signal}={})=>{
-  assert.match(url,/^\/747\/assets\/a380\/[\w-]+\.glb$/);
+  assert.match(url,/^\/assets\/a380\/[\w-]+\.glb$/);
   const data=readFileSync(localPath(url));
   return {ok:true,status:200,async arrayBuffer(){signal?.throwIfAborted?.();return data.buffer.slice(data.byteOffset,data.byteOffset+data.byteLength);}};
  };

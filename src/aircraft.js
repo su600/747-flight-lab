@@ -3,7 +3,7 @@ import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {liveryForModel} from './livery-for-model.js';
 import {projectWingtipPoints} from './navigation-lights.js';
-const ROOT='/747/assets/aircraft/';
+const ROOT='/assets/aircraft/';
 const LIVERY_TEXTURE_VERSION='20261110-1';
 const VERSIONED_LIVERIES=new Set(['CEA.png','CHH.png','CSN.png','sf.png']);
 const textures=new Map();

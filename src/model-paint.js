@@ -340,7 +340,7 @@ export function addModelPaint(aircraft, {sideZ, sideY=0, tailX, tailY, length=38
    const image=new Image();pending.add(image);
    image.onload=()=>{pending.delete(image);if(disposed||request!==version)return;assign(image);draw();};
    image.onerror=()=>{pending.delete(image);};
-   image.src='/747/assets/livery-logos/'+name;
+   image.src='/assets/livery-logos/'+name;
   }
   if(logo===tailLogo)load(logo,image=>{sideImage=tailImage=image;});
   else{load(logo,image=>{sideImage=image;});load(tailLogo,image=>{tailImage=image;});}

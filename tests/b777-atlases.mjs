@@ -33,8 +33,8 @@ for(const {id} of LIVERIES){
  const manifest=variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request);
  assert.equal(manifest.id,id);assert.equal(manifest.variant,variant);assert.equal(manifest.maps.length,5);
  for(const item of manifest.maps){
-  assert.match(item.url,/^\/747\/assets\/b777-liveries\/(?:passenger|cargo)\/[\w-]+\.webp$/);
-  const data=await readFile(new URL('..'+item.url.slice('/747'.length),import.meta.url));
+  assert.match(item.url,/^\/assets\/b777-liveries\/(?:passenger|cargo)\/[\w-]+\.webp$/);
+  const data=await readFile(new URL('..'+item.url,import.meta.url));
   const [w,h]=dimensions(data);assert(w===h&&(w===1024||w===2048),`${id}: atlas dimensions ${w}x${h}`);
   assert(data.length<1024*1024,`${id}: unexpectedly large delivery atlas`);
   total+=data.length;count++;

@@ -204,7 +204,7 @@ function showLivery(){
   const active=supported&&x.dataset.livery===plane.livery;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));x.querySelector('.check').textContent=active?'✓':'';
   if(x.dataset.livery==='BOE'){
    const house=Aircraft.liveryForModel('BOE',plane.type);
-   x.querySelector('b').textContent=house.name;x.querySelector('small').textContent=house.en;x.querySelector('img').src='/747/assets/livery-logos/'+house.logo;
+   x.querySelector('b').textContent=house.name;x.querySelector('small').textContent=house.en;x.querySelector('img').src='/assets/livery-logos/'+house.logo;
   }
   const tag=x.querySelector('.reality-tag');
   if(tag){const r=realityFor(plane.type,x.dataset.livery);tag.textContent=REALITY_TAGS[r.status];tag.className='reality-tag '+r.status;tag.title=r.label+(r.note?'：'+r.note:'');}
@@ -224,7 +224,7 @@ function showAircraft(){
  if(door.disabled)sim.doorTarget=0;
  all('[data-aircraft]').forEach(b=>{const active=b.dataset.aircraft===plane.type;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));});
  all('.engine-meter').forEach((el,i)=>el.hidden=i>=info.engines);
- $('#aboutDetails').innerHTML=plane.type==='b747'?originalAbout:isA330?`<div class="about-number">A330<span>–303</span></div><p>${info.description}</p><div class="spec-grid"><div><strong>63.7<small> m</small></strong><span>参考机长</span></div><div><strong>60.3<small> m</small></strong><span>参考翼展</span></div><div><strong>16.8<small> m</small></strong><span>约高</span></div><div><strong>2<small> 台</small></strong><span>GE CF6-80E1</span></div></div><p class="hint">${cargo?'当前为 A330-300 货运外观示意，并非 A330-200F；主货舱门与涂装均为近似。':'涂装是否有真机见涂装面板的标签，不保证机号及发动机与实机一致。'}参考尺寸不等于网格工程校核；飞行力学和驾驶舱沿用 747 简化版本，动画不代表真实系统时序。</p><a class="source-link" href="/747/assets/accurate-a330/NOTICE" target="_blank">A330 模型来源、署名与 GPL 许可 ↗</a>`:`<div class="about-number">${plane.type==='a380'?'A380':'777'}</div><p>${info.description}</p><p class="hint">飞行力学沿用 747 简化模型，驾驶舱沿用 747 示意座舱，部件运动并非真实系统时序。</p>`;
+ $('#aboutDetails').innerHTML=plane.type==='b747'?originalAbout:isA330?`<div class="about-number">A330<span>–303</span></div><p>${info.description}</p><div class="spec-grid"><div><strong>63.7<small> m</small></strong><span>参考机长</span></div><div><strong>60.3<small> m</small></strong><span>参考翼展</span></div><div><strong>16.8<small> m</small></strong><span>约高</span></div><div><strong>2<small> 台</small></strong><span>GE CF6-80E1</span></div></div><p class="hint">${cargo?'当前为 A330-300 货运外观示意，并非 A330-200F；主货舱门与涂装均为近似。':'涂装是否有真机见涂装面板的标签，不保证机号及发动机与实机一致。'}参考尺寸不等于网格工程校核；飞行力学和驾驶舱沿用 747 简化版本，动画不代表真实系统时序。</p><a class="source-link" href="/assets/accurate-a330/NOTICE" target="_blank">A330 模型来源、署名与 GPL 许可 ↗</a>`:`<div class="about-number">${plane.type==='a380'?'A380':'777'}</div><p>${info.description}</p><p class="hint">飞行力学沿用 747 简化模型，驾驶舱沿用 747 示意座舱，部件运动并非真实系统时序。</p>`;
 }
 function setEmitters(craft){
  airflow.plane=craft;
@@ -320,7 +320,7 @@ function bindUI(){
  $('#sound').onclick=()=>{initAudio();sound.enabled=!sound.enabled;sound.ctx.resume();$('#sound').classList.toggle('on',sound.enabled);$('#sound').ariaLabel=sound.enabled?'关闭声音':'开启声音';notify(sound.enabled?'发动机声音已开启':'声音已关闭');};
  $('#help').onclick=()=>$('#helpDialog').showModal();all('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).close());
  $('#fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{notify('请使用浏览器的全屏按钮');}};
- $('#liveries').innerHTML=LIVERIES.map((l,i)=>`<button class="livery-card ${i===0?'active':''}" data-livery="${l.id}" aria-pressed="${i===0}"><span class="livery-swatch" aria-hidden="true"><img src="/747/assets/livery-logos/${l.logo}" alt="" decoding="async"></span><span><b>${l.name}</b><small>${l.en}</small></span><em class="reality-tag none"></em><span class="check" aria-hidden="true">${i===0?'✓':''}</span></button>`).join('');
+ $('#liveries').innerHTML=LIVERIES.map((l,i)=>`<button class="livery-card ${i===0?'active':''}" data-livery="${l.id}" aria-pressed="${i===0}"><span class="livery-swatch" aria-hidden="true"><img src="/assets/livery-logos/${l.logo}" alt="" decoding="async"></span><span><b>${l.name}</b><small>${l.en}</small></span><em class="reality-tag none"></em><span class="check" aria-hidden="true">${i===0?'✓':''}</span></button>`).join('');
  all('[data-livery]').forEach(b=>b.onclick=()=>selectLivery(b.dataset.livery));
  // Space/Enter on a focused livery button must retain native button activation,
  // rather than being intercepted by the simulator's pause shortcut.

@@ -5,7 +5,7 @@
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {BoundedStore} from './bounded-store.js';
 
-const ASSETS='/747/assets/';
+const ASSETS='/assets/';
 const MB=1048576;
 const MAX_PREFETCH_BODY_BYTES=48*MB;
 // [path, approximate bytes]. Sizes only seed the progress bar until the server reports the real length.

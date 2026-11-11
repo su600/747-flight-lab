@@ -21,7 +21,7 @@ const isFedEx=livery=>/fed[\s-]*ex|联邦快递/i.test(liveryWords(livery));
 const isSF=livery=>/顺丰|shun[\s-]*feng|\bSF[\s-]*(?:express|airlines?|cargo)\b/i.test(liveryWords(livery));
 
 /**
- * Browser-adapter contract for the real app at /747/. The adapter is test glue,
+ * Browser-adapter contract for the real app at the site root. The adapter is test glue,
  * not a required application API. It exposes the page's window.flightLab methods,
  * visible selector state, cabin-light state, and renderer resource counters.
  */

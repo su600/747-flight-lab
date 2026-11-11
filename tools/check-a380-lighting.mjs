@@ -14,7 +14,7 @@ globalThis.createImageBitmap??=async()=>({width:1,height:1,close(){}});
 globalThis.ProgressEvent??=class ProgressEvent{constructor(type,props){this.type=type;Object.assign(this,props);}};
 const requested=[];
 const fetchImpl=async(url,{signal}={})=>{
- assert.match(url,/^\/747\/assets\/a380\/[\w-]+\.glb$/);
+ assert.match(url,/^\/assets\/a380\/[\w-]+\.glb$/);
  assert(signal instanceof AbortSignal,'loader provides an abort signal');
  const filename=url.split('/').pop();requested.push(filename);
  const data=await readFile(new URL('../assets/a380/'+filename,import.meta.url),{signal});

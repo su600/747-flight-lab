@@ -59,4 +59,4 @@ const server=http.createServer(async(req,res)=>{
   // Stream each response (and let pipeline clean up on disconnect), without an in-process asset cache.
   if(gzip)pipeline(stream,zlib.createGzip({level:ext==='.glb'?4:6}),res,()=>{});else pipeline(stream,res,()=>{});
  }catch{if(!res.headersSent)res.writeHead(404).end('Not found');else res.destroy();}
-}).listen(port,process.env.HOST||'0.0.0.0',()=>console.log(`747 Flight Lab: http://localhost:${server.address().port}/747/`));
+}).listen(port,process.env.HOST||'0.0.0.0',()=>console.log(`747 Flight Lab: http://localhost:${server.address().port}/`));

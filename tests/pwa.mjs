@@ -21,7 +21,7 @@ try{
  child.stdout.on('data',data=>stdout+=data);child.stderr.on('data',data=>stderr+=data);
  const port=await new Promise((resolve,reject)=>{
   const timer=setTimeout(()=>reject(Error(`server startup timed out: ${stdout} ${stderr}`)),10000);
-  child.stdout.on('data',()=>{const m=stdout.match(/http:\/\/localhost:(\d+)\/747\//);if(m){clearTimeout(timer);resolve(Number(m[1]));}});
+  child.stdout.on('data',()=>{const m=stdout.match(/http:\/\/localhost:(\d+)\//);if(m){clearTimeout(timer);resolve(Number(m[1]));}});
   exited.then(result=>{clearTimeout(timer);reject(Error(`server exited during startup: ${JSON.stringify(result)} ${stderr}`));});
  });
  const get=path=>request(port,path);

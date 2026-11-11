@@ -290,7 +290,7 @@ function candidateGroundMetrics(scene){
 
 // Concrete per-variant GLB adapter. No 300F substitution; each uses its own
 // XML, scene, window targets, animation graph and provisional ground metrics.
-export function createB777CandidateGeometryLoader({baseURL='/747/assets/accurate-b777/',fetchFn=globalThis.fetch,
+export function createB777CandidateGeometryLoader({baseURL='/assets/accurate-b777/',fetchFn=globalThis.fetch,
  loaderFactory=()=>new GLTFLoader().setMeshoptDecoder(MeshoptDecoder),parseXML=xml=>new DOMParser().parseFromString(xml,'application/xml'),decodeImage=decodeCandidateImage,
  allowUnresolvedTextures=true}={}){
  if(typeof fetchFn!=='function'||typeof loaderFactory!=='function'||typeof parseXML!=='function'||typeof decodeImage!=='function'||typeof allowUnresolvedTextures!=='boolean')throw Error('Invalid B777 candidate loader options');

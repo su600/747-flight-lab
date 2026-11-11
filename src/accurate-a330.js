@@ -4,10 +4,10 @@ import * as T from 'three';
 import {Aircraft, LIVERIES, parseAC} from './aircraft.js';
 import {projectA330WingtipPoints} from './navigation-lights.js';
 
-const ROOT='/747/assets/accurate-a330/Models/';
-// parseAC resolves relative to /747/assets/aircraft/. URL normalization yields
-// /747/assets/accurate-a330/Models/ without altering its shared texture cache.
-const ASSET_ROOT='/747/assets/accurate-a330/';
+const ROOT='/assets/accurate-a330/Models/';
+// parseAC resolves relative to /assets/aircraft/. URL normalization yields
+// /assets/accurate-a330/Models/ without altering its shared texture cache.
+const ASSET_ROOT='/assets/accurate-a330/';
 const AC_FOLDER='../accurate-a330/Models/';
 const EXPECTED_TEXTURES=['323_blank.png','303_blank.png','landing-gears.png','pw_extra.png','windshield_pane.png','windshield.png','wings_main.png','wings_tail.png','ge_extra.png','ge_fan.png','pw_inside.png'];
 const UPSTREAM_LIVERIES={CCA:'A333RR/CCA',CEA:'A333RR/CES',CSN:'A333RR/CSN',DLH:'A333RR/DLH',KLM:'A333GE/KLM'};
@@ -68,7 +68,7 @@ export function a330PaintTargets(root){
   engines:['ge.nacelle0','ge.nacelle1','ge.reverser0','ge.reverser1'].flatMap(n=>pick(n,'303_blank.png')),
   winglets:['winglet0','winglet1'].flatMap(n=>pick(n,'323_blank.png')),
   cockpitGlass:pick('windshield','windshield.png'),
-  cargoAtlas:'/747/assets/accurate-a330/derived/323_windowless.png',
+  cargoAtlas:'/assets/accurate-a330/derived/323_windowless.png',
  };
  if(result.body.length!==1||result.fin.length!==1||result.movingFin.length!==1||result.engines.length!==4||result.winglets.length!==2||result.cockpitGlass.length!==1)throw Error('A330 paint target mismatch');
  return result;
