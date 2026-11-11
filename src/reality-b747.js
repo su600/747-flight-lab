@@ -13,7 +13,7 @@ export const B747_REALITY={
  BAW:{status:'real',note:'英航 747-400（G-BN**、G-CIV* 等），尾翼为 Chatham Dockyard 联合旗；2020 年已全部退役。'},
  KLM:{status:'real',note:'荷航 747-400（PH-BF*，共 22 架，1989–2021 年）的蓝色涂装。'},
  DLH:{status:'real',note:'汉莎 747-400（D-ABV*、D-ABT*）2018 年前的黄圈蓝尾、灰色机腹涂装。'},
- DLH100:{status:'none',note:'百年纪念涂装实际涂在 747-8I 上，747-400 并无此涂装；此为深蓝配色的兼容适配。'},
+ DLH100:{status:'real',note:'汉莎百年纪念涂装真机为 747-8I（D-ABYN）；747-400 上并无此涂装，本模型的深蓝配色为近似适配。'},
  AF1_CLASSIC:{status:'family',note:'空军一号 VC-25A 为 747-200B 改装，浅蓝白涂装；747-400 并非专机。'},
  AF1_2026:{status:'family',note:'白红金深蓝与星条圆徽用于 747-8I VC-25B；747-400 仅作同系列适配。'},
  fedex:{status:'family',note:'联邦快递飞过 747-100F/-200F，没有自有 747-400F；涂装为原创近似绘制。'},
