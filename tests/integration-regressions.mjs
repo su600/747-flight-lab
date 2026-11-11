@@ -5,10 +5,20 @@ import {readFile} from 'node:fs/promises';
 import vm from 'node:vm';
 import * as T from 'three';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
-import {A380Aircraft,loadA380Part} from '../src/a380-aircraft.js';
+import {A380Aircraft,createA380GlassMaterial,loadA380Part} from '../src/a380-aircraft.js';
 import {Aircraft} from '../src/aircraft.js';
 
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
+{
+ const passengerMap=new T.Texture(),passenger=createA380GlassMaterial(new T.MeshStandardMaterial({name:'A380_PAX_WINDOW',map:passengerMap,transparent:true}));
+ const cockpit=createA380GlassMaterial(new T.MeshStandardMaterial({name:'A380X_LIGHT_GLASS'}));
+ assert(passenger?.isMeshPhysicalMaterial&&cockpit?.isMeshPhysicalMaterial,'A380 passenger and cockpit panes use physical glass');
+ assert.equal(passenger.map,passengerMap,'passenger-window alpha/shape texture is retained');
+ for(const pane of [passenger,cockpit]){assert.equal(pane.transparent,true);assert.equal(pane.depthWrite,false);assert.equal(pane.clearcoat,1);assert(pane.roughness<.15&&pane.envMapIntensity>2);}
+ assert.equal(createA380GlassMaterial(new T.MeshStandardMaterial({name:'A380X_FUSE1'})),null,'non-glass fuselage material is untouched');
+ passenger.dispose();cockpit.dispose();passengerMap.dispose();
+}
+
 const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const start=main.indexOf('async function selectAircraft(type){'),end=main.indexOf('// ---- UI',start);
 assert(start>=0&&end>start,'selector implementations must be present');
@@ -135,6 +145,13 @@ console.log('A380 loading: timeout/abort, retry, HTTP errors, late parse and par
 const clips={},models={};for(const part of ['fuselage','wings']){
  const data=await readFile(new URL(`../assets/a380/${part}.glb`,import.meta.url)),jsonLength=data.readUInt32LE(12),json=JSON.parse(data.toString('utf8',20,20+jsonLength).trim());
  models[part]={json,binary:data.subarray(20+jsonLength+8)};clips[part]=json.animations.map(a=>new T.AnimationClip(a.name,1,[]));
+}
+{
+ const {json}=models.fuselage,node=json.nodes.find(n=>n.name==='MAIN FUSELAGE.030');
+ assert(node,'source GLB uses the spaced/dotted windshield mesh name');
+ const names=json.meshes[node.mesh].primitives.map(p=>json.materials[p.material]?.name);
+ assert(names.includes('A380X_LIGHT_GLASS'),'source windshield is identified by its glass material');
+ assert(json.materials.some(m=>m.name==='A380_PAX_WINDOW'),'source GLB contains passenger-window glass material');
 }
 // Check the real compressed keyframes and parent transforms, not just clip times.
 // Positive roll must raise the right trailing edge and lower the left; negative

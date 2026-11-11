@@ -57,11 +57,11 @@ assert(roofLight.position.distanceTo(aircraft.beaconPoint)<1e-6,'top beacon uses
 const roofBounds=new T.Box3().setFromObject(roof,true);ray.set(new T.Vector3(roofLight.position.x,roofBounds.max.y+2,roofLight.position.z),down);
 const roofHit=ray.intersectObject(roof,true)[0];assert(roofHit,'top beacon ray intersects the cabin roof');
 const roofClearance=roofLight.position.y-roofHit.point.y;assert(roofClearance>=.10&&roofClearance<=.14,`top beacon sits on the fuselage skin: ${roofClearance}`);
-const windshield=root.getObjectByName('MAIN_FUSELAGE030');
-assert(windshield?.isMesh&&windshield.visible,'cockpit windshield geometry exists');
-const windshieldMaterial=[windshield.material].flat().find(m=>m?.name==='A380_COCKPIT_WINDSCREEN');
-assert(windshieldMaterial,'cockpit windshield has its dedicated glass material');
-assert.equal(windshieldMaterial.transparent,false,'windshield must not render as an open hole');assert.equal(windshieldMaterial.opacity,1);
+const windshieldMeshes=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_COCKPIT_WINDSCREEN'))windshieldMeshes.push(o);});
+assert(windshieldMeshes.length>0&&windshieldMeshes.every(o=>o.visible),'windshield source material resolves to visible physical glass meshes');
+const windshieldMaterial=[...new Set(windshieldMeshes.flatMap(o=>[o.material].flat()))].find(m=>m?.name==='A380_COCKPIT_WINDSCREEN');
+assert(windshieldMaterial?.isMeshPhysicalMaterial,'cockpit windshield glass is physical');
+assert.equal(windshieldMaterial.transparent,true);assert.equal(windshieldMaterial.depthWrite,false);assert.equal(windshieldMaterial.clearcoat,1);
 const passengerWindows=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_PAX_WINDOW'))passengerWindows.push(o);});
 assert.equal(passengerWindows.length,18,'passenger glazing is retained');assert(passengerWindows.every(o=>o.visible),'passenger glass meshes are visible');
 const compression=aircraft.bindings.find(b=>b.control==='gearCompression');

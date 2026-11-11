@@ -240,6 +240,17 @@ export async function loadA380Part(loader,part,{timeoutMs=PART_TIMEOUT_MS,fetchI
  const deadline=new Promise((_,reject)=>{timer=setTimeout(()=>{expired=true;controller.abort();reject(Error('A380 '+part+' 载入超时，请重试'));},timeoutMs);});
  try{return await Promise.race([work,deadline]);}catch(error){if(expired)throw Error('A380 '+part+' 载入超时，请重试');throw error;}finally{clearTimeout(timer);}
 }
+export function createA380GlassMaterial(source){
+ const cockpit=source.name==='A380X_LIGHT_GLASS',passenger=source.name==='A380_PAX_WINDOW';
+ if(!cockpit&&!passenger)return null;
+ return new T.MeshPhysicalMaterial({
+  name:cockpit?'A380_COCKPIT_WINDSCREEN':'A380_PAX_WINDOW',
+  color:cockpit?0x17364a:0x7898a8,map:source.map??null,
+  transparent:true,opacity:cockpit?.96:(source.opacity??1),alphaTest:source.alphaTest??0,
+  side:T.DoubleSide,depthWrite:false,roughness:cockpit?.07:.12,metalness:.12,
+  clearcoat:1,clearcoatRoughness:.025,reflectivity:.95,envMapIntensity:2.2
+ });
+}
 export class A380Aircraft extends Aircraft {
  constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;}
  async load(){
@@ -259,13 +270,8 @@ export class A380Aircraft extends Aircraft {
      // light, without emissive paint or changing shadows or other aircraft.
      // Keep the portable source colours, diffuse UVs and PBR factors; omit the
      // converted normal maps to retain the lower-cost material path.
-     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});if(m.name==='A380_PAX_WINDOW'){simple.roughness=.1;simple.metalness=.25;simple.envMapIntensity=1.5;}materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
+     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const glass=createA380GlassMaterial(m),simple=glass||new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
      o.material=Array.isArray(o.material)?mats.map(simplify):simplify(mats[0]);
-     if(o.name==='MAIN_FUSELAGE030'){
-      // The exterior GLB has no cockpit interior; keep the windshield pane solidly tinted, not hollow.
-      const opaqueWindshield=()=>new T.MeshPhysicalMaterial({name:'A380_COCKPIT_WINDSCREEN',color:0x1c3142,map:null,roughness:.05,metalness:.2,clearcoat:1,clearcoatRoughness:.03,envMapIntensity:1.6});
-      o.material=Array.isArray(o.material)?o.material.map(opaqueWindshield):opaqueWindshield(o.material);
-     }
      for(const m of [o.material].flat())if(m.map)m.map.anisotropy=4;
     });invisible.forEach(o=>{o.removeFromParent();this.discarded.push(o);});
     const mixer=new T.AnimationMixer(gltf.scene);this.mixers.push(mixer);
