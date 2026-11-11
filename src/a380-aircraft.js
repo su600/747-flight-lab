@@ -259,11 +259,11 @@ export class A380Aircraft extends Aircraft {
      // light, without emissive paint or changing shadows or other aircraft.
      // Keep the portable source colours, diffuse UVs and PBR factors; omit the
      // converted normal maps to retain the lower-cost material path.
-     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
+     const simplify=m=>{if(!materials.has(m)){if(m.name==='A380_EXTERIOR_TYRES'&&m.map){/* TEXCOORD_0 is stored in the source GLBs at 14-bit scale. */m.map.repeat.set(1/16383,1/16383);m.map.offset.set(0,0);m.map.needsUpdate=true;}const simple=new T.MeshStandardMaterial({name:m.name,color:m.color,map:m.map,transparent:m.transparent,opacity:m.opacity,alphaTest:m.alphaTest,side:m.side,depthWrite:m.depthWrite,roughness:m.roughness??.5,metalness:m.metalness??.1});if(m.name==='A380_PAX_WINDOW'){simple.roughness=.1;simple.metalness=.25;simple.envMapIntensity=1.5;}materials.set(m,simple);m.normalMap?.dispose();m.dispose();}return materials.get(m);};
      o.material=Array.isArray(o.material)?mats.map(simplify):simplify(mats[0]);
      if(o.name==='MAIN_FUSELAGE030'){
       // The exterior GLB has no cockpit interior; keep the windshield pane solidly tinted, not hollow.
-      const opaqueWindshield=m=>{const pane=m.clone();pane.name='A380_COCKPIT_WINDSCREEN';pane.color.set(0x182b3a);pane.transparent=false;pane.opacity=1;pane.depthWrite=true;pane.roughness=.18;pane.metalness=.2;return pane;};
+      const opaqueWindshield=()=>new T.MeshPhysicalMaterial({name:'A380_COCKPIT_WINDSCREEN',color:0x1c3142,map:null,roughness:.05,metalness:.2,clearcoat:1,clearcoatRoughness:.03,envMapIntensity:1.6});
       o.material=Array.isArray(o.material)?o.material.map(opaqueWindshield):opaqueWindshield(o.material);
      }
      for(const m of [o.material].flat())if(m.map)m.map.anisotropy=4;
