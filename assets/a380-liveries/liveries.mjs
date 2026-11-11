@@ -233,9 +233,17 @@ export const ART={
   s.poly(xs(37,-37.5).map(x=>[x,keel(x)+.5]).concat([[-38.5,-12],[38,-12]]),BLACK);
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,BLACK));
   const [cx,cy]=FIN.pt(4.7,.5);
-  s.image('sf-express.png',cx,cy,6.4,6.4);
-  s.image('sf-express.png',24,-4.4,3.0,3.0);
-  s.text('AIRLINES',29.5,-3.9,{cap:.55,font:'Arial',fill:'#33363a',width:4.2});
-  s.text('顺丰航空',29.5,-4.8,{cap:.7,font:'Microsoft YaHei',fill:'#33363a',width:3.8});
+  // Tail mark as photographed: white ring with white SF and a red dot, no text.
+  s.circle(cx,cy,3.2,'#f4f4f4');
+  s.circle(cx,cy,2.85,BLACK);
+  s.text('SF',cx,cy-1.0,{cap:2.4,font:'Arial',fill:'#f4f4f4',width:4.2});
+  s.circle(cx+1.05,cy+0.25,.42,RED);
+  // Forward fuselage mark as photographed: black ring and black SF on white skin.
+  s.circle(24,-1.4,1.5,BLACK);
+  s.circle(24,-1.4,1.25,'#f6f6f5');
+  s.text('SF',24,-2.4,{cap:1.7,font:'Arial',fill:BLACK,width:2.5});
+  s.circle(s.side==='port'?24.95:23.05,-1.05,.25,RED);
+  s.text('AIRLINES',29.5,-0.6,{cap:.55,font:'Arial',fill:'#33363a',width:4.2});
+  s.text('顺丰航空',29.5,-1.5,{cap:.7,font:'Noto Sans CJK SC',fill:'#33363a',width:3.8});
  }},
 };

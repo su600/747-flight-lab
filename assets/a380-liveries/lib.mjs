@@ -36,6 +36,7 @@ const W='C:/Windows/Fonts/';
 const FONT_FILES=[
  ...['arial.ttf','arialbd.ttf','ariali.ttf','arialbi.ttf','ARIALNB.TTF','PALAB.TTF','pala.ttf','georgiab.ttf','georgia.ttf','DUBAI-BOLD.TTF','DUBAI-MEDIUM.TTF','msyhbd.ttc','msyh.ttc','simhei.ttf','segoeuib.ttf','framd.ttf','trebucbd.ttf','GILB____.TTF','calibrib.ttf','impact.ttf','FRAHV.TTF'].map(f=>W+f),
  '/usr/share/fonts/dejavu/DejaVuSans.ttf','/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
+ '/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc',
 ].filter(f=>fs.existsSync(f));
 const FONT_FAMILY=FONT_FILES.some(f=>/arial\.ttf$/i.test(f))?'Arial':'DejaVu Sans';
 const FONT_OPTS={fontFiles:FONT_FILES,loadSystemFonts:false,defaultFontFamily:FONT_FAMILY};
