@@ -304,7 +304,7 @@ function bindUI(){
  $('#home')?.addEventListener('click',()=>go('inspect'));
  $('#pause').onclick=()=>sim.paused=!sim.paused;
  $('#rate').onclick=()=>{rate=rate===1?2:rate===2?4:1;$('#rate').textContent=rate+'×';};
- $('#takeControl').onclick=manualControl;$('#runwayStart').onclick=()=>{go('manual');manualTakeoffGuide=true;sim.flapTarget=20;sim.park=true;setCam('chase');syncThrottleUI();updateUI();notify('手动起飞练习已开始，请按左侧步骤提示操作');};
+ $('#takeControl').onclick=manualControl;const startTakeoffCourse=()=>{go('manual');manualTakeoffGuide=true;sim.flapTarget=20;sim.park=true;setCam('chase');syncThrottleUI();updateUI();notify('手动起飞练习已开始，请按左侧步骤提示操作');};$('#runwayStart').onclick=startTakeoffCourse;$('#courseStart').onclick=startTakeoffCourse;
  $('#assist').onclick=()=>{sim.assist=!sim.assist;$('#assist').classList.toggle('active',sim.assist);};
  all('[data-time]').forEach(b=>b.onclick=()=>{world.setTime(b.dataset.time);syncCabinTime(plane);document.body.dataset.time=b.dataset.time;all('[data-time]').forEach(x=>x.classList.toggle('active',x===b));});
  all('[data-aircraft]').forEach(b=>{b.onclick=()=>selectAircraft(b.dataset.aircraft);const warm=()=>{if(b.dataset.aircraft!=='b747')preloadAircraft(b.dataset.aircraft,{livery:desiredLivery,priority:'high'});};b.addEventListener('pointerenter',warm);b.addEventListener('focus',warm);b.addEventListener('touchstart',warm,{passive:true});});$('#aircraftSelect').onchange=e=>selectAircraft(e.target.value);
