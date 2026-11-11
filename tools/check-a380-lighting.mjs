@@ -62,6 +62,7 @@ assert(windshieldMeshes.length>0&&windshieldMeshes.every(o=>o.visible),'windshie
 const windshieldMaterial=[...new Set(windshieldMeshes.flatMap(o=>[o.material].flat()))].find(m=>m?.name==='A380_COCKPIT_WINDSCREEN');
 assert(windshieldMaterial?.isMeshBasicMaterial,'cockpit windshield is an unlit dark material');
 assert.equal(windshieldMaterial.transparent,false);assert.equal(windshieldMaterial.color.getHex(),0x0a1a28);
+const windshieldGlass=root.getObjectByName('a380-windshield-glass');assert.equal(windshieldGlass?.userData.caps,6,'all six windshield openings are capped with dark glass');
 const passengerWindows=[];root.traverse(o=>{if(o.isMesh&&[o.material].flat().some(m=>m?.name==='A380_PAX_WINDOW'))passengerWindows.push(o);});
 assert.equal(passengerWindows.length,18,'passenger glazing is retained');assert(passengerWindows.every(o=>o.visible),'passenger glass meshes are visible');
 const passengerMaterial=[...new Set(passengerWindows.flatMap(o=>[o.material].flat()))][0],uv=passengerWindows[0].geometry.getAttribute('uv');

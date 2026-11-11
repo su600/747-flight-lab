@@ -263,25 +263,39 @@ export function addA380DarkInterior(model,root=model){
  }
  return hulls.length;
 }
-// The windshield panes are triangles of the nose skin painted with the pale
-// body colour. Re-draw just those forward-facing triangles in dark glass.
-export const A380_WINDSHIELD_ZONE={x:[28.5,33.5],y:[-3.5,-2.3],z:3.2,minNormalX:.25};
-function addA380Windshield(hull,root){
- const geometry=hull.geometry,index=geometry.index;if(!index)return null;
+// The six flight-deck windshield panes are real openings in the nose skin (the
+// interior showed through them). Find those boundary loops and cap each with a
+// dark glass fan so they read as glazing, whatever the livery.
+export const A380_WINDSHIELD_BOUNDS={minX:31,y:[-5.6,-3.8],size:[.4,1.2],ring:[30,70]};
+export function addA380Windshield(hull,root){
+ const geometry=hull.geometry,index=geometry.index,position=geometry.attributes.position;if(!index)return null;
  hull.updateMatrixWorld(true);root.updateMatrixWorld(true);hull.skeleton?.update();
- const toRoot=new T.Matrix4().copy(root.matrixWorld).invert().multiply(hull.matrixWorld);
- const p=[new T.Vector3(),new T.Vector3(),new T.Vector3()],n=new T.Vector3(),e=new T.Vector3(),z=A380_WINDSHIELD_ZONE,picked=[];
+ const toRoot=new T.Matrix4().copy(root.matrixWorld).invert().multiply(hull.matrixWorld),v=new T.Vector3(),keyOf=new Array(position.count),points=new Map();
+ for(let i=0;i<position.count;i++){hull.getVertexPosition(i,v).applyMatrix4(toRoot);const key=[v.x,v.y,v.z].map(x=>Math.round(x*500)).join(',');keyOf[i]=key;if(!points.has(key))points.set(key,v.clone());}
+ const edges=new Map();
  for(let i=0;i<index.count;i+=3){
-  for(let k=0;k<3;k++)hull.getVertexPosition(index.getX(i+k),p[k]).applyMatrix4(toRoot);
-  const cx=(p[0].x+p[1].x+p[2].x)/3,cy=(p[0].y+p[1].y+p[2].y)/3,cz=(p[0].z+p[1].z+p[2].z)/3;
-  if(cx<z.x[0]||cx>z.x[1]||cy<z.y[0]||cy>z.y[1]||Math.abs(cz)>z.z)continue;
-  n.subVectors(p[1],p[0]).cross(e.subVectors(p[2],p[0])).normalize();if(n.x<z.minNormalX)continue;
-  picked.push(index.getX(i),index.getX(i+1),index.getX(i+2));
+  const ids=[index.getX(i),index.getX(i+1),index.getX(i+2)];
+  for(let j=0;j<3;j++){const a=keyOf[ids[j]],b=keyOf[ids[(j+1)%3]];if(a===b)continue;const key=a<b?a+'|'+b:b+'|'+a,e=edges.get(key);if(e)e.count++;else edges.set(key,{a,b,count:1});}
  }
- if(!picked.length)return null;
- const glass=new T.BufferGeometry();for(const [name,attribute] of Object.entries(geometry.attributes))glass.setAttribute(name,attribute);glass.setIndex(picked);
- const material=new T.MeshBasicMaterial({name:'A380_WINDSHIELD_GLASS',color:0x0a1a28,side:T.DoubleSide,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2});
- const mesh=new T.SkinnedMesh(glass,material);mesh.name='a380-windshield-glass';mesh.bind(hull.skeleton,hull.bindMatrix);mesh.frustumCulled=false;hull.parent.add(mesh);return mesh;
+ const adjacent=new Map();
+ for(const {a,b,count} of edges.values())if(count===1){for(const [x,y] of [[a,b],[b,a]]){if(!adjacent.has(x))adjacent.set(x,[]);adjacent.get(x).push(y);}}
+ const bounds=A380_WINDSHIELD_BOUNDS,positions=[];let caps=0;
+ while(adjacent.size){
+  const start=adjacent.keys().next().value,loop=[start];let previous=null,current=start;
+  for(;;){const next=(adjacent.get(current)||[]).find(k=>k!==previous&&k!==current);if(!next||next===start)break;if(loop.length>200)break;loop.push(next);previous=current;current=next;}
+  const seen=new Set(loop);const stack=[start],component=new Set();
+  while(stack.length){const k=stack.pop();if(component.has(k))continue;component.add(k);for(const n of adjacent.get(k)||[])stack.push(n);}
+  for(const k of component)adjacent.delete(k);
+  if(component.size!==loop.length||loop.length<bounds.ring[0]||loop.length>bounds.ring[1])continue;
+  const ring=loop.map(k=>points.get(k)),box=new T.Box3().setFromPoints(ring),size=box.getSize(new T.Vector3()),center=box.getCenter(new T.Vector3());
+  if(box.min.x<bounds.minX||center.y<bounds.y[0]||center.y>bounds.y[1]||Math.max(size.x,size.y,size.z)<bounds.size[0]||Math.max(size.x,size.y,size.z)>bounds.size[1])continue;
+  const mid=ring.reduce((sum,p)=>sum.add(p),new T.Vector3()).divideScalar(ring.length);
+  for(let i=0;i<ring.length;i++){const p=ring[i],q=ring[(i+1)%ring.length];positions.push(mid.x,mid.y,mid.z,p.x,p.y,p.z,q.x,q.y,q.z);}caps++;
+ }
+ if(!caps)return null;
+ const glass=new T.BufferGeometry();glass.setAttribute('position',new T.Float32BufferAttribute(positions,3));
+ const mesh=new T.Mesh(glass,new T.MeshBasicMaterial({name:'A380_WINDSHIELD_GLASS',color:0x0a1a28,side:T.DoubleSide}));
+ mesh.name='a380-windshield-glass';mesh.frustumCulled=false;mesh.userData.caps=caps;root.add(mesh);return mesh;
 }
 export class A380Aircraft extends Aircraft {
  constructor(options={}){super();this.type='a380';this.bindings=[];this.mixers=[];this.fanPhase=0;this.loadOptions=options;this.discarded=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;}
