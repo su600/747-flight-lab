@@ -182,6 +182,8 @@ export function createB777CandidateGeometryLoader({baseURL='/assets/accurate-b77
    rig.update(b777PropertiesFromState({gear:1},variant),0);
    const {contact,dimensions,groundReport}=candidateGroundMetrics(scene);
    const cabinWindows=variant==='passenger'?findB777PassengerWindows(scene):[];
+   // Darken the real passenger glazing (material 7).
+   if(variant==='passenger')darkenB777PassengerGlass(cabinWindows);
    bound.report.unresolvedTextures=unresolvedTextures;
    if(signal?.aborted)throw abortError();
    let disposed=false;
@@ -262,6 +264,17 @@ export function createB777CabinLighting(scene,targets){
   set(on){if(disposed)throw Error('B777 cabin lights disposed');for(const o of overlays)o.visible=!!on;},
   dispose(){if(disposed)return;disposed=true;for(const o of overlays)o.removeFromParent();light.dispose();blank.dispose();overlays.length=0;},
  };
+}
+
+// Darken the source passenger glazing (material 7). The warm cabin-light overlay
+// is drawn on top of it, so night lighting still shows through.
+export function darkenB777PassengerGlass(targets){
+ if(!Array.isArray(targets))return 0;let count=0;
+ for(const {mesh,indices} of targets){
+  const materials=Array.isArray(mesh.material)?mesh.material:[mesh.material];
+  for(const i of indices){const m=materials[i];if(!m?.color)continue;m.color.setRGB(.05,.09,.13);m.opacity=.6;m.transparent=true;m.needsUpdate=true;count++;}
+ }
+ return count;
 }
 
 const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
