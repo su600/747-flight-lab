@@ -6,7 +6,7 @@ import {LIVERIES} from './aircraft.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 
 const cargoIds = new Set(CARGO_LIVERIES.map(x => x.id));
-export const B777_LIVERY_IDS = Object.freeze(LIVERIES.map(x => x.id));
+export const B777_LIVERY_IDS = Object.freeze(LIVERIES.filter(x => !x.embedded).map(x => x.id));
 export const B777_CARGO_LIVERY_INFO = Object.freeze({
  fedex:Object.freeze({model:'777-200F',fictional:false,disclosure:'FedEx 777F 实机涂装：白色机身、紫色后下机身与垂尾；原创矢量绘制，注册号与细节不保证与特定实机一致。'}),
  sf:Object.freeze({model:'777-200F',fictional:true,disclosure:'真机无此涂装：顺丰航空没有 777 货机（机队为 737/757/767），此为按顺丰 747 货机风格的假想适配。'}),

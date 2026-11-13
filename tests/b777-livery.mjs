@@ -29,7 +29,7 @@ function textureLease() {
 const tick = () => new Promise(resolve => setTimeout(resolve,0));
 function deferred(){let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};}
 
-assert.deepEqual(B777_LIVERY_IDS, LIVERIES.map(x=>x.id));
+assert.deepEqual(B777_LIVERY_IDS, LIVERIES.filter(x=>!x.embedded).map(x=>x.id));
 assert.equal(B777_LIVERY_IDS.length, 14);
 for (const id of B777_LIVERY_IDS) assert.equal(b777LiveryVariant(id), ['fedex','sf'].includes(id)?'cargo':'passenger');
 assert.throws(()=>b777LiveryVariant('777-300F'));

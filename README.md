@@ -12,7 +12,7 @@
 
 ## 功能
 
-- **机型**：波音 747-400、空客 A380-800、空客 A330-300、波音 777-200LR / 777F 外观。
+- **机型**：波音 747-400、空客 A380-800、空客 A330-300、波音 777-200LR / 777F 外观，以及 NASA 航天飞机轨道器（仅提供降落与地面观察，不含起飞、自由飞行与驾驶舱视角；着陆滑跑可放出 40 英尺减速伞）。
 - **飞行模式**：左侧任务按钮可进入自动起飞、自动降落、自由飞行或地面观察；也可切换手动驾驶并从跑道开始。
 - **手动操作**：推力、刹车、起落架、襟翼、方向舵等控制；“从跑道开始手动起飞”会按检查、滑跑、抬轮和爬升阶段给出简短提示。部分机型还支持扰流板、反推、货舱门和雨刷等部件动画。
 - **视角与环境**：环绕、跟随、驾驶舱、机翼、塔台视角；机场包含带玻璃幕墙、曲面顶棚和登机廊桥的航站楼，跑道与滑行道标线、机位引导线、草地绿岛、牵引车、加油车、行李车和摆渡车；地勤车辆会沿机场服务路线行驶，并在停靠点执行循环任务；另有海岸、丘陵和远山；白天、黄昏和夜晚；可切换精细 / 流畅画质。
@@ -89,6 +89,7 @@ node tests/a380-paint.mjs # A380 涂装加载与状态表
 - `src/`：模拟器、机型适配、控制与界面。
 - `assets/a380/`、`assets/a380-liveries/`：A380 模型和双侧涂装贴图。
 - `assets/aircraft/`、`assets/accurate-a330/`、`assets/accurate-b777/`：其他机型模型与纹理。
+- `assets/space-shuttle/`：航天飞机轨道器 AC3D 模型、起落架、减速伞与贴图（FlightGear SpaceShuttle，GPL-2.0），以及署名与许可文件。
 - `tools/`：资源转换、涂装生成和校验工具。
 - `tests/`：飞行、模型、涂装、相机和服务器回归检查。
 - `MODEL-NOTES.html`：模型来源与尺寸校核记录。
@@ -101,9 +102,12 @@ node tests/a380-paint.mjs # A380 涂装加载与状态表
 - **A330-300**：上游资源为 GPL-2.0；见 [`NOTICE`](assets/accurate-a330/NOTICE) 和 [`LICENSE`](assets/accurate-a330/LICENSE)。
 - **777**：请查阅 [`LICENSE`](assets/accurate-b777/LICENSE)、[`CREDITS`](assets/accurate-b777/CREDITS.txt) 和 [`AUTHORS`](assets/accurate-b777/AUTHORS)。
 - **747 与项目适配代码**：项目说明将 747 模型、涂装贴图和适配代码标为 GNU GPL v2；见 [`COPYING`](assets/aircraft/COPYING)、[`AUTHORS`](assets/aircraft/AUTHORS) 和 [`模型校核记录`](MODEL-NOTES.html)。
+- **航天飞机**：外形、贴图与起落架来自 FlightGear 官方 SpaceShuttle 机型（GPL-2.0；外部模型源自 NASA 公有领域，经 Herbert Wagner 等在 GPL 下改编，高清贴图来自 SSU 插件作者 Wolf，经其同意后由 Snax 修改）。本仓库剔除了 5 个过度细分的轮辋对象并按 NASA 全长缩放，详见 [`CREDITS`](assets/space-shuttle/CREDITS.txt)、[`AUTHORS`](assets/space-shuttle/AUTHORS) 与 [`LICENSE`](assets/space-shuttle/LICENSE)。NASA 徽标不得用于暗示 NASA 认可本项目。
 - **Three.js**：MIT 许可。航空公司名称、标志及飞机品牌属于各自权利人；本项目不代表或背书任何航空公司、制造商或模型来源。
 
 本项目中的飞行力学和自动起降流程为简化教学演示；A330、A380 和 777 也复用部分 747 飞行模型或座舱逻辑。模型尺寸、涂装真实性和动画完整性不等同于工程校核或真实飞行训练。
 
 ---
 > 本项目由 **CodeX、Claude Code、Pi、Copilot** 使用 **GPT、Claude模型** 生成 · MD 由 **Pi coding agent** 使用 **gpt-6-luna** 生成 · 2026-11-03 16:57 CST
+
+> 由 **Pi Agent** 使用 **claude-haiku-5.5（github-copilot）** 生成 · 2026-11-13 21 CST

@@ -432,3 +432,11 @@ dialog .primary-btn{margin-top:14px}
 #liveryDetails.reality-real{border-color:rgba(126,240,176,.4)}
 #liveryDetails.reality-family{border-color:rgba(255,178,62,.4)}
 #liveryDetails.reality-none{border-style:dashed}
+
+/* Space Shuttle: landing and ground observation only. Hide controls with no orbiter counterpart. */
+body.shuttle-mode #courseStart,body.shuttle-mode [data-mode="takeoff"],body.shuttle-mode [data-mode="free"],body.shuttle-mode #runwayStart,
+body.shuttle-mode [data-camera="cockpit"],body.shuttle-mode [data-camera="wing"],body.shuttle-mode .part-control,body.shuttle-mode #spoiler,body.shuttle-mode #reverse,
+body.shuttle-mode #door,body.shuttle-mode #wipers,body.shuttle-mode #engineInspect,body.shuttle-mode #neutral,body.shuttle-mode .engine-meter,body.shuttle-mode .cell-thrust,body.shuttle-mode #quickFlaps{display:none!important}
+/* The drag chute exists only on the orbiter. */
+#chute{display:none}
+body.shuttle-mode #chute{display:block}

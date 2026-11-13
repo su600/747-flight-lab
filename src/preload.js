@@ -18,9 +18,18 @@ const B777={
 };
 const cargoIds=new Set(CARGO_LIVERIES.map(l=>l.id));
 
+const SHUTTLE=[
+ ['space-shuttle/Models/shuttle_o2.ac',1916512],
+ ['space-shuttle/Models/LandingGears-slim.ac',1768487],
+ ['space-shuttle/Models/DragChute.ac',2343283],
+ ['space-shuttle/Models/spstob_1.png',1689701],
+ ['space-shuttle/Models/chutes.png',631],
+];
+
 export function aircraftFiles(type,{livery='BOE'}={}){
  if(type==='a380')return A380;
  if(type==='a330')return A330;
+ if(type==='shuttle')return SHUTTLE;
  if(type==='b777')return B777[cargoIds.has(livery)?'cargo':'passenger'];
  return [];
 }

@@ -45,12 +45,13 @@
   <div class="drawer-head"><div><span class="panel-label">EXPLORE · 探索</span><h2 id="drawerTitle">可动部件</h2></div><button id="closeDrawer" aria-label="关闭面板">×</button></div>
   <section id="aircraftPanel" class="drawer-content" hidden>
    <p class="hint">保留当前飞行状态与涂装。机型模型会在空闲时自动预下载，点选或悬停时优先下载；载入过一次后即可快速切换。驾驶舱与飞行模型为共用 747 简化示意。</p>
-   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–200LR / 777F</option></select>
+   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–200LR / 777F</option><option value="shuttle">NASA Space Shuttle</option></select>
    <div id="aircraftChoices" class="aircraft-choices" role="group" aria-label="机型快捷选择">
     <button data-aircraft="b747" class="active" aria-pressed="true"><b>BOEING 747–400</b><small>四发 · 标志性上层客舱</small></button>
     <button data-aircraft="a380" aria-pressed="false"><b>AIRBUS A380–800</b><small>四发 · 全长双层客舱</small></button>
     <button data-aircraft="a330" aria-pressed="false"><b>AIRBUS A330–303</b><small>双发 GE CF6 · FlightGear 外部模型</small></button>
     <button data-aircraft="b777" aria-pressed="false"><b>BOEING 777–200LR / 777F</b><small>双发 · 客机与货机外形</small></button>
+    <button data-aircraft="shuttle" aria-pressed="false"><b>NASA SPACE SHUTTLE</b><small>无动力滑翔 · 仅降落与地面观察</small></button>
    </div><p id="aircraftStatus" class="fine-print" role="status"></p><p class="fine-print">A380 模型采用 FlyByWire A380X，CC BY-NC 4.0，仅限非商业用途。<a href="/assets/a380/CREDITS.txt" target="_blank">模型署名与许可 ↗</a></p>
   </section>
   <section id="partsPanel" class="drawer-content" hidden>
@@ -60,7 +61,7 @@
    <div class="part-control"><div><button class="part-name" data-focus="wing">副翼</button><output id="aileronValue">0°</output></div><input id="aileron" type="range" min="-1" max="1" step=".05" value="0" aria-label="副翼"></div>
    <div class="part-control"><div><button class="part-name" data-focus="tail">升降舵</button><output id="elevatorValue">0°</output></div><input id="elevator" type="range" min="-1" max="1" step=".05" value="0" aria-label="升降舵"></div>
    <div class="part-control"><div><button class="part-name" data-focus="tail">方向舵</button><output id="rudderValue">0°</output></div><input id="rudder" type="range" min="-1" max="1" step=".05" value="0" aria-label="方向舵"></div>
-   <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door"><b id="doorLabel">下层货舱门</b><span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="engineInspect">发动机风扇<span>慢速转动</span></button></div>
+   <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door"><b id="doorLabel">下层货舱门</b><span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="chute">减速伞<span>收起</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="engineInspect">发动机风扇<span>慢速转动</span></button></div>
    <button class="wide-btn" id="neutral">舵面回到中立位置</button>
   </section>
   <section id="liveryPanel" class="drawer-content" hidden><p class="hint">换一种颜色，开始下一趟旅程。</p><p id="liveryDetails" class="fine-print" role="status" hidden></p><div id="liveries"></div><p class="fine-print">标签含义：<b>真机</b>＝该机型确有实机涂过这套涂装；<b>同系列</b>＝该航司飞过同系列的其他型号，涂装按其真实样式绘制；<b>无真机</b>＝现实中没有这样的飞机，为兼容适配。航空公司名称与标识仅用于识别和学习。</p></section>

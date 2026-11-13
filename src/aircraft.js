@@ -37,7 +37,10 @@ export function parseAC(text,folder=''){
  const lines=text.replace(/\r/g,'').split('\n');let i=1;const materials=[];
  while(lines[i]?.startsWith('MATERIAL')){const l=lines[i++],rgb=l.match(/rgb ([\d.e+ -]+?)\s+amb/)[1].trim().split(/\s+/).map(Number),name=l.match(/"([^"]*)"/)[1],trans=Number(l.match(/trans (\S+)/)?.[1]||0);materials.push({name,rgb,trans});}
  function object(){
-  while(!lines[i]?.startsWith('OBJECT'))i++;i++;
+  // A truncated or miscounted AC3D would otherwise loop past the end of the file.
+  while(i<lines.length&&!lines[i].startsWith('OBJECT'))i++;
+  if(i>=lines.length)return new T.Group();
+  i++;
   const group=new T.Group();let verts=[],faces=[],tex=null,crease=40;
   while(i<lines.length){const l=lines[i++].trim(),parts=l.split(/\s+/),key=parts[0];
    if(key==='name')group.name=l.slice(6,-1);
@@ -74,6 +77,7 @@ export const LIVERIES=[
  {id:'DLH100',name:'汉莎航空 · 100周年',en:'LUFTHANSA · 100 YEARS',color:'#102958',symbol:'100',logo:'lufthansa.png'},
  {id:'AF1_CLASSIC',name:'空军一号 · 经典涂装',en:'AIR FORCE ONE · CLASSIC',color:'#377fa3',symbol:'AF1',logo:'us-flag.png'},
  {id:'AF1_2026',name:'空军一号 · 2026新版',en:'AIR FORCE ONE · 2026',color:'#142a50',symbol:'AF1',logo:'us-flag.png'},
+ {id:'NASA_SHUTTLE',name:'NASA 航天飞机涂装',en:'NASA SPACE SHUTTLE',color:'#f2f3f4',symbol:'NASA',logo:'us-flag.png',embedded:true},
  ...CARGO_LIVERIES,
 ];
 

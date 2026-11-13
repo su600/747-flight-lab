@@ -1,0 +1,58 @@
+航天飞机轨道器模型 · 来源、署名与许可
+==========================================
+
+一、外形、贴图与动画（模型网格、材质、贴图）
+------------------------------------------
+来源：FlightGear 官方机型 SpaceShuttle（fgaddon 仓库 r21799）
+  - SVN：https://svn.code.sf.net/p/flightgear/fgaddon/trunk/Aircraft/SpaceShuttle
+  - 网页：https://sourceforge.net/p/flightgear/fgaddon/HEAD/tree/trunk/Aircraft/SpaceShuttle/
+  - 使用文件：
+      Models/shuttle_o2.ac            轨道器主体（约 2.45 万三角形）
+      Models/LandingGears.ac          起落架总成（已剔除轮辋细节，见第二节）
+      Models/Parachutes/DragChute.ac  减速伞（约 4.3 万三角形）
+      Models/spstob_1.png             2048×1024 机身贴图
+      Models/Parachutes/chutes.png    伞衣贴图
+      AUTHORS、LICENSE               上游署名与许可
+
+许可：GNU General Public License v2（见本目录 LICENSE）。上游声明如下：
+  - 外部 3D 模型：原始模型取自 NASA（公有领域），由 Herbert Wagner 在 GPL 下改编；
+    本项目所用版本由 Richard Harrison、Wayne Bragg、japreja 修改与扩展。
+  - 外部高清贴图：原贴图来自 SSU Orbiter 插件的 Wolf
+    （https://www.orbiter-forum.com/threads/ssu-hi-res-textures.35761/），
+    经 Wolf 同意后由 Snax 为 FlightGear 网格修改。再分发时请保留以上署名。
+  - 飞行动力学、系统与效果基于 NASA 技术报告，由 Thorsten Renk 等人完成；
+    本模拟器未使用其飞行动力学代码，仅使用外部模型与贴图。
+
+本项目未包含上游的座舱、音效、发射台、有效载荷等资源。
+
+二、本项目所作改动
+------------------
+  1. 仅采用轨道器本体、起落架与减速伞三个 AC3D 文件，不加载外部贮箱、助推器与座舱；
+  2. 起落架文件原为 12.4 MB、约 16.9 万三角形，其中 5 个轮辋对象
+     （Rim、LRimL、RRimL、LRimR、RRimR）占约 14.4 万三角形；
+     已剔除这些轮辋，保留轮胎、减震器、撑杆、舱门等部件，文件降至 1.7 MB、约 2.5 万三角形；
+  3. 模型原始状态为货舱门开启，加载时按 FlightGear 动画定义将其闭合到 -171°，
+     使轨道器呈现着陆构型；
+  4. 按 NASA 公布的 37.2 m 全长对模型做统一缩放（源模型约 36.69 m）；
+  5. 由 src/space-shuttle.js 按模拟器状态驱动起落架收放、起落架舱门、垂尾减速板与减速伞；
+  6. 未改动网格与贴图内容。
+
+三、起落架与减速伞的真实数据
+----------------------------
+  - 前起落架轮轴 X_O 370.2 in，主起落架轮轴 X_O 1172.5 in、轮距 22.67 ft；
+    前轮胎 32×8.8 in，主轮胎 44.5×16.0-21 in，共 6 个轮胎。
+    来源：NASA NTRS 20110015612、19770010192、19850008650；
+    https://www.nasa.gov/wp-content/uploads/2023/06/space-shuttle-tires-k-12-supplemental.pdf
+  - 减速伞：40 ft（12.19 m）名义直径，20° 锥形连续带条伞，Kevlar 结构，
+    1992 年 5 月 16 日 STS-49 首次使用；主轮接地后数秒放出，约 30 kt 抛伞。
+    来源：AmericaSpace《Stopping the Shuttle: Remembering the Drag Chute, 30 Years On》
+    https://www.americaspace.com/2021/01/03/stopping-the-shuttle-remembering-the-drag-chute-30-years-on/
+  - 模拟器中的伞衣直径已缩放至 12.19 m；伞绳长度、充气时间与摆动为示意。
+
+四、与真实轨道器的差异
+------------------
+  - 贴图显示该模型为 Atlantis（OV-104）；机身字样、NASA 标志与国旗位置与实机一致。
+  - 飞行力学沿用本项目的简化共享模型（与 A380/A330/777 相同），进近坡度与接地速度为
+    示意值，不代表真实轨道器的约 19° 陡降与约 195 节接地。
+  - 垂尾减速板、机翼升降副翼与机身襟翼在模型中存在；本模拟器只驱动减速板，
+    升降副翼与机身襟翼保持中立。

@@ -32,9 +32,9 @@ export async function verifyAircraftSelectionAdapter(adapter){
  const options=await adapter.listAircraft();
  assert(Array.isArray(options),'listAircraft() must return an array');
  const ids=options.map(option=>typeof option==='string'?option:option?.id);
- const expected=['b747','a380','a330','b777'];
- assert.deepEqual([...ids].sort(),[...expected].sort(),'runtime selector must expose the four supported aircraft');
- assert.equal(new Set(ids).size,4,'aircraft choice IDs must be unique');
+ const expected=['b747','a380','a330','b777','shuttle'];
+ assert.deepEqual([...ids].sort(),[...expected].sort(),'runtime selector must expose the five supported aircraft');
+ assert.equal(new Set(ids).size,5,'aircraft choice IDs must be unique');
  assert.equal(await adapter.isRenderingPaused(),true,'state/resource mode must explicitly pause per-frame rendering');
  console.log('[aircraft-options] renderingPaused=true; visual rendering is intentionally not measured');
  const selectedAircraft=async()=>{
@@ -157,10 +157,10 @@ export async function verifyAircraftSelectionAdapter(adapter){
 async function verifyAircraftChoiceMarkup(){
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const ids=[...html.matchAll(/<button\b[^>]*\bdata-aircraft=[\"']([^\"']+)[\"']/g)].map(match=>match[1]);
- const expected=['b747','a380','a330','b777'];
- assert.equal(ids.length,4,`aircraft selector should expose four choices, found ${ids.length}`);
- assert.equal(new Set(ids).size,4,'aircraft selector choices must be unique');
- assert.deepEqual([...ids].sort(),[...expected].sort(),'aircraft selector should cover 747, A380, A330, and 777');
+ const expected=['b747','a380','a330','b777','shuttle'];
+ assert.equal(ids.length,5,`aircraft selector should expose five choices, found ${ids.length}`);
+ assert.equal(new Set(ids).size,5,'aircraft selector choices must be unique');
+ assert.deepEqual([...ids].sort(),[...expected].sort(),'aircraft selector should cover 747, A380, A330, 777 and the orbiter');
  const glbNames=['fuselage','wings','nose','wing-left','wing-right','body-left','body-right'];
  for(const name of glbNames){
   const data=await readFile(new URL(`../assets/a380/${name}.glb`,import.meta.url));

@@ -19,7 +19,7 @@ async function geometryOnlyGLB(name){
  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(out.buffer.slice(out.byteOffset,out.byteOffset+out.byteLength),'');
 }
 // Catalog, atlas files and reality table agree.
-for(const l of LIVERIES){
+for(const l of LIVERIES.filter(x=>!x.embedded)){
  assert(A380_STYLE[l.id],`style for ${l.id}`);assert(A380_REALITY[l.id],`reality for ${l.id}`);
  assert(['real','family','none'].includes(A380_REALITY[l.id].status));assert(A380_REALITY[l.id].note.length<=70,`${l.id} note length`);
  for(const side of ['port','starboard'])await access(new URL(`../assets/a380-liveries/${l.id}-${side}.webp`,import.meta.url));

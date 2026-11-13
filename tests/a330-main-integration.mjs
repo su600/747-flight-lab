@@ -110,7 +110,7 @@ const aircraftButtons=['b747','a380','a330','b777'].map(id=>({dataset:{aircraft:
 const all=selector=>selector==='[data-livery]'?liveryButtons:selector==='[data-aircraft]'?aircraftButtons:selector==='.engine-meter'?[{},{},{},{}]:[];
 const $=selector=>{if(!elements.has(selector))elements.set(selector,{textContent:'',innerHTML:'',value:'',title:'',disabled:false,hidden:false});return elements.get(selector);};
 let genericAdds=0,genericUpdates=0,wingFixes=0;
-const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,tailSamples:()=>[],makePitchLimit:()=>()=>40,
+const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,document:{body:{classList:{toggle(){}}}},tailSamples:()=>[],makePitchLimit:()=>()=>40,
  realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},beginLoad:()=>({update(){},done(){}}),preloadAircraft:async()=>{},modelFactory:async type=>{if(type==='a330')return new AccurateA330();throw Error('unexpected model '+type);},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
 vm.runInContext(`
  const world={time:'day'},sim={gear:1,flaps:0,engine:0,onGround:true,door:0,doorTarget:0};
@@ -140,8 +140,8 @@ assert(a.dimensions.x>62&&a.dimensions.x<64&&a.dimensions.z>59&&a.dimensions.z<6
 assert.equal($('#engineLabel').textContent,'GE CF6-80E1 · N1 %');assert.equal($('#gearDescription').textContent,'10 个轮子，3 组支撑');assert($('#aboutDetails').innerHTML.includes('FlightGear A330-303'));assert($('#door').disabled);
 assert.equal(api.state().airflow.engines.length,2);assert.equal(api.state().airflow.engines[0].z,-9.41);assert.equal(api.state().airflow.mainGear.length,4);
 for(const entry of LIVERIES){
- if(['AF1_CLASSIC','AF1_2026'].includes(entry.id)){
-  const before=a.livery;assert.equal(await api.selectLivery(entry.id),false,`${entry.id} is 747-only`);assert.equal(a.livery,before);
+ if(['AF1_CLASSIC','AF1_2026','NASA_SHUTTLE'].includes(entry.id)){
+  const before=a.livery;assert.equal(await api.selectLivery(entry.id),false,`${entry.id} is limited to its own aircraft`);assert.equal(a.livery,before);
   continue;
  }
  assert.equal(await api.selectLivery(entry.id),true,entry.id);const cargo=['fedex','sf'].includes(entry.id);
