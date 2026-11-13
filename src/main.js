@@ -259,12 +259,19 @@ async function selectAircraft(type){
    if(requestedLivery===desiredLivery&&selected!==desiredLivery){desiredLivery=selected;liveryVersion++;}
    if(!applied&&selected===desiredLivery&&++retries>2)throw Error('涂装切换未完成，请重试');
   }while(!applied||selected!==desiredLivery);
+  const wasUnpowered=!!plane.unpowered;
   next.root.position.copy(plane.root.position);next.root.quaternion.copy(plane.root.quaternion);next.root.visible=plane.root.visible;
   next.update(sim,0);syncCabinTime(next);scene.remove(plane.root);plane=next;scene.add(plane.root);setEmitters(plane);sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);
   // Only the orbiter carries a drag chute; stow it when leaving that aircraft.
   sim.chuteAvailable=!!plane.hasDragChute;if(!sim.chuteAvailable){sim.chuteTarget=0;sim.chute=0;}
+  // Unpowered gliders (the orbiter) use their own approach profile.
+  sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;
   // The orbiter offers only landing and ground observation: leave takeoff/free-flight states and cockpit/wing views.
-  if(plane.type==='shuttle'&&!['land','inspect'].includes(sim.mode))go('inspect');else if(plane.type==='shuttle'&&(camMode==='cockpit'||camMode==='wing'))setCam('orbit');
+  if(plane.type==='shuttle'&&!['land','inspect'].includes(sim.mode))go('inspect');
+  // The approach profile differs between powered airliners and the gliding orbiter,
+  // so restart the landing demo rather than finish another aircraft's approach.
+  else if(sim.mode==='land'&&sim.unpowered!==wasUnpowered)go('land');
+  else if(plane.type==='shuttle'&&(camMode==='cockpit'||camMode==='wing'))setCam('orbit');
   if(window.flightLab)window.flightLab.plane=plane;
   $('#aircraftStatus').textContent='已切换 · 飞行状态保持不变';showAircraft();showLivery();return true;
  }catch(error){if(request===aircraftRequest){$('#aircraftStatus').textContent='载入失败，请重试';$('#aircraftSelect').value=plane.type;notify(error.message||'机型载入失败');}return false;}
@@ -427,7 +434,7 @@ function resize(){cancelCameraGestures();display.requestResize();if(camMode==='o
 addEventListener('resize',resize);
 let running=true;
 async function start(){
- try{await plane.load();fixAircraftWingShading(plane);sim.chuteAvailable=!!plane.hasDragChute;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
+ try{await plane.load();fixAircraftWingShading(plane);sim.chuteAvailable=!!plane.hasDragChute;sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
  // Parked aircraft share geometry and textures, with animations fixed at their current neutral state.
  for(const [x,z] of [[-1200,-390],[-510,-390],[180,-390],[640,-390]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=-Math.PI/2;world.softShadow(x+6,z+2,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=$('#quality')?.value!=='low';parkedAircraft.push(p);}
  addCabinLights(plane);syncCabinTime(plane);

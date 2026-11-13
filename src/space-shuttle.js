@@ -62,6 +62,11 @@ export class SpaceShuttle extends Aircraft{
   this.type='shuttle';
   // The FlightGear AC3D has the nose toward -X, so the base class's half-turn stays.
   this.hasDragChute=true;
+  // The orbiter is an unpowered glider: no thrust, a steeper approach and a
+  // higher touchdown speed than the airliners it shares the flight model with.
+  this.unpowered=true;
+  this.landingGlide=6;
+  this.landingSpeed=85;
   this.setCabinTime=()=>{};
   this.wheels=[];this.wheelContacts=[];this.wingtipPoints=[];
   this.livery='NASA_SHUTTLE';

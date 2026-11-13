@@ -101,7 +101,7 @@ function flapDrag(flaps){
 }
 
 export class Flight{
- constructor(){this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.reset('inspect');}
+ constructor(){this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
  reset(mode='inspect'){
   this.mode=mode;
   this.mass=mode==='land'?AIRCRAFT.landingMass:AIRCRAFT.mass;
@@ -109,16 +109,17 @@ export class Flight{
   this.phase=mode==='inspect'?'认识你的 747':mode==='takeoff'?'起飞前检查':mode==='land'?'对准跑道，开始进近':'你来当机长';
   this.x=mode==='inspect'?-850:mode==='land'?-5300:-1730;
   this.z=mode==='inspect'?-300:0;
-  this.altitude=mode==='land'?(RUNWAY.touch-this.x)*Math.tan(3*D2R):mode==='free'?700:0;
+  const glide=this.landingGlide||3,approach=this.landingSpeed||78;
+  this.altitude=mode==='land'?(RUNWAY.touch-this.x)*Math.tan(glide*D2R):mode==='free'?700:0;
   this.heading=90;
   this.bank=0;this.rollRate=0;
-  this.gamma=mode==='land'?-3*D2R:0;
-  this.speed=mode==='land'?78:mode==='free'?125:0;
+  this.gamma=mode==='land'?-glide*D2R:0;
+  this.speed=mode==='land'?approach:mode==='free'?125:0;
   this.pitch=mode==='free'||mode==='land'?0:0;
   this.pitchRate=0;
   this.throttle=0;this.engineN1=.22;this.engine=this.engineN1;
   this.gear=mode==='free'?0:1;this.gearTarget=this.gear;
-  this.flaps=mode==='land'?20:0;this.flapTarget=mode==='land'?30:0;
+  this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;
   this.door=0;this.doorTarget=0;
@@ -298,7 +299,7 @@ export class Flight{
   const n1=clamp((this.engineN1-.22)/.78,0,1);
   const sigma=rho/RHO0;
   const lapse=Math.pow(sigma,.82)*Math.max(.1,1-.28*mach-.10*mach*mach);
-  const thrust=AIRCRAFT.engines*AIRCRAFT.engineThrust*(.045+.955*Math.pow(n1,1.3))*lapse;
+  const thrust=this.unpowered?0:AIRCRAFT.engines*AIRCRAFT.engineThrust*(.045+.955*Math.pow(n1,1.3))*lapse;
   const lift=qbar*S*cl;
   // The drag chute adds a large, speed-squared force once it inflates.
   const chuteDrag=qbar*CHUTE_CD*CHUTE_AREA*this.chute;
@@ -309,7 +310,7 @@ export class Flight{
   this.stallAngle=stallAngle*R2D;
   this.cl=cl;this.cd=cd;this.qbar=qbar;this.mach=mach;
   this.lift=lift;this.drag=drag;this.thrust=thrust;this.chuteDrag=chuteDrag;
-  this.reverseThrust=this.onGround?this.reverse*AIRCRAFT.reverseFactor*thrust:0;
+  this.reverseThrust=this.onGround&&!this.unpowered?this.reverse*AIRCRAFT.reverseFactor*thrust:0;
   this.stalled=!this.onGround&&alpha>stallAngle&&v>20;
   this.normalForce=this.onGround?Math.max(0,this.weight-lift-this.thrust*Math.sin(this.pitch*D2R)):lift;
   return{rho,qbar,alpha,flapFrac,cl,cd,lift,drag,thrust,stallAngle,mach};
@@ -344,9 +345,12 @@ export class Flight{
  landingPitchTarget(){
   const distance=RUNWAY.touch-this.x;
   if(this.onGround)return 0;
-  const pathAltitude=Math.max(0,(distance-30)*Math.tan(3*D2R));
-  let gammaTarget=this.altitude>14?clamp(-3+(pathAltitude-this.altitude)*.06,-4.5,-1):clamp(-.8-this.altitude*.06,-1.6,-.6);
-  const targetSpeed=distance>350?77:73;
+  const glide=this.landingGlide||3,approach=this.landingSpeed||77;
+  const flareAlt=this.unpowered?24:14;
+  const pathAltitude=Math.max(0,(distance-30)*Math.tan(glide*D2R));
+  const minGamma=this.unpowered?-12:-4.5;
+  let gammaTarget=this.altitude>flareAlt?clamp(-glide+(pathAltitude-this.altitude)*.06,minGamma,-1):clamp(-.8-this.altitude*.06,-1.6,-.6);
+  const targetSpeed=this.unpowered?approach:(distance>350?77:73);
   const alpha=this.trimAlpha(this.speed,this.flaps,0)*R2D;
   this.guidanceGamma=gammaTarget;
   this.guidanceAltitude=pathAltitude;
@@ -365,15 +369,18 @@ export class Flight{
  }
  landingGuidance(){
   const distance=RUNWAY.touch-this.x;
-  this.flapTarget=30;this.gearTarget=1;
+  const glide=this.landingGlide||3,approach=this.landingSpeed||77;
+  this.flapTarget=this.unpowered?0:30;this.gearTarget=1;
   if(!this.onGround){
-   const targetSpeed=distance>350?77:73;
-   this.throttle=clamp(this.trimThrottle(-3*D2R)+(targetSpeed-this.speed)*.03,.04,.75);
-   if(this.altitude<9)this.throttle=0;
+   const targetSpeed=this.unpowered?approach:(distance>350?77:73);
+   this.throttle=this.unpowered?0:clamp(this.trimThrottle(-glide*D2R)+(targetSpeed-this.speed)*.03,.04,.75);
+   if(!this.unpowered&&this.altitude<9)this.throttle=0;
    this.reverseTarget=0;this.landingBrake=0;this.spoilerTarget=0;
   }else if(this.speed>2){
-   this.throttle=this.speed>25?.6:0;
-   this.reverseTarget=this.speed>25?1:0;
+   // An unpowered orbiter has no reversers; it relies on wheel brakes, the
+   // speed brake and the drag chute.
+   this.throttle=this.unpowered?0:(this.speed>25?.6:0);
+   this.reverseTarget=this.unpowered?0:(this.speed>25?1:0);
    this.landingBrake=this.speed>25?.55:.28;
    this.spoilerTarget=1;
    // The orbiter pops its drag chute right after main-gear touchdown and jettisons it near 30 kt.
@@ -490,7 +497,8 @@ export class Flight{
   const gearDown=this.gear>.97,level=Math.abs(this.bank)<12&&this.pitch>-.5;
   this.touchdown={rate:sink,x:this.x,z:this.z,speed:this.speed};
   this.altitude=0;
-  if(!runway||!gearDown||sink>4.6||!level||this.speed>95){
+  const maxTouchdown=this.unpowered?120:95;
+  if(!runway||!gearDown||sink>4.6||!level||this.speed>maxTouchdown){
    this.failed=true;
    this.message=!runway?'偏离跑道啦，重新对准再试一次':!gearDown?'记得放下起落架，再轻轻着陆':sink>4.6?'下降有点快，接近地面时轻轻抬头':!level?'先把机翼放平、轻轻抬起机头':'接地速度较快，先减速再尝试着陆';
    this.speed=0;this.vs=0;this.gamma=0;this.pitch=0;this.onGround=true;return;
@@ -530,7 +538,7 @@ export class Flight{
    this.phase=this.onGround?(this.speed<72?'四台发动机全推力 · 沿跑道加速':'达到抬轮速度 · 轻轻抬头'):this.altitude<35?'升力托起飞机 · 保持爬升':this.altitude<200?'正爬升 · 收起起落架':'收襟翼 · 加速爬升';
    if(this.altitude>585&&Math.abs(this.vs)<2){this.complete=true;this.phase='起飞成功 · 已进入平飞，可以接管';}
   }else if(this.mode==='land'){
-   this.phase=!this.onGround?(this.altitude<14?'轻轻拉平 · 减少下降率':'保持进近速度 · 沿下滑道下降'):this.speed>25?(this.chute>.5?'减速伞已放出 · 轮刹与减速伞一起减速':'主轮接地 · 轮刹、反推与扰流板减速'):'慢慢停稳 · 欢迎抵达';
+   this.phase=!this.onGround?(this.altitude<14?'轻轻拉平 · 减少下降率':'保持进近速度 · 沿下滑道下降'):this.speed>25?(this.chute>.5?'减速伞已放出 · 轮刹与减速伞一起减速':this.unpowered?'主轮接地 · 减速板与轮刹减速':'主轮接地 · 轮刹、反推与扰流板减速'):'慢慢停稳 · 欢迎抵达';
    if(this.onGround&&this.speed<.2){this.complete=true;this.phase='降落成功 · 飞机已停稳';}
   }else if(this.stalled)this.phase='失速！松杆、压低机头并加推力';
   else if(this.overspeed)this.phase='速度过大 · 收油门并轻轻带杆';
