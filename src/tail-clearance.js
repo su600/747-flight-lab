@@ -19,7 +19,7 @@ export function tailSamples(root,{maxPoints=6000}={}){
  const inv=root.matrixWorld.clone().invert();
  const all=[];let top=null;
  root.traverse(o=>{
-  if(!o.isMesh||!o.geometry?.attributes?.position)return;
+  if(!o.isMesh||!o.geometry?.attributes?.position||o.userData.nonStructural)return;
   const p=o.geometry.attributes.position;
   const e=inv.clone().multiply(o.matrixWorld).elements;
   for(let i=0;i<p.count;i++){

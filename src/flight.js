@@ -118,7 +118,8 @@ export class Flight{
   this.pitch=mode==='free'||mode==='land'?0:0;
   this.pitchRate=0;
   this.throttle=0;this.engineN1=.22;this.engine=this.engineN1;
-  this.gear=mode==='free'?0:1;this.gearTarget=this.gear;
+  // The orbiter lowers its gear late in the approach so the extension is visible.
+  this.gear=mode==='free'?0:(mode==='land'&&this.unpowered?0:1);this.gearTarget=this.gear;
   this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;
@@ -370,7 +371,8 @@ export class Flight{
  landingGuidance(){
   const distance=RUNWAY.touch-this.x;
   const glide=this.landingGlide||3,approach=this.landingSpeed||77;
-  this.flapTarget=this.unpowered?0:30;this.gearTarget=1;
+  this.flapTarget=this.unpowered?0:30;
+  this.gearTarget=this.unpowered?(this.altitude<120?1:0):1;
   if(!this.onGround){
    const targetSpeed=this.unpowered?approach:(distance>350?77:73);
    this.throttle=this.unpowered?0:clamp(this.trimThrottle(-glide*D2R)+(targetSpeed-this.speed)*.03,.04,.75);

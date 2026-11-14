@@ -17,6 +17,12 @@ const DEG=Math.PI/180;
 const REAL_LENGTH=37.2;      // metres, NASA reference
 const CHUTE_DIAMETER=12.19;  // 40 ft nominal
 const CHUTE_ATTACH=new T.Vector3(16.2,1.6,0);   // native frame: +X is the tail
+// The source gear has a short nose strut and long main struts, so the orbiter
+// rests nose-down. Tilting the model by this angle puts every tyre on the ground.
+const GROUND_TILT=3.6*Math.PI/180;
+// Main wheels removed from the source (they were the over-tessellated hub objects).
+const MAIN_WHEELS=[[4.06,-7.46,2.99],[4.06,-7.46,3.91],[4.06,-7.46,-2.99],[4.06,-7.46,-3.91]];
+const MAIN_TYRE_R=.545,MAIN_TYRE_W=.41;
 // The model is authored with the payload bay open; -171 deg closes it.
 const BAY_CLOSED=-171;
 const BAY_DOORS=[
@@ -87,25 +93,38 @@ export class SpaceShuttle extends Aircraft{
    if(object)hinge(object,door.center,new T.Vector3(1,0,0),door.sign*BAY_CLOSED);
   }
   this.gearDoors=GEAR_DOORS.map(d=>({...d,object:body.getObjectByName(d.name)}));
+  // Retraction hinges from the FlightGear animation XML (gear-pos-norm 0 -> 97/110 deg).
+  this.mainGearPivots=[
+   {object:gear.getObjectByName('TrunionFittingL'),center:fg(4.04917,-3.44992,-4.87976),axis:fg(0,1,0),deg:97.17},
+   {object:gear.getObjectByName('TrunionFittingR'),center:fg(4.04917,3.44992,-4.87976),axis:fg(0,1,0),deg:97.17},
+  ];
+  this.noseGearPivot={object:gear.getObjectByName('Cube'),center:fg(-16.119,0,-4.91955),axis:fg(0,1,0),deg:110};
   this.speedBrakes=['SpeedBrakeL','SpeedBrakeR'].map((name,i)=>({
    object:body.getObjectByName(name),
    center:SPEED_BRAKE_CENTER,
    axis:i===0?SPEED_BRAKE_AXIS:SPEED_BRAKE_AXIS.clone().negate(),
   }));
-  this.native.add(body,gear);
+  this.tilt=new T.Group();
+  this.native.add(this.tilt);
+  this.tilt.add(body,gear);
   // The chute model points up from its attach point; turn it aft (the native group's
   // +X is the tail) and scale it to the real 40 ft canopy diameter.
   const chutePivot=new T.Group();
-  chutePivot.rotation.z=-Math.PI/2;
+  chutePivot.rotation.z=-Math.PI/2;   // model +Y (canopy) -> native +X (tail)
+  const chuteSway=new T.Group();      // animated sway, kept separate from the base rotation
+  chutePivot.add(chuteSway);
   const chuteScale=CHUTE_DIAMETER/8.43;
   chute.scale.setScalar(chuteScale);
-  chutePivot.add(chute);
+  chuteSway.add(chute);
   chutePivot.position.copy(CHUTE_ATTACH);
-  this.chuteRoot=chutePivot;this.chuteCanopy=chute;
-  this.native.add(chutePivot);
-  await waitForTextures(this.native);
+  chute.traverse(o=>{if(o.isMesh)o.userData.nonStructural=true;});
+  this.chuteRoot=chutePivot;this.chuteSway=chuteSway;this.chuteCanopy=chute;
+  this.tilt.add(chutePivot);
+  await waitForTextures(this.tilt);
   // Match NASA's published length; both the body and the gear sit in one frame.
   this.native.scale.setScalar(REAL_LENGTH/36.688);
+  this.buildMainWheels();
+  this.tilt.rotation.z=GROUND_TILT;
   this.root.updateMatrixWorld(true);
   // Measure the fuselage and gear only: the stowed chute trails far aft and would
   // otherwise inflate the reported length.
@@ -113,7 +132,7 @@ export class SpaceShuttle extends Aircraft{
   box.expandByObject(body);box.expandByObject(gear);
   this.contact=-box.min.y;
   this.dimensions=box.getSize(new T.Vector3());
-  this.wingtipPoints=this.findWingtips(body).map(p=>p.applyMatrix4(this.native.matrix));
+  this.wingtipPoints=this.findWingtips(body).map(p=>p.applyMatrix4(this.tilt.matrix).applyMatrix4(this.native.matrix));
   this.wheelContacts=this.findWheelContacts(gear);
   this.buildLights();
   this.update({gear:1,chute:0,speed:0,spoiler:0,lights:true,time:0},0);
@@ -137,6 +156,19 @@ export class SpaceShuttle extends Aircraft{
   const st=centreOf(starboard)||new T.Vector3(-9,0,half);
   return [p,st];
  }
+ buildMainWheels(){
+  const tyre=new T.MeshStandardMaterial({color:0x1d1f22,roughness:.85,metalness:0});
+  const hub=new T.MeshStandardMaterial({color:0xb9bec4,roughness:.4,metalness:.7});
+  const [left,right]=this.mainGearPivots.map(p=>p.object);
+  for(const [x,y,z] of MAIN_WHEELS){
+   const wheel=new T.Group();wheel.position.set(x,y,z);
+   const t=new T.Mesh(new T.CylinderGeometry(MAIN_TYRE_R,MAIN_TYRE_R,MAIN_TYRE_W,28),tyre);
+   t.rotation.x=Math.PI/2;t.castShadow=true;wheel.add(t);
+   const h=new T.Mesh(new T.CylinderGeometry(MAIN_TYRE_R*.55,MAIN_TYRE_R*.55,.02,20),hub);
+   h.rotation.x=Math.PI/2;h.position.z=MAIN_TYRE_W/2+.01;wheel.add(h);
+   (z>0?left:right).add(wheel);
+  }
+ }
  findWheelContacts(gear){
   // Lowest vertices of the gear model cluster at the tyre contact patches.
   const points=[];let minY=Infinity;
@@ -147,7 +179,7 @@ export class SpaceShuttle extends Aircraft{
   const low=points.filter(p=>p.y<minY+.15);
   const left=low.filter(p=>p.z<0),right=low.filter(p=>p.z>=0);
   const mid=list=>{const v=new T.Vector3();for(const p of list)v.add(p);return v.multiplyScalar(1/Math.max(1,list.length));};
-  const m=this.native.matrix;
+  const m=this.tilt.matrix.clone().premultiply(this.native.matrix);
   if(!left.length||!right.length)return [new T.Vector3(0,-this.contact,-3.4),new T.Vector3(0,-this.contact,3.4)];
   return [mid(left).applyMatrix4(m),mid(right).applyMatrix4(m)];
  }
@@ -168,9 +200,14 @@ export class SpaceShuttle extends Aircraft{
   const gear=Math.max(0,Math.min(1,s.gear??1));
   const chute=Math.max(0,Math.min(1,s.chute??0));
   const brake=Math.max(0,Math.min(1,s.spoiler??0));
-  // Landing gear slides up into the wheel wells as it retracts.
+  // Landing gear swings up into the wheel wells about its trunnions.
   this.gearGroup.visible=gear>.02;
-  this.gearGroup.position.y=(1-gear)*4.6;
+  const retract=1-gear;
+  for(const p of this.mainGearPivots)hinge(p.object,p.center,p.axis,retract*p.deg);
+  hinge(this.noseGearPivot.object,this.noseGearPivot.center,this.noseGearPivot.axis,retract*this.noseGearPivot.deg);
+  // Sit nose-down on the ground so the short nose strut reaches the runway.
+  const ground=s.onGround?1:0;
+  this.tilt.rotation.z=GROUND_TILT*ground;
   for(const d of this.gearDoors)hinge(d.object,d.center,d.axis,90*gear);
   for(const b of this.speedBrakes)hinge(b.object,b.center,b.axis,SPEED_BRAKE_OPEN*brake);
   // Drag chute: inflate away from the attach point, trailing aft with a slight sway.
@@ -178,7 +215,7 @@ export class SpaceShuttle extends Aircraft{
   if(this.chuteRoot.visible){
    const t=s.time||0;
    this.chuteCanopy.scale.setScalar((CHUTE_DIAMETER/8.43)*(.3+.7*chute));
-   this.chuteRoot.rotation.set(0,Math.sin(t*1.1)*.04*chute,-.10*chute+Math.sin(t*1.6)*.03*chute);
+   this.chuteSway.rotation.set(0,Math.sin(t*1.1)*.04*chute,Math.sin(t*1.6)*.03*chute);
   }
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
  }

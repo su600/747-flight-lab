@@ -92,4 +92,20 @@ assert.equal(f.chuteTarget,1,'chute should deploy on rollout');
 f.speed=10;f.landingGuidance();
 assert.equal(f.chuteTarget,0,'chute should jettison near 30 kt');
 
+// --- Unpowered approach profile --------------------------------------------
+const g=new Flight();
+g.unpowered=true;g.landingGlide=6;g.landingSpeed=85;g.chuteAvailable=true;
+g.reset('land');
+assert.equal(g.gear,0,'the orbiter starts the approach with the gear up');
+assert.equal(g.flaps,0,'the orbiter has no flaps');
+assert(Math.abs(g.altitude-3750*Math.tan(6*Math.PI/180))<1,'approach altitude should follow the 6 deg glide');
+g.altitude=200;g.landingGuidance();assert.equal(g.gearTarget,0,'gear stays up above 120 m');
+g.altitude=100;g.landingGuidance();assert.equal(g.gearTarget,1,'gear lowers below 120 m');
+g.onGround=true;g.speed=60;g.calculateAero();
+assert.equal(g.thrust,0,'the orbiter must not produce thrust');
+assert.equal(g.reverseThrust,0,'the orbiter has no reversers');
+// The gear model must still carry the retraction hinges and the nose strut.
+assert(gear.includes('name "TrunionFittingL"')&&gear.includes('name "TrunionFittingR"'),'gear AC lacks main trunnions');
+assert(gear.includes('name "Cube"'),'gear AC lacks the nose strut');
+
 console.log(`Space Shuttle checks passed: ${orbiter.size[0].toFixed(2)} m long, ${orbiter.size[2].toFixed(2)} m span, ${totalMB.toFixed(1)} MB preload, drag chute ${Math.round(chuteDrag/1000)} kN at 60 m/s.`);
