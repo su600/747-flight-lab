@@ -10,7 +10,7 @@ import {Aircraft, parseAC} from './aircraft.js';
 // prefix normalises to /assets/space-shuttle/Models/.
 const AC_FOLDER='../space-shuttle/Models/';
 const ROOT='/assets/space-shuttle/Models/';
-const FILES={body:'shuttle_o2.ac',gear:'LandingGears-slim.ac',chute:'DragChute.ac'};
+const FILES={body:'shuttle_o2.ac',gear:'LandingGears-slim.ac',chute:'DragChute.ac',engine:'SSME.ac'};
 // FlightGear animation XML is Z-up while the AC3D meshes are Y-up.
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
 const DEG=Math.PI/180;
@@ -23,6 +23,8 @@ const GROUND_TILT=3.6*Math.PI/180;
 // Main wheels removed from the source (they were the over-tessellated hub objects).
 const MAIN_WHEELS=[[4.06,-7.46,2.99],[4.06,-7.46,3.91],[4.06,-7.46,-2.99],[4.06,-7.46,-3.91]];
 const MAIN_TYRE_R=.545,MAIN_TYRE_W=.41;
+// Three SSME bells: centre engine high, the two outboard engines lower and wider.
+const SSME_PLACEMENT=[[-0.1,0,0],[0.1,-2.5,1.5],[0.1,-2.5,-1.5]];
 // The model is authored with the payload bay open; -171 deg closes it.
 const BAY_CLOSED=-171;
 const BAY_DOORS=[
@@ -78,7 +80,7 @@ export class SpaceShuttle extends Aircraft{
   this.livery='NASA_SHUTTLE';
  }
  async load(){
-  const [bodyText,gearText,chuteText]=await Promise.all(Object.values(FILES).map(async name=>{
+  const [bodyText,gearText,chuteText,engineText]=await Promise.all(Object.values(FILES).map(async name=>{
    const response=await fetch(ROOT+name);
    if(!response.ok)throw Error(`航天飞机资源 ${name}：HTTP ${response.status}`);
    return response.text();
@@ -86,7 +88,15 @@ export class SpaceShuttle extends Aircraft{
   const body=parseAC(bodyText,AC_FOLDER);
   const gear=parseAC(gearText,AC_FOLDER);
   const chute=parseAC(chuteText,AC_FOLDER);
-  this.body=body;this.gearGroup=gear;this.chuteModel=chute;
+  const engine=parseAC(engineText,AC_FOLDER);
+  this.body=body;this.gearGroup=gear;this.chuteModel=chute;this.engineModel=engine;
+  // The orbiter AC ships without the main engine bells; clone the single SSME
+  // object to the three documented positions.
+  for(const [x,y,z] of SSME_PLACEMENT){
+   const bell=engine.clone(true);
+   bell.position.set(x,y,z);
+   body.add(bell);
+  }
   // Close the payload bay doors for the landing configuration.
   for(const door of BAY_DOORS){
    const object=body.getObjectByName(door.name);

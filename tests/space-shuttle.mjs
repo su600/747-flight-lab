@@ -60,10 +60,13 @@ assert.equal(liveryForModel(LIVERIES.find(l=>l.id==='BOE'),'shuttle'),null,'airl
 assert.equal(liveryForModel(shuttleLivery,'b747'),null,'NASA livery must not be offered on airliners');
 assert.equal(realityFor('shuttle','NASA_SHUTTLE').status,'real');
 assert(AIRCRAFT_INFO.shuttle&&AIRCRAFT_INFO.shuttle.engines===0,'shuttle info missing or lists engines');
+const engine=await read('SSME.ac');
+assert(engine.includes('name "SSME"'),'SSME nozzle AC lacks its object');
 const files=aircraftFiles('shuttle');
 assert(files.some(([path])=>path.endsWith('shuttle_o2.ac')),'preload list lacks the orbiter body');
 assert(files.some(([path])=>path.endsWith('LandingGears-slim.ac')),'preload list lacks the gear');
 assert(files.some(([path])=>path.endsWith('DragChute.ac')),'preload list lacks the drag chute');
+assert(files.some(([path])=>path.endsWith('SSME.ac')),'preload list lacks the main engine bells');
 const totalMB=files.reduce((n,[,size])=>n+size,0)/1048576;
 assert(totalMB>6&&totalMB<12,`preload budget ${totalMB.toFixed(1)} MB looks wrong`);
 

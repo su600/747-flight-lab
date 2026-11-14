@@ -10,6 +10,7 @@
       Models/shuttle_o2.ac            轨道器主体（约 2.45 万三角形）
       Models/LandingGears.ac          起落架总成（已剔除轮辋细节，见第二节）
       Models/Parachutes/DragChute.ac  减速伞（约 4.3 万三角形）
+      Models/SSME.ac                  主发动机喷口（单件，按上游 SSME1/2/3 位置实例化 3 份）
       Models/spstob_1.png             2048×1024 机身贴图
       Models/Parachutes/chutes.png    伞衣贴图
       AUTHORS、LICENSE               上游署名与许可
