@@ -16,7 +16,9 @@ const fg=(x,y,z)=>new T.Vector3(x,z,-y);
 const DEG=Math.PI/180;
 const REAL_LENGTH=37.2;      // metres, NASA reference
 const CHUTE_DIAMETER=12.19;  // 40 ft nominal
-const CHUTE_FALL_GRAVITY=9.81,CHUTE_REST_Y=.45,CHUTE_FOLD_SECONDS=.65;
+// Runway paint sits at y≈0.05; keep the lowest canopy point just above it.
+// A 40 ft canopy collapses to about 1.2 m high when it lies on the runway.
+const CHUTE_FALL_GRAVITY=9.81,CHUTE_GROUND_CLEARANCE=.06,CHUTE_SETTLE_RATE=5,CHUTE_FOLD_SECONDS=.65,CHUTE_COLLAPSE=1.2/CHUTE_DIAMETER;
 const CHUTE_ATTACH=new T.Vector3(16.2,1.6,0);   // native frame: +X is the tail
 // The source gear has a short nose strut and long main struts, so the orbiter
 // rests nose-down. Tilting the model by this angle puts every tyre on the ground.
@@ -214,20 +216,32 @@ export class SpaceShuttle extends Aircraft{
   dropped.position.copy(pos);
   dropped.quaternion.copy(quat);
   dropped.scale.copy(scl);
-  const restQuaternion=dropped.quaternion.clone().multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),Math.PI/2*.92));
-  dropped.userData.chuteFall={velocityY:0,elapsed:0,initialScaleY:dropped.scale.y,restQuaternion,landed:false};
+  // Canopy geometry: model +Y is the canopy's length (its axis, trailing aft from the attach),
+  // while model X is the canopy diameter that collapses. On the runway the axis lies
+  // horizontal and pointing aft, and the collapsed diameter (model X) points up.
+  const aft=new T.Vector3(0,1,0).applyQuaternion(quat);aft.y=0;
+  if(aft.lengthSq()<1e-6)aft.set(1,0,0);aft.normalize();
+  const up=new T.Vector3(0,1,0),side=new T.Vector3().crossVectors(up,aft);
+  const restQuaternion=new T.Quaternion().setFromRotationMatrix(new T.Matrix4().makeBasis(up,aft,side));
+  dropped.userData.chuteFall={velocityY:0,fold:0,initialScale:dropped.scale.clone(),restQuaternion,landed:false};
   parent.add(dropped);
   this.droppedChutes.push(dropped);
   while(this.droppedChutes.length>3){const old=this.droppedChutes.shift();old.parent?.remove(old);}
  }
+ // Falls under gravity, turns the canopy flat and keeps its lowest point on the runway.
  updateDroppedChuteMotion(dt=0){
   if(dt<=0)return;
   for(const dropped of this.droppedChutes){
-   const fall=dropped.userData.chuteFall;if(!fall||fall.landed)continue;
-   fall.elapsed+=dt;fall.velocityY-=CHUTE_FALL_GRAVITY*dt;dropped.position.y+=fall.velocityY*dt;
-   dropped.quaternion.slerp(fall.restQuaternion,1-Math.exp(-4*dt));
-   dropped.scale.y=fall.initialScaleY*Math.max(.35,1-.65*fall.elapsed/CHUTE_FOLD_SECONDS);
-   if(dropped.position.y<=CHUTE_REST_Y){dropped.position.y=CHUTE_REST_Y;dropped.quaternion.copy(fall.restQuaternion);dropped.scale.y=fall.initialScaleY*.35;fall.landed=true;}
+   const fall=dropped.userData.chuteFall;if(!fall)continue;
+   if(!fall.landed){fall.velocityY-=CHUTE_FALL_GRAVITY*dt;dropped.position.y+=fall.velocityY*dt;}
+   dropped.quaternion.slerp(fall.restQuaternion,1-Math.exp(-CHUTE_SETTLE_RATE*dt));
+   // The canopy collapses from its inflated height down to its flat rest height.
+   fall.fold=Math.min(1,fall.fold+dt/CHUTE_FOLD_SECONDS);
+   dropped.scale.x=fall.initialScale.x*(1-(1-CHUTE_COLLAPSE)*fall.fold);
+   dropped.updateMatrixWorld(true);
+   const low=new T.Box3().setFromObject(dropped,true).min.y;
+   if(!fall.landed&&low<=CHUTE_GROUND_CLEARANCE)fall.landed=true,fall.velocityY=0;
+   if(fall.landed){dropped.position.y+=CHUTE_GROUND_CLEARANCE-low;dropped.updateMatrixWorld(true);}
   }
  }
  clearDroppedChutes(){

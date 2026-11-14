@@ -79,7 +79,7 @@ console.log('Selection races: old-craft failure, newer selection, and current-cr
 // Exercise the real selector with real detached chute objects in the scene.
 function chuteSwitchFixture(candidate){
  const scene=new T.Scene(),shuttle=new SpaceShuttle();scene.add(shuttle.root);
- shuttle.chuteRoot=new T.Group();shuttle.chuteRoot.position.set(12,3,0);shuttle.root.add(shuttle.chuteRoot);
+ shuttle.chuteRoot=new T.Group();shuttle.chuteRoot.position.set(12,3,0);shuttle.chuteRoot.add(new T.Mesh(new T.BoxGeometry(2,2,2)));// a real extent so landing can be measuredshuttle.root.add(shuttle.chuteRoot);
  shuttle.dropChute();const landed=shuttle.droppedChutes[0];
  for(let i=0;i<30;i++)shuttle.updateDroppedChuteMotion(.05);
  shuttle.dropChute();const falling=shuttle.droppedChutes[1];shuttle.chuteDropped=shuttle.chuteDeployed=true;

@@ -103,14 +103,37 @@ assert.equal(manualCut.control('chute',0),'');manualCut.landingGuidance();
 assert.equal(manualCut.chuteTarget,0,'landing guidance must not redeploy a manually jettisoned chute');
 assert.equal(manualCut.control('chute',1),'减速伞已切除','jettisoned chute cannot be redeployed');
 
-const chuteScene=new T.Scene(),fallingShuttle=new SpaceShuttle();fallingShuttle.root=new T.Group();chuteScene.add(fallingShuttle.root);
-fallingShuttle.chuteRoot=new T.Group();fallingShuttle.chuteRoot.position.set(12,3,0);fallingShuttle.root.add(fallingShuttle.chuteRoot);
+// The real canopy geometry (every AC vertex), so the landing test checks the actual shape.
+function acVertices(text){
+ const lines=text.split('\n'),values=[];
+ for(let i=0;i<lines.length;i++){
+  if(!lines[i].startsWith('numvert '))continue;
+  const n=Number(lines[i].slice(8));
+  for(let k=1;k<=n;k++){const [x,y,z]=lines[i+k].trim().split(/\s+/).map(Number);values.push(x,y,z);}
+ }
+ return new Float32Array(values);
+}
+const canopyGeometry=new T.BufferGeometry();canopyGeometry.setAttribute('position',new T.BufferAttribute(acVertices(chute),3));
+const canopyMesh=new T.Mesh(canopyGeometry);canopyMesh.scale.setScalar(12.19/8.43);
+const fallingShuttle=new SpaceShuttle();
+fallingShuttle.root=new T.Group();fallingShuttle.root.position.set(0,6,0);
+// Same attach as load(): the canopy trails aft from the tail with its axis along the body.
+fallingShuttle.chuteRoot=new T.Group();fallingShuttle.chuteRoot.rotation.z=-Math.PI/2;fallingShuttle.chuteRoot.position.set(16.2,1.6,0);
+const sway=new T.Group();sway.add(canopyMesh);fallingShuttle.chuteRoot.add(sway);fallingShuttle.root.add(fallingShuttle.chuteRoot);
+const chuteParent=new T.Scene();chuteParent.add(fallingShuttle.root);
 fallingShuttle.dropChute();const detached=fallingShuttle.droppedChutes[0];
-assert(detached.position.y>.45,'detached chute should begin above the runway');
-fallingShuttle.updateDroppedChuteMotion(.2);assert(detached.position.y<3,'detached chute should fall under gravity');
-for(let i=0;i<30;i++)fallingShuttle.updateDroppedChuteMotion(.05);
-assert.equal(detached.position.y,.45,'detached chute should settle on the runway');
-assert.equal(detached.userData.chuteFall.landed,true,'detached chute should stop once it reaches the runway');
+const lowest=()=>new T.Box3().setFromObject(detached,true);
+assert(lowest().min.y>1,'detached canopy should start well above the runway');
+for(let i=0;i<400;i++)fallingShuttle.updateDroppedChuteMotion(.02);
+const settled=lowest();
+assert(detached.userData.chuteFall.landed,'detached canopy should land');
+assert(Math.abs(settled.min.y-.06)<1e-3,`canopy lowest point ${settled.min.y.toFixed(3)} m should rest on the runway`);
+assert(settled.max.y-settled.min.y<2,`canopy should lie collapsed (height ${(settled.max.y-settled.min.y).toFixed(2)} m), not stand up`);
+const axisWorld=new T.Vector3(0,1,0).applyQuaternion(detached.quaternion);
+assert(Math.abs(axisWorld.y)<.05,'canopy axis should lie horizontal on the runway');
+assert(Math.hypot(axisWorld.x,axisWorld.z)>.99,'canopy should trail along a horizontal heading');
+for(let i=0;i<50;i++)fallingShuttle.updateDroppedChuteMotion(.02);
+assert(Math.abs(lowest().min.y-.06)<1e-3,'a landed canopy should stay on the runway');
 
 // --- Unpowered approach profile --------------------------------------------
 const g=new Flight();
