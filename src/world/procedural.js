@@ -28,8 +28,8 @@ export function speckle(ctx,S,count,alpha,wMax,hMax,gBase=0,gRange=255){
 export function noiseTexture(base,scale=1){const c=document.createElement('canvas');c.width=c.height=512;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,512,512);speckle(x,512,70000,.065,2,2);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
 export const canvasTex=(c,srgb=true)=>{const t=new T.CanvasTexture(c);if(srgb)t.colorSpace=T.SRGBColorSpace;return t;};
 // Rolling patches of meadow plus faint mowing stripes, so the ground no longer reads as one flat colour.
-export function fieldTexture(){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#7f9568';x.fillRect(0,0,S,S);
- const tones=['#8aa06b','#738c5f','#90a06a','#6d8660','#9aa570'];
+export function fieldTexture(){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#7d9266';x.fillRect(0,0,S,S);
+ const tones=['#889d68','#72895c','#93a26b','#6a835e','#a0a672','#7b8c5a'];
  for(let i=0;i<46;i++){const px=rnd()*S,py=rnd()*S,r=60+rnd()*180,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,tones[i%tones.length]+'aa');g.addColorStop(1,tones[i%tones.length]+'00');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}
  speckle(x,S,90000,.05,2,3);
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
