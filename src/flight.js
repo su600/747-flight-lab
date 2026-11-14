@@ -122,7 +122,7 @@ export class Flight{
   this.gear=mode==='free'?0:(mode==='land'&&this.unpowered?0:1);this.gearTarget=this.gear;
   this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;
-  this.chute=0;this.chuteTarget=0;this.chuteDrag=0;
+  this.chute=0;this.chuteTarget=0;this.chuteDrag=0;this.chuteJettisoned=false;
   this.door=0;this.doorTarget=0;
   this.onGround=!['free','land'].includes(mode);
   this.park=mode==='inspect';this.brake=0;this.landingBrake=0;this.brakePressure=0;
@@ -169,8 +169,10 @@ export class Flight{
   if(name==='spoiler'){if(!this.onGround&&value&&ias>230*KNOT)return '高速飞行时不能完全打开扰流板';this.spoilerTarget=value;}
   if(name==='chute'){
    if(!this.chuteAvailable)return '这架飞机没有减速伞';
+   if(value&&this.chuteJettisoned)return '减速伞已切除';
    if(!this.onGround)return '落地后才能放出减速伞';
    if(value&&this.speed>95)return '速度太高，接地后再放伞';
+   if(!value&&this.chuteTarget===1)this.chuteJettisoned=true;
    this.chuteTarget=value?1:0;
   }
   if(name==='throttle'){
@@ -386,7 +388,10 @@ export class Flight{
    this.landingBrake=this.speed>25?.55:.28;
    this.spoilerTarget=1;
    // The orbiter pops its drag chute right after main-gear touchdown and jettisons it near 30 kt.
-   if(this.chuteAvailable){if(this.speed<=15)this.chuteTarget=0;else if(this.speed<95)this.chuteTarget=1;}
+   if(this.chuteAvailable){
+    if(this.speed<=15){if(this.chuteTarget===1||this.chute>.05)this.chuteJettisoned=true;this.chuteTarget=0;}
+    else if(this.speed<95&&!this.chuteJettisoned)this.chuteTarget=1;
+   }
   }else{
    this.throttle=0;this.reverseTarget=0;this.landingBrake=0;this.park=true;
   }

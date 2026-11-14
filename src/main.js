@@ -263,7 +263,7 @@ async function selectAircraft(type){
   next.root.position.copy(plane.root.position);next.root.quaternion.copy(plane.root.quaternion);next.root.visible=plane.root.visible;
   next.update(sim,0);syncCabinTime(next);scene.remove(plane.root);plane=next;scene.add(plane.root);setEmitters(plane);sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);
   // Only the orbiter carries a drag chute; stow it when leaving that aircraft.
-  sim.chuteAvailable=!!plane.hasDragChute;if(!sim.chuteAvailable){sim.chuteTarget=0;sim.chute=0;}
+  sim.chuteAvailable=!!plane.hasDragChute;sim.chuteJettisoned=false;if(!sim.chuteAvailable){sim.chuteTarget=0;sim.chute=0;}
   // Unpowered gliders (the orbiter) use their own approach profile.
   sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;
   // The orbiter offers only landing and ground observation: leave takeoff/free-flight states and cockpit/wing views.

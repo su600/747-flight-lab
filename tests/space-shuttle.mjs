@@ -1,5 +1,6 @@
 // Space Shuttle asset and integration checks. Run with: node tests/space-shuttle.mjs
 import assert from 'node:assert/strict';
+import * as T from 'three';
 import {readFile} from 'node:fs/promises';
 
 const root=new URL('../assets/space-shuttle/Models/',import.meta.url);
@@ -93,8 +94,23 @@ f.chute=1;f.calculateAero();const chuteDrag=f.drag;
 assert(chuteDrag>dryDrag*1.5,`chute drag ${Math.round(chuteDrag)} N should far exceed ${Math.round(dryDrag)} N`);
 f.reset('land');f.chuteAvailable=true;f.onGround=true;f.speed=70;f.landingGuidance();
 assert.equal(f.chuteTarget,1,'chute should deploy on rollout');
-f.speed=10;f.landingGuidance();
+f.speed=10;f.chute=1;f.chuteTarget=1;f.landingGuidance();
 assert.equal(f.chuteTarget,0,'chute should jettison near 30 kt');
+assert.equal(f.chuteJettisoned,true,'automatic jettison should be permanent');
+const manualCut=new Flight();manualCut.unpowered=true;manualCut.chuteAvailable=true;manualCut.reset('land');
+manualCut.onGround=true;manualCut.speed=60;manualCut.chute=1;manualCut.chuteTarget=1;
+assert.equal(manualCut.control('chute',0),'');manualCut.landingGuidance();
+assert.equal(manualCut.chuteTarget,0,'landing guidance must not redeploy a manually jettisoned chute');
+assert.equal(manualCut.control('chute',1),'减速伞已切除','jettisoned chute cannot be redeployed');
+
+const chuteScene=new T.Scene(),fallingShuttle=new SpaceShuttle();fallingShuttle.root=new T.Group();chuteScene.add(fallingShuttle.root);
+fallingShuttle.chuteRoot=new T.Group();fallingShuttle.chuteRoot.position.set(12,3,0);fallingShuttle.root.add(fallingShuttle.chuteRoot);
+fallingShuttle.dropChute();const detached=fallingShuttle.droppedChutes[0];
+assert(detached.position.y>.45,'detached chute should begin above the runway');
+fallingShuttle.updateDroppedChuteMotion(.2);assert(detached.position.y<3,'detached chute should fall under gravity');
+for(let i=0;i<30;i++)fallingShuttle.updateDroppedChuteMotion(.05);
+assert.equal(detached.position.y,.45,'detached chute should settle on the runway');
+assert.equal(detached.userData.chuteFall.landed,true,'detached chute should stop once it reaches the runway');
 
 // --- Unpowered approach profile --------------------------------------------
 const g=new Flight();

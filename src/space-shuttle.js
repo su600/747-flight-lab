@@ -16,6 +16,7 @@ const fg=(x,y,z)=>new T.Vector3(x,z,-y);
 const DEG=Math.PI/180;
 const REAL_LENGTH=37.2;      // metres, NASA reference
 const CHUTE_DIAMETER=12.19;  // 40 ft nominal
+const CHUTE_FALL_GRAVITY=9.81,CHUTE_REST_Y=.45,CHUTE_FOLD_SECONDS=.65;
 const CHUTE_ATTACH=new T.Vector3(16.2,1.6,0);   // native frame: +X is the tail
 // The source gear has a short nose strut and long main struts, so the orbiter
 // rests nose-down. Tilting the model by this angle puts every tyre on the ground.
@@ -213,13 +214,21 @@ export class SpaceShuttle extends Aircraft{
   dropped.position.copy(pos);
   dropped.quaternion.copy(quat);
   dropped.scale.copy(scl);
-  // Lay the canopy down and collapse it onto the runway behind the orbiter.
-  dropped.rotateZ(Math.PI/2*.92);
-  dropped.scale.y*=.35;
-  dropped.position.y=.45;
+  const restQuaternion=dropped.quaternion.clone().multiply(new T.Quaternion().setFromAxisAngle(new T.Vector3(0,0,1),Math.PI/2*.92));
+  dropped.userData.chuteFall={velocityY:0,elapsed:0,initialScaleY:dropped.scale.y,restQuaternion,landed:false};
   parent.add(dropped);
   this.droppedChutes.push(dropped);
   while(this.droppedChutes.length>3){const old=this.droppedChutes.shift();old.parent?.remove(old);}
+ }
+ updateDroppedChuteMotion(dt=0){
+  if(dt<=0)return;
+  for(const dropped of this.droppedChutes){
+   const fall=dropped.userData.chuteFall;if(!fall||fall.landed)continue;
+   fall.elapsed+=dt;fall.velocityY-=CHUTE_FALL_GRAVITY*dt;dropped.position.y+=fall.velocityY*dt;
+   dropped.quaternion.slerp(fall.restQuaternion,1-Math.exp(-4*dt));
+   dropped.scale.y=fall.initialScaleY*Math.max(.35,1-.65*fall.elapsed/CHUTE_FOLD_SECONDS);
+   if(dropped.position.y<=CHUTE_REST_Y){dropped.position.y=CHUTE_REST_Y;dropped.quaternion.copy(fall.restQuaternion);dropped.scale.y=fall.initialScaleY*.35;fall.landed=true;}
+  }
  }
  clearDroppedChutes(){
   for(const c of this.droppedChutes)c.parent?.remove(c);
@@ -244,7 +253,7 @@ export class SpaceShuttle extends Aircraft{
   for(const d of this.gearDoors)hinge(d.object,d.center,d.axis,90*gear);
   for(const b of this.speedBrakes)hinge(b.object,b.center,b.axis,SPEED_BRAKE_OPEN*brake);
   // Drag chute: inflate away from the attach point, trailing aft with a slight sway.
-  // When the chute is jettisoned it is cut loose and left lying on the runway.
+  // When jettisoned, the canopy drops under gravity and settles on the runway.
   if(s.chuteTarget===0&&this.chuteDeployed&&!this.chuteDropped){this.dropChute();this.chuteDropped=true;}
   if(s.chuteTarget===1)this.chuteDropped=false;
   this.chuteDeployed=chute>.5;
@@ -255,5 +264,6 @@ export class SpaceShuttle extends Aircraft{
    this.chuteSway.rotation.set(0,Math.sin(t*1.1)*.04*chute,Math.sin(t*1.6)*.03*chute);
   }
   this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
+  this.updateDroppedChuteMotion(dt);
  }
 }
