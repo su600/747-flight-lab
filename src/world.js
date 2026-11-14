@@ -15,7 +15,7 @@ export class World{
  label(text,x,y,z,w,h,ground=false,fg='#f5f3dc',bg=null){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);}ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';let fontSize=175;ctx.font=`bold ${fontSize}px Arial`;while(fontSize>54&&ctx.measureText(text).width>930){fontSize-=8;ctx.font=`bold ${fontSize}px Arial`;}ctx.fillText(text,512,132,960);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:T.DoubleSide});const o=new T.Mesh(new T.PlaneGeometry(w,h),m);o.position.set(x,y,z);if(ground)o.rotation.x=-Math.PI/2;this.scene.add(o);return o;}
  build(){
   const scene=this.scene;scene.fog=new T.FogExp2(0x8fbde8,.000055);
-  this.sky=new Sky();this.sky.scale.setScalar(200000);scene.add(this.sky);const u=this.sky.material.uniforms;u.turbidity.value=2.5;u.rayleigh.value=.7;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
+  this.sky=new Sky();this.sky.scale.setScalar(200000);scene.add(this.sky);const u=this.sky.material.uniforms;u.skyTint={value:new T.Vector3(.45,.72,1.7)};this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('varying vec3 vWorldPosition;','uniform vec3 skyTint;\nvarying vec3 vWorldPosition;').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyTint, 1.0 );');this.sky.material.customProgramCacheKey=()=> 'sky-day-blue-tint-v1';this.sky.material.needsUpdate=true;u.turbidity.value=2.5;u.rayleigh.value=.7;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
   this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
@@ -406,7 +406,7 @@ export class World{
   // Daylight: a slightly lower sun models the airframe with longer shadows, and a cleaner,
   // bluer sky/haze keeps the white fuselage from merging into a washed-out horizon.
   this.sunOffset=new T.Vector3(300,night?160:dusk?90:360,-250);
-  u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:2.5;u.rayleigh.value=dusk?2.4:.7;u.mieCoefficient.value=dusk?.02:.005;
+  if(u.skyTint)u.skyTint.value.set(night||dusk?1:.45,night||dusk?1:.72,night||dusk?1:1.7);u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:2.5;u.rayleigh.value=dusk?2.4:.7;u.mieCoefficient.value=dusk?.02:.005;
   this.sky.visible=!night;this.stars.visible=night;this.scene.background=night?new T.Color('#081426'):null;
   this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0x8fbde8);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
   this.renderer.toneMappingExposure=night?1:dusk?.95:.7;
