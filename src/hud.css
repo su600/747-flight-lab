@@ -84,8 +84,17 @@ body.cockpit-mode .craft-chip{display:none}
 .craft-chip span{color:var(--t2)}
 
 /* ---------- Missions ---------- */
-.modes{z-index:4;left:var(--pad);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:292px;padding:16px 14px 12px;display:flex;flex-direction:column;gap:6px;animation:rise .7s var(--ease) both .1s}
-.modes .panel-label{padding:0 6px 8px}
+.modes{z-index:4;left:var(--pad);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:292px;padding:12px 14px;animation:rise .7s var(--ease) both .1s}
+.modes:not([open]){width:220px;max-width:calc(100vw - 2 * var(--pad))}
+.modes-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 6px;list-style:none;cursor:pointer;touch-action:manipulation;border-radius:10px}
+.modes-summary::-webkit-details-marker{display:none}
+.modes-summary:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
+.modes-summary:hover .modes-action{color:var(--cyan)}
+.modes-action{display:flex;align-items:center;gap:4px;flex:none;font-size:12px;color:var(--t2)}
+.modes-expand,.modes:not([open]) .modes-collapse{display:none}
+.modes:not([open]) .modes-expand,.modes[open] .modes-collapse{display:inline}
+.modes[open] .modes-action [aria-hidden]{transform:rotate(180deg)}
+.modes-content{display:flex;flex-direction:column;gap:6px;max-height:max(100px,calc(100dvh - max(84px,calc(env(safe-area-inset-top) + 68px)) - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 80px));overflow-y:auto;overscroll-behavior:contain}
 .mode{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;padding:8px 10px;border-radius:14px;text-align:left;border:1px solid transparent;position:relative}
 .mode:hover{background:rgba(255,255,255,.06)}
 .mode:active{transform:scale(.985)}
@@ -370,9 +379,15 @@ dialog .primary-btn{margin-top:14px}
  .brand-text,.airport{display:none}.brand .mark{font-size:28px}
  .compass{top:max(12px,env(safe-area-inset-top));left:calc(max(10px,env(safe-area-inset-left)) + 55px);right:calc(max(10px,env(safe-area-inset-right)) + 144px);width:auto;transform:none;height:40px}.compass-box{bottom:-17px;padding:4px 11px}
  .craft-chip{display:none}
- .modes{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 54px);padding:4px;flex-direction:row;gap:6px;overflow-x:auto}
- .modes,.cam-dock{scrollbar-width:none}.modes::-webkit-scrollbar,.cam-dock::-webkit-scrollbar{display:none}
- .modes .panel-label,.copilot,.modes-foot,.mode-no,.mode-txt small{display:none}
+ .modes{left:max(10px,env(safe-area-inset-left));right:max(10px,env(safe-area-inset-right));width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 54px);padding:4px}
+ .modes:not([open]){right:auto;width:132px}
+ .modes-summary{float:left;min-height:44px;margin-right:6px;padding:0 8px}
+ .modes-summary .panel-label{font-size:11px;letter-spacing:0;white-space:nowrap}
+ .modes-summary .live-dot,.modes-prefix{display:none}
+ .modes-content{flex-direction:row;align-items:center;max-height:none;overflow-x:auto;overflow-y:hidden}
+ .modes-content,.cam-dock{scrollbar-width:none}.modes-content::-webkit-scrollbar,.cam-dock::-webkit-scrollbar{display:none}
+ .copilot,.mode-no,.mode-txt small{display:none}
+ .modes-foot{flex:none;gap:8px;margin:0;padding:0 6px;border-top:0;border-left:1px solid var(--line);white-space:nowrap}
  .mode{grid-template-columns:36px auto;width:auto;flex:none;padding:3px 8px 3px 3px;gap:8px}.mode-ico{width:36px;height:36px;font-size:18px}.mode-txt b{font-size:13px;white-space:nowrap}
  .mode-inspect{margin-top:0}.mode-inspect::before{display:none}
  .rail{left:max(10px,env(safe-area-inset-left));right:auto;top:calc(max(10px,env(safe-area-inset-top)) + 112px);flex-direction:row;gap:6px}.rail button{width:44px;height:44px;border-radius:14px;font-size:20px}.rail em{display:none}
@@ -404,7 +419,7 @@ dialog .primary-btn{margin-top:14px}
 @media(pointer:coarse),(any-pointer:coarse),(max-width:760px){body.ground-inspect #touchControls,body:has(.mode[data-mode="inspect"].active) #touchControls{display:none}}
 @media(max-width:950px) and (orientation:landscape) and (max-height:500px){
  :root{--deck-h:112px}
- .modes{right:calc(max(10px,env(safe-area-inset-right)) + 210px)}
+ .modes[open]{right:calc(max(10px,env(safe-area-inset-right)) + 210px)}
  .rail{top:calc(max(10px,env(safe-area-inset-top)) + 112px)}
  .status{left:auto;right:max(10px,env(safe-area-inset-right));top:calc(max(10px,env(safe-area-inset-top)) + 54px);bottom:auto;max-width:200px;flex-wrap:nowrap}
  .status #phase{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

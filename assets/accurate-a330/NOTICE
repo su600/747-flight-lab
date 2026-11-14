@@ -16,10 +16,14 @@ Copyright (c) 2022 Josh Davidson (Octal450). We do not assert individual
 attribution beyond upstream's own credits.
 
 No upstream root NOTICE or AUTHORS file was found at this revision; this is a
-local provenance notice, not an upstream document. All files in Models/ and
-the upstream README.md, LICENSE and A330-300-GE-set.xml are unmodified and
-were byte-verified against the revision above. Other files here are locally
-created research notes, scripts, metadata, or derived assets.
+local provenance notice, not an upstream document. Files in Models/ and the
+upstream README.md, LICENSE and A330-300-GE-set.xml were byte-verified against
+the revision above. The runtime Models/Liveries/A333RR/CSN.png is now a local
+derivative: the original is preserved as CSN-upstream.png with its pinned
+SHA-256 in generate_csn_livery.py, which flips only six starboard Chinese
+glyph rectangles. All other upstream files in Models/ remain unmodified.
+Other files here are locally created research notes, scripts, metadata, or
+derived assets.
 
 The set references Models/A330-303-GE.xml, which references
 Models/A330-303-main.xml. Its aircraft geometry is a330-300-main.ac; the

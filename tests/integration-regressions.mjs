@@ -7,6 +7,7 @@ import * as T from 'three';
 import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {A380Aircraft,createA380GlassMaterial,loadA380Part} from '../src/a380-aircraft.js';
 import {Aircraft} from '../src/aircraft.js';
+import {SpaceShuttle} from '../src/space-shuttle.js';
 
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return {promise,resolve,reject};};
 {
@@ -74,6 +75,69 @@ const craft=(type,impl)=>({type,livery:'BOE',root:root(),update(){},setLivery:im
  assert.equal(await context.test.selectLivery('CCA'),false);assert.equal(context.test.state().desiredLivery,'BOE');assert.equal(context.test.state().notices.length,1);
 }
 console.log('Selection races: old-craft failure, newer selection, and current-craft failure passed.');
+
+// Exercise the real selector with real detached chute objects in the scene.
+function chuteSwitchFixture(candidate){
+ const scene=new T.Scene(),shuttle=new SpaceShuttle();scene.add(shuttle.root);
+ shuttle.chuteRoot=new T.Group();shuttle.chuteRoot.position.set(12,3,0);shuttle.root.add(shuttle.chuteRoot);
+ shuttle.dropChute();const landed=shuttle.droppedChutes[0];
+ for(let i=0;i<30;i++)shuttle.updateDroppedChuteMotion(.05);
+ shuttle.dropChute();const falling=shuttle.droppedChutes[1];shuttle.chuteDropped=shuttle.chuteDeployed=true;
+ const unrelated=new T.Group();scene.add(unrelated);
+ const context=vm.createContext({console,Aircraft,scene,shuttle,candidate,tailSamples:()=>[],makePitchLimit:()=>()=>40});
+ vm.runInContext(`
+  let plane=shuttle,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
+  const AIRCRAFT_INFO={shuttle:{name:'Shuttle'},a330:{name:'330'}},LIVERIES=[],sim={mode:'inspect'},window={flightLab:{}};
+  const $=()=>({textContent:'',value:''}),getAircraft=async()=>candidate;
+  const syncCabinTime=()=>{},setEmitters=()=>{},showAircraft=()=>{},showLivery=()=>{},notify=()=>{},beginLoad=()=>({update(){},done(){}});
+  ${main.slice(start,end)}
+  globalThis.test={selectAircraft,state:()=>plane};
+ `,context);
+ return {scene,shuttle,landed,falling,unrelated,api:context.test};
+}
+function assertChutesPresent(fixture){
+ assert.equal(fixture.shuttle.root.parent,fixture.scene);assert.equal(fixture.api.state(),fixture.shuttle);
+ assert.equal(fixture.landed.parent,fixture.scene);assert.equal(fixture.falling.parent,fixture.scene);
+ assert.equal(fixture.shuttle.droppedChutes.length,2);assert.equal(fixture.shuttle.chuteDropped,true);assert.equal(fixture.shuttle.chuteDeployed,true);
+}
+const nextCraft=(setLivery=async()=>true)=>({type:'a330',root:new T.Group(),update(){},setLivery});
+{
+ const paint=deferred(),paintStarted=deferred(),next=nextCraft(()=>{paintStarted.resolve();return paint.promise;}),f=chuteSwitchFixture(next);
+ assert.equal(f.landed.userData.chuteFall.landed,true);assert.equal(f.falling.userData.chuteFall.landed,false);
+ let removed=false;f.shuttle.root.addEventListener('removed',()=>{
+  removed=true;assert.equal(f.landed.parent,null);assert.equal(f.falling.parent,null);
+  assert.equal(f.shuttle.droppedChutes.length,0,'clear before removing the old aircraft');
+ });
+ const switching=f.api.selectAircraft('a330');await paintStarted.promise;
+ assertChutesPresent(f);paint.resolve(true);assert.equal(await switching,true);
+ assert(removed);assert.equal(f.api.state(),next);assert.equal(next.root.parent,f.scene);
+ assert.equal(f.shuttle.chuteDropped,false);assert.equal(f.shuttle.chuteDeployed,false);assert.equal(f.unrelated.parent,f.scene);
+}
+{
+ const load=deferred(),f=chuteSwitchFixture(load.promise),switching=f.api.selectAircraft('a330');
+ assertChutesPresent(f);load.reject(Error('load failed'));assert.equal(await switching,false);assertChutesPresent(f);
+}
+{
+ const paint=deferred(),paintStarted=deferred(),f=chuteSwitchFixture(nextCraft(()=>{paintStarted.resolve();return paint.promise;})),switching=f.api.selectAircraft('a330');
+ await paintStarted.promise;assertChutesPresent(f);paint.reject(Error('paint failed'));
+ assert.equal(await switching,false);assertChutesPresent(f);
+}
+{
+ const next=nextCraft();next.update=()=>{throw Error('model preparation failed');};const f=chuteSwitchFixture(next);
+ assert.equal(await f.api.selectAircraft('a330'),false);assertChutesPresent(f);
+}
+{
+ const load=deferred(),f=chuteSwitchFixture(load.promise),switching=f.api.selectAircraft('a330');
+ assert.equal(await f.api.selectAircraft('shuttle'),true);load.resolve(nextCraft());
+ assert.equal(await switching,false);assertChutesPresent(f);
+}
+for(const fail of [false,true]){
+ const paint=deferred(),paintStarted=deferred(),f=chuteSwitchFixture(nextCraft(()=>{paintStarted.resolve();return paint.promise;})),switching=f.api.selectAircraft('a330');
+ await paintStarted.promise;assert.equal(await f.api.selectAircraft('shuttle'),true);
+ if(fail)paint.reject(Error('stale paint failure'));else paint.resolve(true);
+ assert.equal(await switching,false);assertChutesPresent(f);
+}
+console.log('Shuttle chute switch: successful replacement, failures and superseded loads passed.');
 
 // Fake time models the reported 10.44 MB / 117 KB/s transfer without waiting
 // 89 seconds in CI. The same per-part deadline also covers async parsing.

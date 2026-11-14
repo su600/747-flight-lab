@@ -22,8 +22,11 @@
  </div>
  <div class="craft-chip"><b id="aircraftName">BOEING 747–400</b><i></i><span id="liveryName">波音经典涂装</span></div>
 
- <nav class="modes glass" aria-label="飞行模式">
-  <div class="panel-label"><span class="live-dot"></span>MISSION · 今日任务</div>
+ <nav aria-label="飞行模式">
+  <details class="modes glass" open>
+   <!-- 空格留给原生折叠操作，不触发全局暂停快捷键。 -->
+   <summary class="modes-summary" onkeydown="if(event.code==='Space')event.stopPropagation()"><span class="panel-label"><span class="live-dot"></span><span class="modes-prefix">MISSION ·</span>今日任务</span><span class="modes-action"><span class="modes-collapse">收起</span><span class="modes-expand">展开</span><span aria-hidden="true">⌄</span></span></summary>
+   <div class="modes-content">
   <button class="mode" id="courseStart"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M4 19 12 5l8 14"/><path d="M12 9v4M12 16v.1"/></svg></span><span class="mode-txt"><b>跟小机长学起飞</b><small>6 个阶段 · 从跑道到爬升</small></span></button>
   <button class="mode" data-mode="takeoff"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5.5 14.5 18 8"/><path d="M12.5 6.8 18.4 7.6 17.3 13.4"/></svg></span><span class="mode-txt"><b>看飞机起飞</b><small>加速 · 抬头 · 飞向蓝天</small></span><span class="mode-no">01</span></button>
   <button class="mode" data-mode="land"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5.5 6.5 18 12.5"/><path d="M12.6 12.8 18.2 12.6 15.8 7.4"/></svg></span><span class="mode-txt"><b>看飞机降落</b><small>进近 · 拉平 · 稳稳接地</small></span><span class="mode-no">02</span></button>
@@ -31,6 +34,8 @@
   <button class="mode mode-inspect active" data-mode="inspect"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="mode-txt"><b>地面观察</b><small>换涂装，动动部件</small></span><span class="mode-no">00</span></button>
   <div class="copilot"><span class="copilot-no" id="lessonNo">01 / EXPLORE</span><p id="lesson">左键或单指拖动环绕，滚轮或双指张合缩放；右键或双指移动可平移。</p></div>
   <div class="modes-foot"><span id="modeLabel">观察模式</span><div><button id="pause" class="chip-btn" title="暂停 / 继续">Ⅱ</button><button id="rate" class="chip-btn" title="演示速度">1×</button></div></div>
+   </div>
+  </details>
  </nav>
 
  <nav class="rail" aria-label="探索工具">
