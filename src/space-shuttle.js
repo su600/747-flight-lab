@@ -74,7 +74,7 @@ export class SpaceShuttle extends Aircraft{
   this.landingGlide=6;
   this.landingSpeed=85;
   this.setCabinTime=()=>{};
-  this.wheels=[];this.wheelContacts=[];this.wingtipPoints=[];
+  this.wheels=[];this.wheelContacts=[];this.wingtipPoints=[];this.droppedChutes=[];this.chuteDropped=false;this.chuteDeployed=false;
   this.livery='NASA_SHUTTLE';
  }
  async load(){
@@ -192,6 +192,29 @@ export class SpaceShuttle extends Aircraft{
   add(this.wingtipPoints[1],green,.14);
   add(new T.Vector3(-13.5,8.6,0),beacon,.12);
  }
+ dropChute(){
+  const parent=this.root.parent;
+  if(!parent)return;
+  this.chuteRoot.updateWorldMatrix(true,false);
+  const pos=new T.Vector3(),quat=new T.Quaternion(),scl=new T.Vector3();
+  this.chuteRoot.matrixWorld.decompose(pos,quat,scl);
+  const dropped=this.chuteRoot.clone(true);
+  dropped.visible=true;
+  dropped.position.copy(pos);
+  dropped.quaternion.copy(quat);
+  dropped.scale.copy(scl);
+  // Lay the canopy down and collapse it onto the runway behind the orbiter.
+  dropped.rotateZ(Math.PI/2*.92);
+  dropped.scale.y*=.35;
+  dropped.position.y=.45;
+  parent.add(dropped);
+  this.droppedChutes.push(dropped);
+  while(this.droppedChutes.length>3){const old=this.droppedChutes.shift();old.parent?.remove(old);}
+ }
+ clearDroppedChutes(){
+  for(const c of this.droppedChutes)c.parent?.remove(c);
+  this.droppedChutes.length=0;this.chuteDropped=false;this.chuteDeployed=false;
+ }
  setLivery(){
   // One built-in NASA scheme ships with the model.
   this.livery='NASA_SHUTTLE';return true;
@@ -211,7 +234,11 @@ export class SpaceShuttle extends Aircraft{
   for(const d of this.gearDoors)hinge(d.object,d.center,d.axis,90*gear);
   for(const b of this.speedBrakes)hinge(b.object,b.center,b.axis,SPEED_BRAKE_OPEN*brake);
   // Drag chute: inflate away from the attach point, trailing aft with a slight sway.
-  this.chuteRoot.visible=chute>.01;
+  // When the chute is jettisoned it is cut loose and left lying on the runway.
+  if(s.chuteTarget===0&&this.chuteDeployed&&!this.chuteDropped){this.dropChute();this.chuteDropped=true;}
+  if(s.chuteTarget===1)this.chuteDropped=false;
+  this.chuteDeployed=chute>.5;
+  this.chuteRoot.visible=chute>.01&&!this.chuteDropped;
   if(this.chuteRoot.visible){
    const t=s.time||0;
    this.chuteCanopy.scale.setScalar((CHUTE_DIAMETER/8.43)*(.3+.7*chute));

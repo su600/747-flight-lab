@@ -77,6 +77,7 @@ assert(css.includes('body.shuttle-mode'),'shuttle-mode CSS missing');
 
 // --- Drag chute -------------------------------------------------------------
 assert.equal(new SpaceShuttle().hasDragChute,true,'orbiter must expose a drag chute');
+assert.equal(typeof new SpaceShuttle().dropChute,'function','orbiter must be able to jettison the chute');
 const f=new Flight();
 f.reset('land');
 assert.equal(f.control('chute',1),'这架飞机没有减速伞','chute must be refused without one');
