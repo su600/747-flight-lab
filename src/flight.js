@@ -21,6 +21,9 @@ const D2R=Math.PI/180,R2D=180/Math.PI;
 const KNOT=.514444;
 
 export const RUNWAY={start:-1900,end:1900,width:60,touch:-1550};
+// Powered approaches begin in a descent above the glide path, with the gear still up,
+// so the gear extension is part of the demo. Below this height the gear lowers.
+const LANDING_START_ALTITUDE=420,GEAR_DOWN_ALTITUDE=260;
 
 // Nose-up ground lift used by the renderer and the tail-clearance limit. It keeps
 // wheels on the surface at rotation and fades out over the first two metres of
@@ -110,7 +113,8 @@ export class Flight{
   this.x=mode==='inspect'?-850:mode==='land'?-5300:-1730;
   this.z=mode==='inspect'?-300:0;
   const glide=this.landingGlide||3,approach=this.landingSpeed||78;
-  this.altitude=mode==='land'?(RUNWAY.touch-this.x)*Math.tan(glide*D2R):mode==='free'?700:0;
+  const pathAltitude=(RUNWAY.touch-this.x)*Math.tan(glide*D2R);
+  this.altitude=mode==='land'?(this.unpowered?pathAltitude:Math.max(pathAltitude,LANDING_START_ALTITUDE)):mode==='free'?700:0;
   this.heading=90;
   this.bank=0;this.rollRate=0;
   this.gamma=mode==='land'?-glide*D2R:0;
@@ -119,7 +123,8 @@ export class Flight{
   this.pitchRate=0;
   this.throttle=0;this.engineN1=.22;this.engine=this.engineN1;
   // The orbiter lowers its gear late in the approach so the extension is visible.
-  this.gear=mode==='free'?0:(mode==='land'&&this.unpowered?0:1);this.gearTarget=this.gear;
+  // Gear starts up for the approach and lowers during it (free flight starts up too).
+  this.gear=mode==='free'||mode==='land'?0:1;this.gearTarget=this.gear;
   this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;this.chuteJettisoned=false;
@@ -358,7 +363,8 @@ export class Flight{
   this.guidanceGamma=gammaTarget;
   this.guidanceAltitude=pathAltitude;
   this.guidanceSpeed=targetSpeed;
-  return clamp(gammaTarget+alpha+(gammaTarget-this.gamma*R2D)*2,-1,12);
+  // The lower limit allows the steeper descent from the start altitude back to the glide path.
+  return clamp(gammaTarget+alpha+(gammaTarget-this.gamma*R2D)*2,-6,12);
  }
  takeoffGuidance(){
   this.park=false;this.brake=0;this.landingBrake=0;
@@ -374,7 +380,7 @@ export class Flight{
   const distance=RUNWAY.touch-this.x;
   const glide=this.landingGlide||3,approach=this.landingSpeed||77;
   this.flapTarget=this.unpowered?0:30;
-  this.gearTarget=this.unpowered?(this.altitude<120?1:0):1;
+  this.gearTarget=this.altitude<(this.unpowered?120:GEAR_DOWN_ALTITUDE)?1:0;
   if(!this.onGround){
    const targetSpeed=this.unpowered?approach:(distance>350?77:73);
    this.throttle=this.unpowered?0:clamp(this.trimThrottle(-glide*D2R)+(targetSpeed-this.speed)*.03,.04,.75);
@@ -545,7 +551,7 @@ export class Flight{
    this.phase=this.onGround?(this.speed<72?'四台发动机全推力 · 沿跑道加速':'达到抬轮速度 · 轻轻抬头'):this.altitude<35?'升力托起飞机 · 保持爬升':this.altitude<200?'正爬升 · 收起起落架':'收襟翼 · 加速爬升';
    if(this.altitude>585&&Math.abs(this.vs)<2){this.complete=true;this.phase='起飞成功 · 已进入平飞，可以接管';}
   }else if(this.mode==='land'){
-   this.phase=!this.onGround?(this.altitude<14?'轻轻拉平 · 减少下降率':'保持进近速度 · 沿下滑道下降'):this.speed>25?(this.chute>.5?'减速伞已放出 · 轮刹与减速伞一起减速':this.unpowered?'主轮接地 · 减速板与轮刹减速':'主轮接地 · 轮刹、反推与扰流板减速'):'慢慢停稳 · 欢迎抵达';
+   this.phase=!this.onGround?(this.altitude<14?'轻轻拉平 · 减少下降率':this.gearTarget===1&&this.gear<.98?'正在放下起落架 · 保持进近速度':'保持进近速度 · 沿下滑道下降'):this.speed>25?(this.chute>.5?'减速伞已放出 · 轮刹与减速伞一起减速':this.unpowered?'主轮接地 · 减速板与轮刹减速':'主轮接地 · 轮刹、反推与扰流板减速'):'慢慢停稳 · 欢迎抵达';
    if(this.onGround&&this.speed<.2){this.complete=true;this.phase='降落成功 · 飞机已停稳';}
   }else if(this.stalled)this.phase='失速！松杆、压低机头并加推力';
   else if(this.overspeed)this.phase='速度过大 · 收油门并轻轻带杆';
