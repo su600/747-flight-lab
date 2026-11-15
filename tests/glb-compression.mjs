@@ -53,7 +53,7 @@ try{
  const raw=await request(path);
  assert.equal(raw.status,200);assert.equal(raw.headers['content-type'],'application/octet-stream');
  assert.equal(raw.headers['content-length'],String(original.length));assert.equal(raw.headers['content-encoding'],undefined);
- assert.equal(raw.headers['cache-control'],'public, max-age=86400');vary(raw);assert.deepEqual(raw.body,original);
+ assert.equal(raw.headers['cache-control'],'public, max-age=0, must-revalidate');vary(raw);assert.deepEqual(raw.body,original);
  assert.match(raw.headers.etag,/^W\/"[0-9a-f]+-[0-9a-f]+"$/);
  const gzip=await request(path,{headers:{'accept-encoding':'gzip'}});
  assert.equal(gzip.status,200);assert.equal(gzip.headers['content-type'],'application/octet-stream');
@@ -132,7 +132,7 @@ try{
  const png=await request(pngPath,{headers:{'accept-encoding':'gzip'}});
  assert.equal(png.status,200);assert.equal(png.headers['content-type'],'image/png');
  assert.equal(png.headers['content-encoding'],undefined);assert.equal(png.headers['content-length'],String(pngBytes.length));
- assert.equal(png.headers['cache-control'],'public, max-age=86400');vary(png);assert.deepEqual(png.body,pngBytes);
+ assert.equal(png.headers['cache-control'],'public, max-age=0, must-revalidate');vary(png);assert.deepEqual(png.body,pngBytes);
  for(const unsafe of ['/747/%2e%2e%2fserver.mjs','/%2egit/config','/assets/%2ehidden.glb','/%5c'+hiddenName]){
   const response=await request(unsafe,{headers:{'accept-encoding':'gzip'}});
   assert.equal(response.status,404,unsafe);assert.notEqual(response.headers['content-encoding'],'gzip');

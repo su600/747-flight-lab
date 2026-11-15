@@ -25,7 +25,9 @@ const acceptsGzip=header=>{
  return (gzip??wildcard??0)>0;
 };
 // Third-party code and aircraft assets never change while the app runs; our own sources revalidate via ETag.
-const longCache=p=>p.startsWith('/assets/')||p.startsWith('/node_modules/');
+// Static assets always revalidate with their ETag: an unchanged file returns 304 and the browser cache is reused;
+// a redeployed file has a new ETag and is downloaded again.
+const revalidate=p=>p.startsWith('/assets/')||p.startsWith('/node_modules/');
 // PORT=0 is useful for isolated local tests without colliding with a running instance.
 const port=process.env.PORT==='0'?0:Number(process.env.PORT)||8748;
 const server=http.createServer(async(req,res)=>{
@@ -42,7 +44,7 @@ const server=http.createServer(async(req,res)=>{
   const stat=await fs.promises.stat(target,{bigint:true});
   if(!stat.isFile()){res.writeHead(404).end('Not found');return;}
   const ext=path.extname(target),etag=`W/"${stat.size.toString(16)}-${stat.mtimeNs.toString(16)}"`;
-  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':longCache(pathname)?'public, max-age=86400':'no-cache',Vary:'Accept-Encoding','X-Raw-Length':stat.size.toString()};
+  const headers={'Content-Type':types[ext]||'application/octet-stream','ETag':etag,'Cache-Control':revalidate(pathname)?'public, max-age=0, must-revalidate':'no-cache',Vary:'Accept-Encoding','X-Raw-Length':stat.size.toString()};
   const gzip=(ext==='.glb'||(compressible.has(ext)&&stat.size>1024n))&&acceptsGzip(req.headers['accept-encoding']);
   if(gzip)headers['Content-Encoding']='gzip';
   // The weak ETag identifies equivalent raw/gzip representations; Vary separates CDN variants.
