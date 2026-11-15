@@ -23,7 +23,7 @@ const SHUTTLE=[
  ['space-shuttle/Models/LandingGears-slim.ac',1768487],
  ['space-shuttle/Models/DragChute.ac',2343283],
  ['space-shuttle/Models/SSME.ac',25438],
- ['space-shuttle/Models/spstob_1.png',1689701],
+ ['space-shuttle/Models/spstob_1.webp',315000],
  ['space-shuttle/Models/chutes.png',631],
 ];
 

@@ -9,7 +9,7 @@ name "AirDataProbeL"
 data 16
 AirDataProbe.000
 crease 40.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 840
 -17.57642 -3.99527 1.01725
@@ -7003,7 +7003,7 @@ name "AirDataProbeR"
 data 16
 AirDataProbe.002
 crease 40.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 978
 -17.5832 -3.91432 -1.01809
@@ -15087,7 +15087,7 @@ name "BodyFlap"
 data 8
 BodyFlap
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 42
 15.42156 -5.09698 -0
@@ -15371,7 +15371,7 @@ name "cockpit-front-glass-outside"
 data 27
 cockpit-front-glass-outside
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 76
 -12.1181 -0.12309 1.49075
@@ -15841,7 +15841,7 @@ name "cockpit-glass-outside-back"
 data 30
 cockpit-glass-outside-back.003
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 22
 -10.33531 -0.00658 0.22314
@@ -15981,7 +15981,7 @@ name "cockpit-glass-outside-observation"
 data 30
 cockpit-glass-outside-back.002
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 24
 -10.92082 0.56389 -0.61009
@@ -16135,7 +16135,7 @@ name "footholds-left"
 data 23
 spaceshutt_spstob_1.000
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 32
 7.08682 -1.22164 2.47895
@@ -16489,7 +16489,7 @@ name "footholds-right"
 data 23
 spaceshutt_spstob_1.004
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 32
 7.08682 -1.22662 -2.47753
@@ -16843,7 +16843,7 @@ name "fuselage"
 data 23
 spaceshutt_spstob_1.003
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 1855
 -16.23381 -1.92001 0.55526
@@ -35389,7 +35389,7 @@ name "gearbays"
 data 14
 heatshield.000
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 75
 4.26936 -5.10015 4.23143
@@ -35681,7 +35681,7 @@ name "GearDoorL"
 data 9
 GearDoorL
 crease 0.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 53
 4.32856 -5.19661 2.65943
@@ -36076,7 +36076,7 @@ name "GearDoorR"
 data 9
 GearDoorR
 crease 0.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 53
 0.49326 -5.10031 -4.23135
@@ -36471,7 +36471,7 @@ name "handholds-left"
 data 23
 spaceshutt_spstob_1.002
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 540
 7.39564 -1.32844 2.33024
@@ -42421,7 +42421,7 @@ name "handholds-right"
 data 23
 spaceshutt_spstob_1.001
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 540
 7.39563 -1.32411 -2.32882
@@ -48371,7 +48371,7 @@ name "heatshield"
 data 14
 heatshield.001
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 302
 13.29716 -5.03148 3.02066
@@ -50892,7 +50892,7 @@ name "inboard-elevon-left"
 data 19
 inboard-elevon-left
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 9
 9.4296 -3.9535 2.65623
@@ -50941,7 +50941,7 @@ name "inboard-elevon-right"
 data 20
 inboard-elevon-right
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 9
 9.42631 -5.19722 -2.65465
@@ -50990,7 +50990,7 @@ name "interior-shell"
 data 25
 Fwd_Base_Set.008.mesh.011
 crease 0.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 9062
 -13.32626 -1.04153 -1.53848
@@ -103895,7 +103895,7 @@ name "NoseDoorL"
 data 10
 Nose.DoorL
 crease 40.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 30
 -17.96457 -4.61373 -0
@@ -104141,7 +104141,7 @@ name "NoseDoorR"
 data 10
 Nose.DoorR
 crease 40.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 30
 -17.96457 -4.61267 -0.53
@@ -104387,7 +104387,7 @@ name "outboard-elevon-left"
 data 20
 outboard-elevon-left
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 11
 9.7277 -4.75218 11.61199
@@ -104450,7 +104450,7 @@ name "outboard-elevon-right"
 data 21
 outboard-elevon-right
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 13
 9.7277 -4.75218 -11.61199
@@ -104515,7 +104515,7 @@ name "payload-bay"
 data 23
 spaceshutt_spstob_1.005
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 172
 -10.43364 0.63994 0
@@ -106125,7 +106125,7 @@ name "payload-bay-door-left"
 data 21
 spaceshutt_spstob.004
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 87
 -10.03664 -3.24018 4.38435
@@ -106991,7 +106991,7 @@ name "payload-bay-door-right"
 data 21
 spaceshutt_spstob.003
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 86
 1.6992 -3.24647 -4.38451
@@ -107856,7 +107856,7 @@ name "SpeedBrakeL"
 data 17
 SpeedBreakL.Upper
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 16
 13.18641 2.36127 0.25211
@@ -107976,7 +107976,7 @@ name "SpeedBrakeR"
 data 17
 SpeedBreakR.Lower
 crease 45.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 17
 13.18653 2.36107 0.00002

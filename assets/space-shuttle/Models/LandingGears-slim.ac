@@ -10,7 +10,7 @@ name "Cube"
 data 4
 Cube
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 242
 -16.18252 -5.05141 -0.47517
@@ -1970,7 +1970,7 @@ name "Shock"
 data 5
 Shock
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 160
 -16.11902 -6.31655 -0.1016
@@ -3396,7 +3396,7 @@ name "Axel"
 data 4
 Axel
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 258
 -16.22062 -6.31655 0.38735
@@ -5776,7 +5776,7 @@ name "Tire"
 data 4
 Tire
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 5248
 -16.19526 -6.05906 -0.17345
@@ -46874,7 +46874,7 @@ name "DragBrace.UpperL"
 data 16
 DragBrace.UpperL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 20
 1.94455 -4.28589 4.22329
@@ -47030,7 +47030,7 @@ name "DragBrace.LowerL"
 data 16
 DragBrace.LowerL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.71551 -6.43536 3.47532
@@ -47090,7 +47090,7 @@ name "LockBrace.LowerL"
 data 16
 LockBrace.LowerL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 2.97464 -5.39845 3.50175
@@ -47150,7 +47150,7 @@ name "StrutActuatorL"
 data 14
 StrutActuatorL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 128
 3.90107 -4.46672 3.03844
@@ -48320,7 +48320,7 @@ name "StrutActuator.RodL"
 data 18
 StrutActuator.RodL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 924
 3.8492 -5.27176 3.0505
@@ -55852,7 +55852,7 @@ name "TrunionFittingL"
 data 15
 TrunionFittingL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 280
 3.96693 -5.1306 4.09011
@@ -58140,7 +58140,7 @@ name "CylinderL"
 data 9
 CylinderL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 66
 3.77718 -6.36106 3.44946
@@ -58824,7 +58824,7 @@ name "LockBraceUpper.BarL"
 data 19
 LockBraceUpper.BarL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 1194
 3.93599 -5.21675 4.09762
@@ -68734,7 +68734,7 @@ name "CylinderL.001"
 data 13
 CylinderL.001
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 64
 3.80198 -6.09077 3.44992
@@ -69392,7 +69392,7 @@ name "LockBrace.UpperL"
 data 16
 LockBrace.UpperL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.41669 -5.24594 3.47532
@@ -69452,7 +69452,7 @@ name "ShockHousingL"
 data 13
 ShockHousingL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 194
 4.0584 -6.85168 3.44992
@@ -71160,7 +71160,7 @@ name "ShockL"
 data 6
 ShockL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 194
 4.0584 -7.37658 3.44992
@@ -72868,7 +72868,7 @@ name "CubeL"
 data 5
 CubeL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.906 -7.60955 3.60232
@@ -72928,7 +72928,7 @@ name "AxelL"
 data 5
 AxelL
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 322
 4.0584 -7.45715 4.13204
@@ -75552,7 +75552,7 @@ name "DragBrace.UpperR"
 data 16
 DragBrace.UpperR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 20
 1.94454 -4.28589 -4.22329
@@ -75708,7 +75708,7 @@ name "DragBrace.LowerR"
 data 16
 DragBrace.LowerR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.71551 -6.43536 -3.47532
@@ -75768,7 +75768,7 @@ name "LockBrace.LowerR"
 data 16
 LockBrace.LowerR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 2.97465 -5.39845 -3.50175
@@ -75828,7 +75828,7 @@ name "StrutActuatorR"
 data 14
 StrutActuatorR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 128
 3.90107 -4.46672 -3.03844
@@ -76998,7 +76998,7 @@ name "StrutActuator.RodR"
 data 18
 StrutActuator.RodR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 924
 3.8492 -5.27176 -3.0505
@@ -84530,7 +84530,7 @@ name "TrunionFittingR"
 data 15
 TrunionFittingR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 280
 3.96693 -5.1306 -4.09011
@@ -86818,7 +86818,7 @@ name "CylinderR"
 data 9
 CylinderR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 66
 3.77719 -6.36105 -3.44946
@@ -87502,7 +87502,7 @@ name "LockBraceUpper.BarR"
 data 19
 LockBraceUpper.BarR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 1194
 3.93599 -5.21675 -4.09762
@@ -97412,7 +97412,7 @@ name "CylinderR.001"
 data 13
 CylinderR.001
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 64
 3.80198 -6.09077 -3.44992
@@ -98070,7 +98070,7 @@ name "LockBrace.UpperR"
 data 16
 LockBrace.UpperR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.4167 -5.24593 -3.47532
@@ -98130,7 +98130,7 @@ name "ShockHousingR"
 data 13
 ShockHousingR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 194
 4.0584 -6.85168 -3.44992
@@ -99838,7 +99838,7 @@ name "ShockR"
 data 6
 ShockR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 194
 4.0584 -7.37658 -3.44992
@@ -101546,7 +101546,7 @@ name "CubeR"
 data 5
 CubeR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 3.906 -7.60955 -3.60232
@@ -101606,7 +101606,7 @@ name "AxelR"
 data 5
 AxelR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 322
 4.0584 -7.45715 -4.13204
@@ -104114,7 +104114,7 @@ name "TorqueArm.LowerR"
 data 16
 TorqueArm.LowerR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 4.27939 -7.53491 -3.56788
@@ -104174,7 +104174,7 @@ name "TorqueArm.UpperR"
 data 16
 TorqueArm.UpperR
 crease 30.0
-texture "spstob_1.png"
+texture "spstob_1.webp"
 texrep 1 1
 numvert 8
 4.21186 -6.82208 -3.56788
