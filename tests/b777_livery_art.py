@@ -22,9 +22,11 @@ def yc(x): return float(np.interp(x, _X, _YC))
 def rad(x): return float(np.interp(x, _X, _R))
 def fz(x, rel): return yc(x)+rel*rad(x)           # rel -1 keel .. 0 axis .. +1 crown
 
-# fin planform (x of leading/trailing edge by height)
-def fin_le(y): return 24.4+(y-2.5)*(34.6-24.4)/(12.36-2.5)
-def fin_te(y): return 38.0-(y-2.4)*(38.0-37.75)/(12.36-2.4)
+# Lateral fin silhouette measured from the 200LR Tail/Rudder UV triangles in
+# world metres (above the root fairing). The trailing edge sweeps aft too;
+# treating it as x~=38 at every height places logos beyond the leading edge.
+def fin_le(y): return 26.32+(y-3.5)*.965
+def fin_te(y): return 34.31+(y-3.5)*.388
 def fin_pt(fx, y): return (fin_le(y)+fx*(fin_te(y)-fin_le(y)), y)
 
 # body canvas / fin canvas definitions (consumed by the baker)

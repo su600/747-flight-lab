@@ -4,6 +4,7 @@
   python tests/b777_livery_build.py preview UAE [BOE ...]   # side-view art + guides -> $B777_PREVIEW (default %TEMP%)
   python tests/b777_livery_build.py build   UAE [BOE ...]   # write assets/b777-liveries/{passenger,cargo}/<ID>-*.webp
   python tests/b777_livery_build.py build all
+  python tests/b777_livery_build.py fin BOE [CCA ...]       # update only fin UVs in existing passenger WebPs, losslessly
 
 Requires Pillow, numpy, opencv-python, Node with @resvg/resvg-js (global install is found automatically).
 Everything is drawn from original vector shapes (see b777_livery_art.py); no photographs are copied.
@@ -52,9 +53,10 @@ def render(c, spec, defs=WHITE_FILTER, guides=None):
     img = render_svg(c.svg(defs), int(round(c.w*spec['ppm'])))
     return SideCanvas(img, c.U0, spec['ytop'], spec['ppm']), img
 
-def build_one(ident, write=True, prims_cache={}):
+def build_one(ident, write=True, prims_cache={}, fin_only=False):
     L = LIVERIES[ident]
     variant = 'cargo' if ident in CARGO_IDS else 'pax'
+    if fin_only and variant != 'pax': raise ValueError('fin-only updates are limited to passenger atlases')
     if variant not in prims_cache: prims_cache[variant] = load_prims(variant)
     prims = prims_cache[variant]
     # draw artwork once per side, for body and fin canvases
@@ -69,20 +71,34 @@ def build_one(ident, write=True, prims_cache={}):
     outdir = OUT/('cargo' if variant == 'cargo' else 'passenger'); outdir.mkdir(parents=True, exist_ok=True)
     produced = []
     for name, spec in sources(variant).items():
-        if name == 'eng':
+        if name == 'eng' or (fin_only and name != 'fin'):
             continue
         n = spec['n']
         pos, mask = raster_positions(prims, spec['source'], n, include=spec.get('include'), tag=variant)
         base = cargo_neutral_body() if spec['base'] == 'cargo-neutral' else load_rgb(spec['base'], n)
         canv = fin_canvas if name == 'fin' else body_canvas
         painted = paint(base, pos, mask, canv['port'], canv['stbd'])
-        if name == 'fin' and not (mask > 0).any(): continue
+        if name == 'fin' and not (mask > 0).any():
+            raise ValueError(f'No fin UVs found for {variant}')
         if write:
-            save_webp(painted, outdir/f'{ident}-{name}.webp', 90 if n >= 2048 else 92)
+            target = outdir/f'{ident}-{name}.webp'
+            if fin_only:
+                # Refuse to overwrite any other part sharing this atlas.
+                _, other = raster_positions(prims, spec['source'], n, exclude=FIN_PARTS, tag=variant)
+                if np.any((mask > 0) & (other > 0)):
+                    raise ValueError('Fin UVs overlap other parts; audit before painting')
+                # Preserve every decoded pixel outside the fin UVs, including
+                # unrelated objects sharing AFR5. Avoid lossy recompression.
+                previous = np.asarray(Image.open(target).convert('RGB')).copy()
+                updated = np.clip(painted*255+.5, 0, 255).astype(np.uint8)
+                previous[mask > 0] = updated[mask > 0]
+                Image.fromarray(previous).save(target, 'WEBP', lossless=True, method=6)
+            else:
+                save_webp(painted, target, 90 if n >= 2048 else 92)
             produced.append(name)
     # engines: simple two-tone nacelle paint (optional)
     eng = extras.get('engine')
-    if eng:
+    if eng and not fin_only:
         spec = sources(variant)['eng']; n = spec['n']
         pos, mask = raster_positions(prims, spec['source'], n, tag=variant)
         base = load_rgb(spec['base'], n)
@@ -142,7 +158,8 @@ def preview(ident):
 
 if __name__ == '__main__':
     cmd, ids = sys.argv[1], sys.argv[2:]
-    if ids == ['all']: ids = list(LIVERIES)
+    if ids == ['all']: ids = [i for i in LIVERIES if cmd != 'fin' or i not in CARGO_IDS]
     for i in ids:
         if cmd == 'preview': preview(i)
-        else: print(i, build_one(i))
+        elif cmd in ('build', 'fin'): print(i, build_one(i, fin_only=(cmd == 'fin')))
+        else: raise SystemExit('Expected preview, build, or fin')

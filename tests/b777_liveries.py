@@ -54,9 +54,7 @@ def boe(body, fin):
     # fin: bright blue with white 777
     fin.rect_all(BLUE)
     fin.poly([(24.0, 2.0), (38.5, 2.0), (38.5, 3.2), (24.0, 3.2)], NAVY, opacity=.0)
-    for i, (x, y) in enumerate([(30.0, 10.0), (30.5, 7.8), (31.5, 5.6)]):
-        pass
-    fin.text(30.6, 6.2, '777', 2.5, '#ffffff', family='Arial Black', weight='900', style='italic')
+    fin.text(fin_pt(.56, 6.8)[0], 6.8, '777', 1.7, '#ffffff', family='Arial Black', weight='900', style='italic')
     return dict(engine=dict(base='#ffffff', lower=NAVY, split=-.15))
 
 def baw(body, fin):

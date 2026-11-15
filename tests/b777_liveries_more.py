@@ -18,7 +18,7 @@ def cca(body, fin):
     body.text(-12.0, .95, 'AIR CHINA', 1.25, RED, weight='bold', length=7.2)
     body.text(-2.2, .95, '中国国际航空公司', 1.0, RED, family='Microsoft YaHei', weight='bold')
     fin.rect_all(WHITE)
-    fin.logo('air-china.png', 31.2, 6.6, 8.2)
+    fin.logo('air-china.png', fin_pt(.5, 7.0)[0], 7.0, 4.8)
     return dict(engine=dict(base='#ffffff'))
 
 def cea(body, fin):
@@ -28,7 +28,7 @@ def cea(body, fin):
     body.text(-12.4, .95, 'CHINA EASTERN', 1.15, BLUE, weight='bold', length=8.0)
     body.text(-4.9, .95, '中国东方航空', 1.0, RED, family='Microsoft YaHei', weight='bold')
     fin.rect_all(WHITE)
-    fin.logo('china-eastern.png', 31.0, 6.4, 9.0)
+    fin.logo('china-eastern.png', fin_pt(.5, 7.0)[0], 7.0, 4.8)
     return dict(engine=dict(base='#ffffff'))
 
 def csn(body, fin):
@@ -53,7 +53,7 @@ def chh(body, fin):
     body.text(-12.0, 1.0, 'Hainan Airlines', 1.15, '#333b4a', weight='bold', length=7.6)
     body.text(-4.4, 1.0, '海南航空', 1.0, '#333b4a', family='Microsoft YaHei', weight='bold')
     fin.rect_all(RED)
-    fin.logo('hainan.png', 31.2, 6.4, 8.4, tint='gold')
+    fin.logo('hainan.png', fin_pt(.5, 7.0)[0], 7.0, 4.8, tint='gold')
     return dict(engine=dict(base='#ffffff'))
 
 def klm(body, fin):
@@ -63,7 +63,7 @@ def klm(body, fin):
     body.poly(band(-25.4, 37.8, _edge([-25.4, -20, -8, 20, 30, 37.8], [-.2, -.15, -.12, -.1, .0, .3]), 1.2), BLUE)
     body.text(-9.4, 1.35, 'KLM Royal Dutch Airlines', .8, '#ffffff', weight='bold', length=9.5)
     fin.rect_all(BLUE)
-    fin.logo('klm.png', 31.0, 6.8, 6.6, mirror=False, tint='white')
+    fin.logo('klm.png', fin_pt(.5, 7.0)[0], 7.0, 4.8, mirror=False, tint='white')
     return dict(engine=dict(base='#ffffff'))
 
 def dlh(body, fin):
@@ -74,9 +74,9 @@ def dlh(body, fin):
     _stripe(body, -.07, -.01, NAVY, -23, 36)
     body.text(-10.8, 1.0, 'Lufthansa', 1.9, NAVY, family='Arial', weight='bold', length=9.6)
     fin.rect_all(NAVY)
-    cx = fin_pt(.45, 6.7)[0]
-    fin.circle((cx, 6.7), 2.55, YELLOW)
-    fin.logo('lufthansa.png', cx, 6.7, 5.0, mirror=False)
+    cx = fin_pt(.6, 6.7)[0]
+    fin.circle((cx, 6.7), 2.2, YELLOW)
+    fin.logo('lufthansa.png', cx, 6.7, 4.4, mirror=False)
     return dict(engine=dict(base='#ffffff'))
 
 def dlh100(body, fin):
@@ -87,9 +87,9 @@ def dlh100(body, fin):
     body.text(-10.6, -.9, 'Lufthansa', 1.9, '#ffffff', weight='bold', length=9.6)
     body.text(6.0, -.8, '1926 – 2026', 1.0, GOLD, weight='bold')
     fin.rect_all(NAVY)
-    cx = fin_pt(.45, 6.3)[0]
-    fin.logo('lufthansa.png', cx, 6.3, 5.4, mirror=False, tint='white')
-    fin.text(fin_pt(.5, 9.4)[0], 9.4, '100', 1.5, GOLD, weight='bold')
+    cx = fin_pt(.6, 6.3)[0]
+    fin.logo('lufthansa.png', cx, 6.3, 4.4, mirror=False, tint='white')
+    fin.text(fin_pt(.6, 9.4)[0], 9.4, '100', 1.2, GOLD, weight='bold')
     return dict(engine=dict(base='#ffffff', lower=NAVY, split=-.2))
 
 def af1c(body, fin):
@@ -102,7 +102,7 @@ def af1c(body, fin):
     fin.rect_all(WHITE)
     # VC-25A style: a large flag across most of the upper fin chord, tail number below.
     # The flag is mirrored on the starboard side so the union always leads (US aircraft convention).
-    fin.logo('us-flag.png', fin_pt(.58, 9.6)[0], 9.6, 4.2)
+    fin.logo('us-flag.png', fin_pt(.5, 9.2)[0], 9.2, 3.2)
     fin.text(fin_pt(.55, 7.3)[0], 7.3, '28000', .9, NAVY, weight='bold')
     return dict(engine=dict(base='#79b4de'))
 
@@ -115,7 +115,7 @@ def af1n(body, fin):
     body.poly(band(-25.4, 37.8, edge, lambda x: edge(x)+.07), RED)
     body.text(-8.0, 1.0, 'UNITED STATES OF AMERICA', 1.0, NAVY, family='Georgia', weight='bold', length=14.5)
     fin.rect_all(NAVY)
-    fin.logo('us-flag.png', fin_pt(.5, 8.0)[0], 8.0, 6.0)
+    fin.logo('us-flag.png', fin_pt(.55, 7.3)[0], 7.3, 4.2)
     return dict(engine=dict(base='#ffffff', lower=NAVY, split=-.1))
 
 def fedex(body, fin):

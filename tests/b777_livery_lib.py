@@ -12,7 +12,8 @@ from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 # The shipped GLBs are meshopt-compressed, which this reader cannot decode. Point
-# B777_GLB_PAX / B777_GLB_CARGO at the uncompressed originals (same UVs), e.g.
+# B777_GLB_PAX / B777_GLB_CARGO at the uncompressed originals (UVs differ
+# only by meshopt quantization; see tests/b777-fin-model.mjs), e.g.
 #   git show db2577a:assets/accurate-b777/777-200LR-2048.candidate.glb > %TEMP%/777-pax.glb
 GLB = {
  'pax': Path(os.environ.get('B777_GLB_PAX', ROOT/'assets/accurate-b777/777-200LR-2048.candidate.glb')),
@@ -44,6 +45,8 @@ def load_prims(variant):
     data = GLB[variant].read_bytes()
     size = struct.unpack_from('<I', data, 12)[0]
     gltf = json.loads(data[20:20+size])
+    if 'EXT_meshopt_compression' in gltf.get('extensionsRequired', []):
+        raise ValueError(f'{GLB[variant]} is meshopt-compressed; set B777_GLB_{variant.upper()} to an uncompressed original')
     base = 20+size+8
 
     def access(i):
@@ -78,8 +81,14 @@ def load_prims(variant):
 
 def raster_positions(prims, source, n, include=None, exclude=None, bleed_px=5, tag=''):
     """Map every covered texel of atlas `source` to its 3D hull position (cached)."""
-    ident = repr((source, n, sorted(include or []), sorted(exclude or []), len(prims), sum(len(p['idx']) for p in prims), tag))
-    key = CACHE/(hashlib.sha1(ident.encode()).hexdigest()[:16]+'.npz')
+    ident = repr((source, n, sorted(include or []), sorted(exclude or []), bleed_px, tag))
+    digest = hashlib.sha256(ident.encode())
+    for p in prims:
+        if p['src'] != source or (include and p['name'] not in include) or (exclude and p['name'] in exclude):
+            continue
+        digest.update(p['name'].encode()+b'\0')
+        for field in ('pos', 'uv', 'idx'): digest.update(p[field].tobytes())
+    key = CACHE/(digest.hexdigest()[:16]+'.npz')
     if key.exists():
         z = np.load(key)
         return z['pos'], z['mask']
