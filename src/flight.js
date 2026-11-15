@@ -23,7 +23,7 @@ const KNOT=.514444;
 export const RUNWAY={start:-1900,end:1900,width:60,touch:-1550};
 // Powered approaches begin in a descent above the glide path, with the gear still up,
 // so the gear extension is part of the demo. Below this height the gear lowers.
-const LANDING_START_ALTITUDE=420,GEAR_DOWN_ALTITUDE=260;
+const LANDING_START_ALTITUDE=300,GEAR_DOWN_ALTITUDE=260;
 
 // Nose-up ground lift used by the renderer and the tail-clearance limit. It keeps
 // wheels on the surface at rotation and fades out over the first two metres of
