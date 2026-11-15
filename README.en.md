@@ -12,6 +12,16 @@ An interactive flight-viewing and teaching simulator that runs in the browser. I
 
 ![747 Flight Lab main view: ground observation, aircraft configuration and flight controls](docs/screenshots/flight-lab-overview.png)
 
+### Modes
+
+| Ground observation | Takeoff |
+| --- | --- |
+| ![Ground observation](docs/screenshots/mode-ground-observation.png) | ![Takeoff](docs/screenshots/mode-takeoff.png) |
+| **Landing** (descending, gear lowering) | **Free flight** (manual flying) |
+| ![Landing](docs/screenshots/mode-landing.png) | ![Free flight](docs/screenshots/mode-free-flight.png) |
+| **Space Shuttle landing** (drag chute deployed) | |
+| ![Space Shuttle landing](docs/screenshots/mode-shuttle-rollout.png) | |
+
 ## Features
 
 - **Aircraft**: Boeing 747-400, Airbus A380-800, Airbus A330-300, Boeing 777-200LR / 777F exteriors, and the NASA Space Shuttle orbiter. The orbiter offers landing and ground observation only; takeoff, free flight and the cockpit view are not available.

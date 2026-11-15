@@ -12,6 +12,16 @@
 
 ![747 Flight Lab 主界面：地面观察、飞机构型与飞行控制](docs/screenshots/flight-lab-overview.png)
 
+### 各种模式
+
+| 地面观察 | 看飞机起飞 |
+| --- | --- |
+| ![地面观察](docs/screenshots/mode-ground-observation.png) | ![看飞机起飞](docs/screenshots/mode-takeoff.png) |
+| **看飞机降落**（下降中，起落架正在放下） | **我来开飞机**（手动飞行） |
+| ![看飞机降落](docs/screenshots/mode-landing.png) | ![我来开飞机](docs/screenshots/mode-free-flight.png) |
+| **航天飞机降落**（减速伞已放出） | |
+| ![航天飞机降落](docs/screenshots/mode-shuttle-rollout.png) | |
+
 ## 功能
 
 - **机型**：波音 747-400、空客 A380-800、空客 A330-300、波音 777-200LR / 777F 外观，以及 NASA 航天飞机轨道器。航天飞机仅提供降落与地面观察，不含起飞、自由飞行与驾驶舱视角。
