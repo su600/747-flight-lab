@@ -167,6 +167,7 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border-radius:50%;bac
 .primary-btn:active{transform:scale(.97)}
 .aircraft-select-label{display:block;color:var(--t2);font-size:12px;margin:12px 0 6px}#aircraftSelect{width:100%;margin-bottom:12px;padding:10px;border:1px solid var(--line-2);border-radius:10px;background:#102633;color:var(--t1);font:inherit}
 .aircraft-choices{display:grid;gap:9px}.aircraft-choices button{display:flex;flex-direction:column;gap:6px;padding:14px;text-align:left;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.05)}.aircraft-choices button:hover,.aircraft-choices button.active{border-color:var(--cyan);background:rgba(85,217,255,.12)}.aircraft-choices small{color:var(--t2)}
+.aircraft-choices .dl-state{font:normal 10px var(--mono);letter-spacing:.04em;color:var(--t2);opacity:.85}.aircraft-choices .dl-state[data-state=loading]{color:var(--cyan)}.aircraft-choices .dl-state[data-state=ready]{color:#7be0a4}.aircraft-choices .dl-state[data-state=ready]::before{content:"✓ "}.aircraft-choices .dl-state[data-state=failed]{color:#f0b35a}
 #liveries{display:grid;gap:9px}
 .livery-card{display:flex;align-items:center;gap:12px;width:100%;padding:10px 14px 10px 10px;border-radius:14px;text-align:left;background:rgba(255,255,255,.05);border:1px solid var(--line)}
 .livery-card:hover{transform:translateY(-1px);border-color:var(--line-2)}

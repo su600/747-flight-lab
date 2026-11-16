@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {Aircraft,LIVERIES} from './aircraft.js';
 import {realityFor} from './livery-reality.js';
-import {preloadAircraft,scheduleIdlePrefetch,isPreloaded,installPreloadedFetch} from './preload.js';
+import {preloadAircraft,prefetchInOrder,isPreloaded,installPreloadedFetch} from './preload.js';
 installPreloadedFetch();
 import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
 import {World} from './world.js';
@@ -282,8 +282,13 @@ async function start(){
  for(const [x,z] of [[-1200,-390],[-510,-390],[180,-390],[640,-390]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=-Math.PI/2;world.softShadow(x+6,z+2,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=$('#quality')?.value!=='low';parkedAircraft.push(p);}
  addCabinLights(plane);syncCabinTime(plane);
  bindUI();world.setQuality($('#quality').value==='low');showLivery();resize();setCam('orbit');$('#loading').remove();
- // A380 is the largest model; warm its files first while the browser is idle.
- if(!/[?&]prefetch=0/.test(location.search))setTimeout(()=>scheduleIdlePrefetch(['a380','a330','b777'],{livery:()=>desiredLivery}),3000);
+ // Background download of every other aircraft, in picker order, right after the first scene is shown.
+ if(!/[?&]prefetch=0/.test(location.search)){
+  const order=all('[data-aircraft]').map(b=>b.dataset.aircraft).filter(t=>t!=='b747');
+  const badge=(type,text,state)=>{const b=document.querySelector(`[data-aircraft="${type}"]`);if(!b)return;let tag=b.querySelector('.dl-state');if(!tag){tag=document.createElement('i');tag.className='dl-state';b.querySelector('b')?.after(tag);}tag.textContent=text;tag.dataset.state=state;};
+  order.forEach(t=>badge(t,'排队下载','queued'));
+  setTimeout(()=>prefetchInOrder(order,{livery:()=>desiredLivery,onStatus:(type,p)=>badge(type,p.done?'已下载':p.fraction>=1?'下载未完成':`后台下载 ${Math.round((p.fraction||0)*100)}%`,p.done?'ready':p.fraction>=1?'failed':'loading')}),600);
+ }
  window.flightLab={sim,landingLights,plane,cockpit:()=>cockpit,world,weather,airflow,camera,renderer,display,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit,cameraView,advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
  let last=performance.now(),uiTime=0;display.onResume=()=>{last=performance.now();};
  function frame(now){if(!running)return;requestAnimationFrame(frame);if(!display.beginFrame()){last=now;return;}let realDt=Math.min((now-last)/1000,.05);last=now;const input=readInput(realDt);const dt=realDt*rate;const n=Math.max(1,Math.ceil(dt*120));for(let i=0;i<n;i++)sim.step(dt/n,input);

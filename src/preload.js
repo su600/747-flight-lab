@@ -8,7 +8,8 @@ import {AIRCRAFT_DOWNLOAD_SIZES} from './aircraft-download-sizes.js';
 
 const ASSETS='/assets/';
 const MB=1048576;
-const MAX_PREFETCH_BODY_BYTES=48*MB;
+// Room for every non-default aircraft (~57 MB decoded) so background downloads are not evicted before use.
+const MAX_PREFETCH_BODY_BYTES=64*MB;
 // Fixed uncompressed sizes match the decoded fetch stream, including when HTTP uses gzip.
 // Regenerate the manifest whenever one of these files changes.
 const sized=paths=>paths.map(path=>[path,AIRCRAFT_DOWNLOAD_SIZES[path]??0]);
@@ -98,11 +99,17 @@ export function preloadAircraft(type,{livery='BOE',priority='low',onProgress}={}
 export function isPreloaded(type,options){const key=aircraftFiles(type,options).map(f=>f[0]).join('|');return !key||!!jobs.get(key)?.done;}
 export const downloadSizeMB=(type,options)=>aircraftFiles(type,options).reduce((n,f)=>n+f[1],0)/MB;
 
-// Quietly fetch the other aircraft once the first scene is on screen. Skipped on metered or slow connections.
-export function scheduleIdlePrefetch(types,{livery}={}){
- const link=navigator.connection;
- if(link&&(link.saveData||/^(slow-2g|2g|3g)$/.test(link.effectiveType||'')))return;
- const idle=window.requestIdleCallback||(fn=>setTimeout(fn,1500));
+// Download the other aircraft in the background, one after another, as soon as the first scene is up,
+// so switching models later only pays for parsing. Respects the browser's Data Saver setting only.
+// onStatus(type,{loaded,total,fraction,done}) reports progress for the aircraft picker.
+export function prefetchInOrder(types,{livery,onStatus}={}){
+ if(navigator.connection?.saveData)return Promise.resolve(false);
  let chain=Promise.resolve();
- for(const type of types)chain=chain.then(()=>new Promise(resolve=>idle(()=>preloadAircraft(type,{livery:livery?.()??'BOE',priority:'low'}).then(resolve),{timeout:8000})));
+ for(const type of types)chain=chain.then(()=>{
+  const options={livery:livery?.()??'BOE'};
+  return preloadAircraft(type,{...options,priority:'low',onProgress:p=>onStatus?.(type,{...p,done:false})})
+   .then(()=>onStatus?.(type,{fraction:1,done:isPreloaded(type,options)}));
+ });
+ return chain.then(()=>true);
 }
+export const scheduleIdlePrefetch=(types,options)=>prefetchInOrder(types,options);
