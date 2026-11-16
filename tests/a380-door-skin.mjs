@@ -2,6 +2,7 @@
 // at least 1.5 cm in front of the fuselage skin, or both surfaces, which share the
 // livery material, win the depth test in turn on 16-bit phone depth buffers.
 // Run: node tests/a380-door-skin.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

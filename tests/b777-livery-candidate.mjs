@@ -1,8 +1,10 @@
 // CPU-only integration with the existing candidate. No image decoding or GPU.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import * as T from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/addons/libs/meshopt_decoder.module.js';
 import {createB777LiveryController} from '../src/b777-livery.js';
 
 const path='assets/accurate-b777/777-200F-refined.candidate.glb';
@@ -13,7 +15,7 @@ const file=fs.readFileSync(path), jsonLength=file.readUInt32LE(12);
 assert.equal(file.toString('ascii',0,4),'glTF');
 const meta=JSON.parse(file.toString('utf8',20,20+jsonLength));
 assert.equal(meta.asset.extras.sourceIdentity,'FlightGear Boeing 777-200F');
-const loader=new GLTFLoader().register(()=>({name:'TEXTURE_STUB',loadTexture(){return Promise.resolve(new T.Texture());}}));
+const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).register(parser=>{parser.loadImageSource=()=>Promise.resolve(new T.Texture());return {name:'TEXTURE_STUB'};});
 const gltf=await loader.parseAsync(file.buffer.slice(file.byteOffset,file.byteOffset+file.byteLength),'');
 const src='Liveries-F/AFR1blanc.png';
 const matches=[], untouched=[];let seal,door,window=false;

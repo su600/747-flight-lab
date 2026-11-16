@@ -1,6 +1,7 @@
 // CPU regression: the right wing skin must not lift off the wing when spoilers
 // deploy. The left wing has no spoiler-driven skin, so both sides should stay put.
 // Run: node tests/a380-spoiler-skin.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

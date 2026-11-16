@@ -1,5 +1,6 @@
 // CPU regression for actual A380 GLBs, material lighting and face winding.
 // Run: node tests/a380-daylight.mjs (no browser, GPU, external network or deployment).
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

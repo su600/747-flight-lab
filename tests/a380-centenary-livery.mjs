@@ -2,6 +2,7 @@
 // This guards the active art path and verifies that the teaser-era native atlas
 // is not applied to the A380 model.
 // Run: node tests/a380-centenary-livery.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

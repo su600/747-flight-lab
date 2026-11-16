@@ -2,6 +2,7 @@
 // are bound to slat bones, so they stay put while the flaps move. They are removed
 // because the mirrored flap surfaces (bound to flap bones) replace them.
 // Run: node tests/a380-right-flap-skins.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';

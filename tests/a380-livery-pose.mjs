@@ -2,6 +2,7 @@
 // uses the inverse aircraft root transform. It must match the current frame's pose
 // after every update, or parts drawn earlier in a frame show last frame's livery.
 // Run: node tests/a380-livery-pose.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';
