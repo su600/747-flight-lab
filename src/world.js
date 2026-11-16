@@ -1,5 +1,6 @@
 import * as T from 'three';
 import {Sky} from 'three/addons/objects/Sky.js';
+import {Scenery,inSceneryZone} from './world/scenery.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,glowTexture,cumulusTexture,pavementTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
@@ -152,17 +153,18 @@ export class World{
   // Distant urban edge and tree belts use instancing to keep the airport responsive.
   const temp=new T.Object3D(),col=new T.Color();
   this.cityMat=new T.MeshStandardMaterial({color:'#ffffff',roughness:.38,metalness:.35,map:facadeTexture(false),emissive:'#ffffff',emissiveMap:facadeTexture(true),emissiveIntensity:0});
-  const city=new T.InstancedMesh(boxGeo(1,1,1),this.cityMat,250);for(let i=0;i<250;i++){const x=-6000+rnd()*12000,z=-1300-rnd()*3500,h=10+rnd()*90;if(nearLandmark(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}else{temp.position.set(x,h/2,z);temp.scale.set(35+rnd()*60,h,25+rnd()*55);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));}temp.updateMatrix();city.setMatrixAt(i,temp.matrix);}scene.add(city);
+  const city=new T.InstancedMesh(boxGeo(1,1,1),this.cityMat,250);for(let i=0;i<250;i++){const x=-6000+rnd()*12000,z=-1300-rnd()*3500,h=10+rnd()*90;if(nearLandmark(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}else{temp.position.set(x,h/2,z);temp.scale.set(35+rnd()*60,h,25+rnd()*55);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));if(inSceneryZone(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}}temp.updateMatrix();city.setMatrixAt(i,temp.matrix);}scene.add(city);
   // Two tree species, tinted individually, scattered outside the airfield.
   const spots=[];for(let i=0;i<1500;i++){let x=(rnd()-.5)*14000,z=(rnd()-.5)*11000;if(Math.abs(x)<2500&&z>-850&&z<200){z=350+rnd()*500;}if(!nearLandmark(x,z))spots.push([x,z,6+rnd()*13,rnd()]);}
   const pines=spots.filter(s=>s[3]<.55),oaks=spots.filter(s=>s[3]>=.55);
   const pineMesh=new T.InstancedMesh(pineGeometry(),mat('#ffffff',.92),pines.length),oakMesh=new T.InstancedMesh(oakGeometry(),mat('#ffffff',.92),oaks.length);pineMesh.castShadow=oakMesh.castShadow=false;
-  pines.forEach(([x,z,h],i)=>{temp.position.set(x,0,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.36,h,h*.36);temp.updateMatrix();pineMesh.setMatrixAt(i,temp.matrix);pineMesh.setColorAt(i,col.setHSL(.36+rnd()*.05,.35,.2+rnd()*.1));});
-  oaks.forEach(([x,z,h],i)=>{temp.position.set(x,h*.42,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.42,h*.4,h*.42);temp.updateMatrix();oakMesh.setMatrixAt(i,temp.matrix);oakMesh.setColorAt(i,col.setHSL(.22+rnd()*.12,.4,.28+rnd()*.12));});
+  pines.forEach(([x,z,h],i)=>{temp.position.set(x,0,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.36,h,h*.36);if(inSceneryZone(x,z))temp.scale.set(0,0,0);temp.updateMatrix();pineMesh.setMatrixAt(i,temp.matrix);pineMesh.setColorAt(i,col.setHSL(.36+rnd()*.05,.35,.2+rnd()*.1));});
+  oaks.forEach(([x,z,h],i)=>{temp.position.set(x,h*.42,z);temp.rotation.y=rnd()*6.28;temp.scale.set(h*.42,h*.4,h*.42);if(inSceneryZone(x,z))temp.scale.set(0,0,0);temp.updateMatrix();oakMesh.setMatrixAt(i,temp.matrix);oakMesh.setColorAt(i,col.setHSL(.22+rnd()*.12,.4,.28+rnd()*.12));});
   temp.rotation.set(0,0,0);scene.add(pineMesh,oakMesh);this.buildLandmarks();
   const hills=[[-10500,-7600,3500,410],[10800,-9800,4100,500],[-14800,-1200,3800,350],[15100,1800,4200,440],[-9200,3200,2900,290]];
   for(const [x,z,r,h] of hills){const hill=new T.Mesh(rollingHillGeometry(r,h),new T.MeshStandardMaterial({vertexColors:true,roughness:.96,flatShading:true}));hill.position.set(x,0,z);hill.receiveShadow=true;scene.add(hill);}
   for(let i=0;i<18;i++){const mh=700+rnd()*1900,mountain=new T.Mesh(mountainGeometry(1400+rnd()*2100,mh,mh>1700),new T.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:true}));mountain.position.set(-24000+i*2800,mh/2-40,-16000-rnd()*3000);mountain.rotation.y=rnd()*6;scene.add(mountain);}
+  this.scenery=new Scenery(scene,this.cityMat);
   this.buildWindsock();this.buildStars();
   this.cloudMat=new T.SpriteMaterial({map:cumulusTexture(),transparent:true,opacity:.85,depthWrite:false,color:0xffffff});
   const mkCloud=(n,alt,spread,w,hh)=>{const g=new T.Group();for(let j=0;j<n;j++){const s=new T.Sprite(this.cloudMat);s.position.set((rnd()-.5)*spread,rnd()*70,(rnd()-.5)*spread*.4);s.scale.set(w*(.6+rnd()*.8),hh*(.6+rnd()*.8),1);g.add(s);}g.position.set((rnd()-.5)*28000,alt,(rnd()-.5)*28000);g.userData.drift=.8+rnd()*1.2;scene.add(g);this.clouds.push(g);};
@@ -411,7 +413,7 @@ export class World{
   this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0x8fbde8);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
   this.renderer.toneMappingExposure=night?1:dusk?.95:.7;
   this.cloudMat.color.set(night?0x2c3a58:dusk?0xffb890:0xffffff);this.cloudMat.opacity=night?.7:dusk?.8:.85;
-  this.cityMat.emissiveIntensity=night?1.1:dusk?.35:0;
+  this.cityMat.emissiveIntensity=night?1.1:dusk?.35:0;this.scenery?.setTime(mode);
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
   this.scaleLamps(night?2:dusk?1.5:1);
@@ -435,7 +437,9 @@ export class World{
    for(const wheel of vehicle.wheels)wheel.rotation.y+=moved/wheel.userData.radius;
   }
  }
+ setQuality(low){this.scenery?.setQuality(low);}
  update(dt,pos){
+  this.scenery?.update(dt);
   this.t+=dt;if(this.waterNormal){this.waterNormal.offset.x=(this.t*.0021)%1;this.waterNormal.offset.y=(this.t*.0013)%1;}
   this.updateServiceVehicles(dt);
   // Quantize the shadow camera in light space to avoid shadows swimming over the aircraft.
