@@ -22,7 +22,7 @@ for(const aircraftType of ['b747','a380','a330','b777','shuttle']){
    near(camera.position,position,`${aircraftType} ${mode} first frame`);
    const initialPosition=aircraftFrame(camera.position),initialTarget=aircraftFrame(target);
    const initialDirection=camera.getWorldDirection(new T.Vector3());
-   if(mode==='wing')near(initialPosition,new T.Vector3(3,aircraftType==='a380'?2:1.3,aircraftType==='a380'?4.5:3.5),`${aircraftType} wing anchor`);
+   if(mode==='wing')near(initialPosition,aircraftType==='a380'?new T.Vector3(-6,-1.5,4.2):new T.Vector3(3,1.3,3.5),`${aircraftType} wing anchor`);
    for(let frame=0;frame<120;frame++){
     const dt=playback/60;
     planePosition.addScaledVector(new T.Vector3(.6,.1,-Math.sqrt(.63)),130*dt);

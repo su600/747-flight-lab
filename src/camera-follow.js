@@ -4,6 +4,7 @@ export const ORBIT_MIN_HEIGHT=1.2;
 const yAxis=new T.Vector3(0,1,0),headingRotation=new T.Quaternion();
 const offset=new T.Vector3(),lookDir=new T.Vector3(),lookRight=new T.Vector3();
 const COCKPIT_EYE=new T.Vector3(24.05,3.8,-.55),COCKPIT_LOOK=new T.Vector3(124.05,-13.83,-.55);
+export const A380_WING_POS=new T.Vector3(-6,-1.5,4.2),A380_WING_LOOK=new T.Vector3(-14,-11,40);
 const CHASE_LOOK=new T.Vector3(22,4,0),CHASE_POS=new T.Vector3(-115,35,7),WING_POS=new T.Vector3(3,1.3,3.5),WING_LOOK=new T.Vector3(-12,1,35);
 
 // Write the current world-space pose into the supplied vectors. No previous
@@ -23,7 +24,8 @@ export function cameraPose({mode,planePosition,planeQuaternion,heading,aircraftT
   const inside=mode==='cockpit';
   position.copy(inside?COCKPIT_EYE:WING_POS);lookDir.copy(inside?COCKPIT_LOOK:WING_LOOK);
   if(inside){position.multiply(cockpitScale);lookDir.multiply(cockpitScale);}
-  else if(aircraftType==='a380'){position.z=4.5;position.y=2;lookDir.z=40;}
+  // A380: sit at an upper-deck window above the wing root (its root origin is high on the fuselage) and look down along the low wing.
+  else if(aircraftType==='a380'){position.copy(A380_WING_POS);lookDir.copy(A380_WING_LOOK);}
   lookDir.sub(position);lookRight.crossVectors(lookDir,yAxis).normalize();
   lookDir.applyAxisAngle(lookRight,lookPitch).applyAxisAngle(yAxis,lookYaw).applyQuaternion(planeQuaternion);
   position.applyQuaternion(planeQuaternion).add(planePosition);target.copy(position).add(lookDir);
