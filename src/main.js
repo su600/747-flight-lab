@@ -8,15 +8,15 @@ import {World} from './world.js';
 import {Flight,clamp,THRUST_DETENTS,groundLift} from './flight.js';
 import {tailSamples,makePitchLimit} from './tail-clearance.js';
 import {Cockpit} from './cockpit.js';
-import {setCockpitAirframeVisibility,cameraModeForWiperToggle,cameraFollowFactor} from './cockpit-view.js';
+import {setCockpitAirframeVisibility,cameraModeForWiperToggle} from './cockpit-view.js';
+import {cameraPose,applyCameraBuffet,applyCameraPose} from './camera-follow.js';
 import {StableDisplay} from './display.js';
 import {Airflow} from './airflow.js';
 import {EngineSound} from './audio.js';
 import {createCameraGestures} from './camera-gestures.js';
 import {createCourseProgress,advanceCourse} from './lesson-course.js';
 import {$,all,setText,setHTML} from './ui/dom.js';
-const _quat=new T.Quaternion(),_euler=new T.Euler(0,0,0,'YZX'),_yAxis=new T.Vector3(0,1,0),_off=new T.Vector3(),_v1=new T.Vector3(),_shake=new T.Vector3();
-const COCKPIT_EYE=new T.Vector3(24.05,3.8,-.55),COCKPIT_LOOK=new T.Vector3(124.05,-13.83,-.55),CHASE_LOOK=new T.Vector3(22,4,0),CHASE_POS=new T.Vector3(-115,35,7),WING_POS=new T.Vector3(3,1.3,3.5),WING_LOOK=new T.Vector3(-12,1,35);
+const _euler=new T.Euler(0,0,0,'YZX'),_yAxis=new T.Vector3(0,1,0);
 const radians=x=>x*Math.PI/180;
 let renderer;
 // Keep millimetre-separated runway paint stable even with the cockpit's close near plane.
@@ -37,7 +37,7 @@ let plane=new Aircraft(),cockpit=null,airflow=null;
 const aircraftCache=new Map();const parkedAircraft=[];let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
 import {REALITY_TAGS,AIRCRAFT_INFO} from './ui/aircraft-info.js';
 let originalAbout='',originalEmitters=null;
-let camMode='orbit',orbitAngle=.87,orbitHeight=.29,orbitDistance=137,focus=new T.Vector3(0,2,0),firstCamera=true,rate=1,panel=null,toastTimer,frameCount=0,elapsed=0,fps=0;
+let camMode='orbit',orbitAngle=.87,orbitHeight=.29,orbitDistance=137,focus=new T.Vector3(0,2,0),rate=1,panel=null,toastTimer,frameCount=0,elapsed=0,fps=0;
 let orbitOverview=true,overviewCraft=null;
 let lookYaw=0,lookPitch=0,viewFov=43,towerZoom=1,cancelCameraGestures=()=>{};
 // Cache projection inputs so the camera matrix is only rebuilt when one of them changes.
@@ -45,8 +45,8 @@ let lastViewX=NaN,lastW=0,lastH=0,lastFov=0,lastNear=0;
 const keys=new Set(),touch=new Set(),surface={roll:0,pitch:0,yaw:0};
 let manualTakeoffGuide=false;
 let courseProgress=createCourseProgress();
-const camPos=new T.Vector3(),camTarget=new T.Vector3(),targetPos=new T.Vector3(),planePos=new T.Vector3();
-const lookDir=new T.Vector3(),lookRight=new T.Vector3(),panRight=new T.Vector3(),panUp=new T.Vector3(),inverseHeading=new T.Quaternion();
+const camPos=new T.Vector3(),targetPos=new T.Vector3();
+const panRight=new T.Vector3(),panUp=new T.Vector3(),inverseHeading=new T.Quaternion();
 const attitude=$('#attitude').getContext('2d');
 const copilotHidden=()=>getComputedStyle(document.querySelector('.copilot')).display==='none';
 function notify(s){if(!s)return;$('#toast').textContent=s;$('#toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('#toast').hidden=true,4500);}
@@ -63,7 +63,7 @@ function overviewDistance(){
  const dimensions=plane.dimensions,span=dimensions?Math.max(dimensions.x,dimensions.z):70;
  const min=plane.type==='shuttle'?70:165;return clamp(Math.max(min,span*.58/Math.sin(halfHorizontal)*1.35),min,1200);
 }
-function setCam(mode){cancelCameraGestures();camMode=mode;focus.set(0,2,0);lookYaw=lookPitch=0;viewFov=mode==='cockpit'?66:43;towerZoom=1;if(mode==='orbit'){orbitAngle=.87;orbitHeight=.25;orbitOverview=true;overviewCraft=plane;orbitDistance=overviewDistance();}firstCamera=true;setCockpitAirframeVisibility(plane,camMode);all('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));$('#cockpitOverlay').hidden=mode!=='cockpit'||!!cockpit;document.body.classList.toggle('cockpit-mode',mode==='cockpit');}
+function setCam(mode){cancelCameraGestures();camMode=mode;focus.set(0,2,0);lookYaw=lookPitch=0;viewFov=mode==='cockpit'?66:43;towerZoom=1;if(mode==='orbit'){orbitAngle=.87;orbitHeight=.25;orbitOverview=true;overviewCraft=plane;orbitDistance=overviewDistance();}setCockpitAirframeVisibility(plane,camMode);all('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));$('#cockpitOverlay').hidden=mode!=='cockpit'||!!cockpit;document.body.classList.toggle('cockpit-mode',mode==='cockpit');}
 function beginCameraGesture(kind){if(camMode==='chase'||(camMode==='tower'&&kind!=='zoom'))setCam('orbit');}
 function rotateCamera(dx,dy){
  if(camMode==='cockpit'||camMode==='wing'){lookYaw-=dx*.005;lookPitch=clamp(lookPitch-dy*.005,-1.3,1.3);}
@@ -342,33 +342,20 @@ function bindUI(){
  cancelCameraGestures=()=>gestures.cancel();
 }
 function readInput(dt){const pressed=(...a)=>a.some(k=>keys.has(k));const pitch=clamp((pressed('ArrowDown','KeyS')||touch.has('down')?1:0)-(pressed('ArrowUp','KeyW')||touch.has('up')?1:0)+surface.pitch,-1,1),roll=clamp((pressed('ArrowRight','KeyD')||touch.has('right')?1:0)-(pressed('ArrowLeft','KeyA')||touch.has('left')?1:0)+surface.roll,-1,1),yaw=clamp((pressed('KeyE')?1:0)-(pressed('KeyQ')?1:0)+surface.yaw,-1,1);if(pitch||roll||yaw)manualControl();if(pressed('ShiftLeft','ShiftRight','Equal')){manualControl();notify(sim.control('throttle',clamp(sim.throttle+dt*.3,0,1)));}if(pressed('ControlLeft','ControlRight','Minus')){manualControl();notify(sim.control('throttle',clamp(sim.throttle-dt*.3,0,1)));}return{pitch,roll,yaw,brake:pressed('KeyB')||touch.has('brake')?1:0};}
-function updateCamera(dt){
- if(camMode==='orbit'&&orbitOverview&&overviewCraft!==plane){overviewCraft=plane;orbitDistance=overviewDistance();firstCamera=true;}
- planePos.copy(plane.root.position);const heading=_quat.setFromAxisAngle(_yAxis,radians(90-sim.heading));
- if(camMode==='orbit'){const offset=_off.set(Math.cos(orbitAngle)*Math.cos(orbitHeight)*orbitDistance,Math.sin(orbitHeight)*orbitDistance,Math.sin(orbitAngle)*Math.cos(orbitHeight)*orbitDistance).applyQuaternion(heading);targetPos.copy(focus).applyQuaternion(heading).add(planePos);camPos.copy(targetPos).add(offset);}
- if(camMode==='chase'){const k=plane.type==='shuttle'?.55:1;targetPos.copy(planePos).add(_v1.copy(CHASE_LOOK).multiplyScalar(k).applyQuaternion(heading));camPos.copy(planePos).add(_v1.copy(CHASE_POS).multiplyScalar(k).applyQuaternion(heading));}
- if(camMode==='cockpit'||camMode==='wing'){
-  const inside=camMode==='cockpit';
-  camPos.copy(inside?COCKPIT_EYE:WING_POS);lookDir.copy(inside?COCKPIT_LOOK:WING_LOOK);
-  if(inside){camPos.multiply(cockpit?.native.scale||plane.native.scale);lookDir.multiply(cockpit?.native.scale||plane.native.scale);}
-  else if(plane.type==='a380'){camPos.z=4.5;camPos.y=2;lookDir.z=40;}
-  lookDir.sub(camPos);lookRight.crossVectors(lookDir,_yAxis).normalize();
-  lookDir.applyAxisAngle(lookRight,lookPitch).applyAxisAngle(_yAxis,lookYaw).applyQuaternion(plane.root.quaternion);
-  camPos.applyQuaternion(plane.root.quaternion).add(planePos);targetPos.copy(camPos).add(lookDir);
- }
- if(camMode==='tower'){camPos.set(0,68,-500);targetPos.copy(planePos);camera.fov=clamp(clamp(2200/camPos.distanceTo(planePos),2.8,43)*towerZoom,2.8,85);}
+function updateCamera(){
+ if(camMode==='orbit'&&orbitOverview&&overviewCraft!==plane){overviewCraft=plane;orbitDistance=overviewDistance();}
+ // No world-height clamp: it would make attached views drift when the aircraft climbs near the ground.
+ cameraPose({mode:camMode,planePosition:plane.root.position,planeQuaternion:plane.root.quaternion,heading:sim.heading,aircraftType:plane.type,cockpitScale:cockpit?.native.scale||plane.native.scale,orbitAngle,orbitHeight,orbitDistance,focus,lookYaw,lookPitch},camPos,targetPos);
+ if(camMode==='tower')camera.fov=clamp(clamp(2200/camPos.distanceTo(plane.root.position),2.8,43)*towerZoom,2.8,85);
  else camera.fov=camMode==='cockpit'||camMode==='wing'?viewFov:43;
- if(camMode!=='cockpit')camPos.y=Math.max(camPos.y,1.2);
- // Light buffet shake when the wing is close to the stall, a real cue in the cockpit.
- if(sim.buffet&&!sim.paused){const shake=.28;camPos.x+=(Math.random()-.5)*shake;camPos.y+=(Math.random()-.5)*shake;camTarget.add(_shake.set((Math.random()-.5)*shake,(Math.random()-.5)*shake,0));}
- const t=cameraFollowFactor(camMode,firstCamera,dt);camera.position.lerp(camPos,t);camTarget.lerp(targetPos,t);camera.up.set(0,1,0);if(camMode==='cockpit')camera.up.applyQuaternion(plane.root.quaternion);camera.lookAt(camTarget);
+ applyCameraBuffet(camMode,sim.buffet,sim.paused,camPos,targetPos);
+ applyCameraPose(camera,camPos,targetPos,plane.root.quaternion,camMode);
  const w=display.width,h=display.height,viewX=camMode==='orbit'&&w>760?(panel?w*.035:-w*.055):0,near=camMode==='cockpit'?.03:.2;
  if(h>0&&(near!==lastNear||camera.fov!==lastFov||w!==lastW||h!==lastH||viewX!==lastViewX)){
   camera.near=near;camera.aspect=w/h;lastNear=near;lastFov=camera.fov;lastW=w;lastH=h;lastViewX=viewX;
   // Both calls rebuild the projection matrix.
   if(viewX)camera.setViewOffset(w,h,viewX,0,w,h);else camera.clearViewOffset();
  }
- firstCamera=false;
 }
 function drawAttitude(){
  const c=attitude,W=200,H=150,y=sim.pitch*2.6;
@@ -433,7 +420,7 @@ function updateUI(){
 }
 const COMPASS_PX=3.2,compassStrip=document.createElement('div');compassStrip.className='compass-strip';
 (function buildCompass(){let h='';for(let d=-360;d<=720;d+=5){const x=d*COMPASS_PX,deg=((d%360)+360)%360,major=d%30===0,cardinal=d%90===0;h+=`<i class="tick${d%10===0?' mid':''}" style="left:${x}px"></i>`;if(major){const t=cardinal?({0:'N',90:'E',180:'S',270:'W'})[deg]:String(deg/10).padStart(2,'0');h+=`<span class="tick-label${cardinal?' card':''}" style="left:${x}px">${t}</span>`;}}compassStrip.innerHTML=h;const host=document.querySelector('#compass');if(host)host.appendChild(compassStrip);})();
-function resize(){cancelCameraGestures();display.requestResize();if(camMode==='orbit'&&orbitOverview){orbitDistance=overviewDistance();overviewCraft=plane;firstCamera=true;}}
+function resize(){cancelCameraGestures();display.requestResize();if(camMode==='orbit'&&orbitOverview){orbitDistance=overviewDistance();overviewCraft=plane;}}
 addEventListener('resize',resize);
 let running=true;
 async function start(){
@@ -444,10 +431,10 @@ async function start(){
  bindUI();showLivery();resize();setCam('orbit');$('#loading').remove();
  // A380 is the largest model; warm its files first while the browser is idle.
  if(!/[?&]prefetch=0/.test(location.search))setTimeout(()=>scheduleIdlePrefetch(['a380','a330','b777'],{livery:()=>desiredLivery}),3000);
- window.flightLab={sim,plane,cockpit:()=>cockpit,world,airflow,camera,renderer,display,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit(angle,height,distance,at){orbitOverview=false;orbitAngle=angle;orbitHeight=height;orbitDistance=distance;if(at)focus.fromArray(at);firstCamera=true;},cameraView(){return{mode:camMode,azimuth:orbitAngle,elevation:orbitHeight,distance:orbitDistance,focus:focus.toArray(),lookYaw,lookPitch,viewFov,towerZoom};},advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
+ window.flightLab={sim,plane,cockpit:()=>cockpit,world,airflow,camera,renderer,display,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit(angle,height,distance,at){orbitOverview=false;orbitAngle=angle;orbitHeight=height;orbitDistance=distance;if(at)focus.fromArray(at);},cameraView(){return{mode:camMode,azimuth:orbitAngle,elevation:orbitHeight,distance:orbitDistance,focus:focus.toArray(),lookYaw,lookPitch,viewFov,towerZoom};},advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
  let last=performance.now(),uiTime=0;display.onResume=()=>{last=performance.now();};
  function frame(now){if(!running)return;requestAnimationFrame(frame);if(!display.beginFrame()){last=now;return;}let realDt=Math.min((now-last)/1000,.05);last=now;const input=readInput(realDt);const dt=realDt*rate;const n=Math.max(1,Math.ceil(dt*120));for(let i=0;i<n;i++)sim.step(dt/n,input);
- plane.root.position.set(sim.x,plane.contact+sim.altitude+groundLift(sim.pitch,sim.altitude),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));setCockpitAirframeVisibility(plane,camMode);plane.update(sim,sim.paused?0:dt);plane.root.position.y-=plane.groundSettle||0;if(cockpit){cockpit.root.visible=camMode==='cockpit';if(cockpit.root.visible){cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);cockpit.draw(sim);}}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,camMode,world.time);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera(realDt);renderer.render(scene,camera);display.captureAfterRender();display.presented(now);updateAudio();
+ plane.root.position.set(sim.x,plane.contact+sim.altitude+groundLift(sim.pitch,sim.altitude),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));setCockpitAirframeVisibility(plane,camMode);plane.update(sim,sim.paused?0:dt);plane.root.position.y-=plane.groundSettle||0;if(cockpit){cockpit.root.visible=camMode==='cockpit';if(cockpit.root.visible){cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);cockpit.draw(sim);}}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,camMode,world.time);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera();renderer.render(scene,camera);display.captureAfterRender();display.presented(now);updateAudio();
  uiTime+=realDt;if(uiTime>.09){updateUI();uiTime=0;}if(sim.failed&&!$('#retryDialog').open){$('#retryReason').textContent=sim.message;$('#retryDialog').showModal();}
  elapsed+=realDt;frameCount++;if(elapsed>1){fps=Math.round(frameCount/elapsed);elapsed=0;frameCount=0;}
  }requestAnimationFrame(frame);
