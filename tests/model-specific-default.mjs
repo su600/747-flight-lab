@@ -86,7 +86,7 @@ assert.equal(JSON.stringify(LIVERIES),catalog);
 const source=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const showStart=source.indexOf('function showLivery(){'),showEnd=source.indexOf('function showAircraft(){',showStart);
 const selectStart=source.indexOf('async function selectAircraft(type){'),selectEnd=source.indexOf('// ---- UI',selectStart);
-const bindStart=source.indexOf(" $('#liveries').innerHTML=LIVERIES.map"),bindEnd=source.indexOf('\n // Space/Enter',bindStart);
+const bindStart=source.indexOf(" $('#liveries').innerHTML=LIVERIES.map"),bindEnd=source.indexOf('\n bindInput();',bindStart);
 assert(showStart>=0&&showEnd>showStart&&selectStart>=0&&selectEnd>selectStart&&bindStart>=0&&bindEnd>bindStart);
 let focused=null,buttons=[];
 function button(id){
@@ -136,10 +136,11 @@ assert.equal(context.test.state().plane.livery,'BOE','switching off 747 falls ba
 assert.equal(context.test.state().desiredLivery,'BOE');assert.equal(af1Classic.hidden,true);assert.equal(af1New.hidden,true);
 // Exercise the real global shortcut handler as well: without its focus guard,
 // Space is prevented before the browser can activate the focused button.
-const ignoreStart=source.indexOf(' const ignore=()=>'),keyEnd=source.indexOf("\n addEventListener('keyup'",ignoreStart);assert(ignoreStart>=0&&keyEnd>ignoreStart);
+const inputSource=await readFile(new URL('../src/input.js',import.meta.url),'utf8');
+const ignoreStart=inputSource.indexOf(' const ignore=()=>'),keyEnd=inputSource.indexOf("\n addEventListener('keyup'",ignoreStart);assert(ignoreStart>=0&&keyEnd>ignoreStart);
 const keyboard={handler:null,sim:{paused:false},keys:new Set(),document:{activeElement:{matches:s=>s.includes('.livery-card')},querySelector:()=>null},addEventListener(type,fn){assert.equal(type,'keydown');this.handler=fn;}};
 keyboard.addEventListener=(_type,fn)=>keyboard.handler=fn;
-vm.runInNewContext(source.slice(ignoreStart,keyEnd),keyboard);
+vm.runInNewContext(inputSource.slice(ignoreStart,keyEnd),keyboard);
 let prevented=false;keyboard.handler({code:'Space',preventDefault(){prevented=true;}});assert.equal(prevented,false);assert.equal(keyboard.sim.paused,false);
 keyboard.document.activeElement={matches:()=>false};keyboard.handler({code:'Space',preventDefault(){prevented=true;}});assert.equal(prevented,true);assert.equal(keyboard.sim.paused,true);
 console.log('Model defaults passed: catalog immutability, Airbus/Boeing markings, freight and stale logos, model-aware menu, focus, keyboard and persistent selection (CPU only).');

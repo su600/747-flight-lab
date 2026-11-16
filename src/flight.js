@@ -15,70 +15,10 @@
 // approximation, not a trainer-level aerodynamic database.
 
 import {windVector,groundVelocity,runwayCrab} from './weather-math.js';
-
-export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-const mix=(a,b,t)=>a+(b-a)*t;
-const approach=(a,b,rate,dt)=>a+clamp(b-a,-rate*dt,rate*dt);
-const D2R=Math.PI/180,R2D=180/Math.PI;
-const KNOT=.514444;
-
-export const RUNWAY={start:-1900,end:1900,width:60,touch:-1550};
-// Powered approaches begin in a descent above the glide path, with the gear still up,
-// so the gear extension is part of the demo. Below this height the gear lowers.
-const LANDING_START_ALTITUDE=300,GEAR_DOWN_ALTITUDE=260;
-
-// Nose-up ground lift used by the renderer and the tail-clearance limit. It keeps
-// wheels on the surface at rotation and fades out over the first two metres of
-// altitude, so ground and air use one continuous formula.
-export function groundLift(pitchDeg,altitude){
- return Math.max(0,Math.sin(pitchDeg*D2R)*4)*(1-clamp(altitude/2,0,1));
-}
-export const FLAP_DETENTS=[0,5,10,20,25,30];
-export const THRUST_DETENTS=[
- {id:'idle',label:'慢车',en:'IDLE',value:0},
- {id:'cruise',label:'巡航',en:'CRZ',value:.66},
- {id:'climb',label:'爬升',en:'CLB',value:.84},
- {id:'takeoff',label:'起飞',en:'TO',value:1}
-];
-
-export const AIRCRAFT={
- mass:330000,
- landingMass:300000,
- wingArea:525,
- wingSpan:64.4,
- chord:8.6,
- engines:4,
- engineThrust:252000,       // N per engine, CF6-80C2B1F class
- gravity:9.80665,
- rho0:1.225,
- liftSlope:5.0,             // CL per rad, whole aircraft
- cleanLiftAtZero:.22,
- flapLiftGain:1.05,
- cleanMaxLift:1.58,
- flapMaxLiftGain:.98,
- cleanStallAngle:15.5,      // deg
- flapStallAngleGain:1.5,    // deg at full flaps
- oswald:.78,
- cd0:.019,
- gearDrag:.016,
- spoilerDrag:.10,
- cmAlpha:-1.4,              // static pitch stability, per rad
- cmElevator:.65,            // elevator power, per rad deflection
- cmPitchRate:-40,           // pitch damping
- clAileron:.042,            // roll power
- clRollRate:-.45,           // roll damping
- pitchInertia:6.5e7,
- rollInertia:1.9e7,
- brakeMu:.35,
- rollingMu:.018,
- reverseFactor:.45,
- noseGearShare:.035,
- noseGearArm:20,
- wheelbase:22,
- vmo:188,                   // m/s indicated (equivalent) airspeed, ~365 KIAS
- mmo:.92,
- maxAltitude:12500
-};
+import {clamp,mix,approach,D2R,R2D,KNOT,RUNWAY,LANDING_START_ALTITUDE,AIRCRAFT} from './flight/constants.js';
+import {Guidance} from './flight/guidance.js';
+import {Ground} from './flight/ground.js';
+export {clamp,RUNWAY,groundLift,FLAP_DETENTS,THRUST_DETENTS,AIRCRAFT} from './flight/constants.js';
 
 const M=AIRCRAFT.mass,S=AIRCRAFT.wingArea,G=AIRCRAFT.gravity,W=M*G;
 const RHO0=AIRCRAFT.rho0;
@@ -272,23 +212,6 @@ export class Flight{
   this.elevator=-this.elevatorCmd;this.aileron=this.rollCmd;
   this.rudder=guided?0:pilot.yaw;
  }
- // Simple flight-director style autopilot used by the demonstration flights: it
- // commands a pitch rate toward the desired attitude, then converts that into an
- // elevator deflection like a pilot would.
- autoElevator(targetPitch){
-  if(this.onGround){
-   // On the runway the pitch rate is commanded directly by the elevator, so only
-   // position feedback is used (a rate loop would fight itself).
-   const error=targetPitch-this.pitch;
-   const desiredRate=clamp(error*1.6,-8,8);
-   const authority=clamp(Math.pow(this.speed/74,2),0,1.5);
-   return clamp((desiredRate+this.pitch*.9)/Math.max(1.2,13*authority),-1,1);
-  }
-  const error=targetPitch-this.pitch;
-  const rateCommand=clamp(error*.75,-7,7);
-  const rateError=rateCommand-this.pitchRate;
-  return clamp(rateError*.32,-1,1);
- }
  atmosphere(){return atmosphere(this.altitude);}
  gust(){return 0;}
  calculateAero(){
@@ -350,124 +273,6 @@ export class Flight{
   const power=clamp((drag+this.weight*Math.sin(gamma))/(Math.max(1,available)*Math.cos(a)),.045,1);
   return clamp(Math.pow((power-.045)/.955,1/1.3),0,1);
  }
- takeoffPitchTarget(){
-  if(this.speed<72&&this.onGround)return 0;
-  if(this.onGround)return 10.5;
-  const targetSpeed=this.altitude<200?94:this.altitude<450?112:128;
-  const gammaTarget=this.altitude<560?clamp(7+(this.speed-targetSpeed)*.18,2,10):clamp((600-this.altitude)*.05,-2,2);
-  return clamp(gammaTarget+this.trimAlpha()*R2D,0,18);
- }
- landingPitchTarget(){
-  const distance=RUNWAY.touch-this.x;
-  if(this.onGround)return 0;
-  const glide=this.landingGlide||3,approach=this.landingSpeed||77;
-  // A tailwind shortens the orbiter's time to flare on the runway approach.
-  const tailwind=this.unpowered?Math.max(0,windVector(this.windDirection,this.windSpeed).x):0;
-  const flareAlt=this.unpowered?24+tailwind*.9:14;
-  const pathAltitude=Math.max(0,(distance-30)*Math.tan(glide*D2R));
-  const minGamma=this.unpowered?-12:-4.5;
-  let gammaTarget=this.altitude>flareAlt?clamp(-glide+(pathAltitude-this.altitude)*.06,minGamma,-1):clamp(-.8-this.altitude*.06,-1.6,-.6);
-  const targetSpeed=this.unpowered?approach:(distance>350?77:73);
-  const alpha=this.trimAlpha(this.speed,this.flaps,0)*R2D;
-  this.guidanceGamma=gammaTarget;
-  this.guidanceAltitude=pathAltitude;
-  this.guidanceSpeed=targetSpeed;
-  // The lower limit allows the steeper descent from the start altitude back to the glide path.
-  return clamp(gammaTarget+alpha+(gammaTarget-this.gamma*R2D)*2,-6,12);
- }
- takeoffGuidance(){
-  this.park=false;this.brake=0;this.landingBrake=0;
-  if(this.onGround){this.throttle=1;this.flapTarget=20;this.gearTarget=1;}
-  else{
-   const targetSpeed=this.altitude<200?94:this.altitude<450?112:128;
-   this.throttle=this.altitude<480?1:clamp(this.trimThrottle(0)+(targetSpeed-this.speed)*.02,.10,.85);
-   this.flapTarget=this.altitude>200?0:20;
-   this.gearTarget=this.altitude>30?0:1;
-  }
- }
- landingGuidance(){
-  const distance=RUNWAY.touch-this.x;
-  const glide=this.landingGlide||3,approach=this.landingSpeed||77;
-  this.flapTarget=this.unpowered?0:30;
-  this.gearTarget=this.altitude<(this.unpowered?120:GEAR_DOWN_ALTITUDE)?1:0;
-  if(!this.onGround){
-   const targetSpeed=this.unpowered?approach:(distance>350?77:73);
-   this.throttle=this.unpowered?0:clamp(this.trimThrottle(-glide*D2R)+(targetSpeed-this.speed)*.03,.04,.75);
-   if(!this.unpowered&&this.altitude<9)this.throttle=0;
-   this.reverseTarget=0;this.landingBrake=0;this.spoilerTarget=0;
-  }else if(this.speed>2){
-   // An unpowered orbiter has no reversers; it relies on wheel brakes, the
-   // speed brake and the drag chute.
-   this.throttle=this.unpowered?0:(this.speed>60*KNOT?.6:0);
-   this.reverseTarget=this.unpowered?0:(this.speed>60*KNOT?1:0);
-   this.landingBrake=this.speed>25?.55:.28;
-   this.spoilerTarget=1;
-   // The orbiter pops its drag chute right after main-gear touchdown and jettisons it near 30 kt.
-   if(this.chuteAvailable){
-    if(this.speed<=15){if(this.chuteTarget===1||this.chute>.05)this.chuteJettisoned=true;this.chuteTarget=0;}
-    else if(this.speed<95&&!this.chuteJettisoned)this.chuteTarget=1;
-   }
-  }else{
-   this.throttle=0;this.reverseTarget=0;this.landingBrake=0;this.park=true;
-   if(!this.unpowered){this.spoilerTarget=0;this.autoGroundSpoilers=false;}
-  }
- }
- integrateGround(dt,pilot,aero){
-  this.gamma=0;this.vs=0;
-  const normal=Math.max(0,this.weight-aero.lift-this.thrust*Math.sin(this.pitch*D2R));
-  this.normalForce=normal;
-  const reverseForce=this.reverse*AIRCRAFT.reverseFactor*this.thrust;
-  const drive=this.thrust*Math.cos(this.pitch*D2R)*(1-.8*this.reverse)-reverseForce;
-  const rolling=AIRCRAFT.rollingMu*normal;
-  const brakePressure=clamp(Math.max(pilot.brake,this.landingBrake||0,this.park?1:0),0,1);
-  const brakeForce=brakePressure*AIRCRAFT.brakeMu*normal;
-  const resistance=rolling+brakeForce;
-  const net=drive-aero.drag;
-  this.acceleration=(net-resistance)/this.mass;
-  if(net<=resistance&&this.speed<.05)this.speed=0;
-  else this.speed=Math.max(0,this.speed+this.acceleration*dt);
-  if(this.park&&this.speed<.3)this.speed=0;
-  this.brakePressure=brakePressure;
-  // Wheels on the runway hold the wings level.
-  this.bank=approach(this.bank,0,8,dt);this.rollRate=0;
-  // Nose-wheel steering is limited by tyre side force: cap the turn so the
-  // lateral acceleration stays near 0.3 g at runway speeds while taxi turns stay tight.
-  const steerLimit=clamp((40-this.speed)/40,.12,1)*70*D2R;
-  const steer=(this.rudder*steerLimit);
-  const maxTan=this.speed>1?.3*G*AIRCRAFT.wheelbase/(this.speed*this.speed):Infinity;
-  const steerTan=clamp(Math.tan(steer),-maxTan,maxTan);
-  this.heading=(this.heading+this.speed*steerTan/AIRCRAFT.wheelbase*R2D*dt+360)%360;
-  const heading=(this.heading-90)*D2R;
-  this.x+=Math.cos(heading)*this.speed*dt;
-  this.z+=Math.sin(heading)*this.speed*dt;
-  this.updateGroundPitch(dt);
-  this.onRunway=this.x>RUNWAY.start&&this.x<RUNWAY.end&&Math.abs(this.z)<RUNWAY.width/2;
-  if(normal<=0&&this.pitch>3&&!this.park){
-   this.onGround=false;
-   this.phase='离地！升力超过了飞机重量';
-   this.say('升力 > 重量，飞机离地了');
-   return;
-  }
-  if(this.onGround&&(Math.abs(this.z)>55||this.x>RUNWAY.end+80)&&this.mode!=='inspect'){
-   this.failed=true;this.message='飞机驶出了跑道。放襟翼、轻轻抬头，并预留足够滑跑距离再试一次';
-  }
- }
- // Rotation on the ground is limited by the weight still carried by the nose gear:
- // the elevator can only lift the nose once enough lift has been generated.
- updateGroundPitch(dt){
-  const vrTarget=74;
-  const authority=clamp(Math.pow(this.speed/vrTarget,2),0,1.5);
-  const noseLoad=clamp((this.weight-this.lift)/this.weight,0,1);
-  let rate;
-  if(this.onGround){
-   rate=this.elevatorCmd*13*authority*(1-.55*noseLoad)-this.pitch*.9;
-   if(this.pitch<=0&&rate<0)rate=0;
-   this.pitchRate=rate;
-   this.pitch=clamp(this.pitch+rate*dt,0,11.4);
-   if(this.pitch>=11.4&&this.speed>25)this.tailStrike=true;
-   if(this.pitch<=0){this.pitch=0;this.pitchRate=0;}
-  }
- }
  integrateAirborne(dt,pilot,aero){
   const V=Math.max(12,this.speed);
   const bank=this.bank*D2R;
@@ -522,28 +327,6 @@ export class Flight{
    this.vs=this.speed*Math.sin(this.gamma);
   }
  }
- touchdownOrCrash(sink){
-  const runway=Math.abs(this.z)<RUNWAY.width/2&&this.x>RUNWAY.start&&this.x<RUNWAY.end;
-  const gearDown=this.gear>.97,level=Math.abs(this.bank)<12&&this.pitch>-.5;
-  this.touchdown={rate:sink,x:this.x,z:this.z,speed:this.speed,heading:this.heading,time:this.time,valid:false};
-  this.altitude=0;
-  const maxTouchdown=this.unpowered?120:95;
-  if(!runway||!gearDown||sink>4.6||!level||this.speed>maxTouchdown){
-   this.failed=true;
-   this.message=!runway?'偏离跑道啦，重新对准再试一次':!gearDown?'记得放下起落架，再轻轻着陆':sink>4.6?'下降有点快，接近地面时轻轻抬头':!level?'先把机翼放平、轻轻抬起机头':'接地速度较快，先减速再尝试着陆';
-   this.speed=0;this.vs=0;this.gamma=0;this.pitch=0;this.onGround=true;return;
-  }
-  this.gamma=0;this.vs=0;this.onGround=true;this.pitchRate=0;
-  // Simplified de-crab at touchdown; the wheels then track the runway.
-  if(this.mode==='land'&&this.windCompensating)this.heading=90;
-  this.pitch=clamp(this.pitch,0,11.4);this.touchdown.valid=true;
-  // The shuttle retains its existing rudder speed-brake/chute behavior.
-  if(this.unpowered)this.spoilerTarget=1;
-  else if(this.mode==='land'||this.throttle<=.2){this.spoilerTarget=1;this.autoGroundSpoilers=true;}
-  this.phase='主轮轻轻接地 · 开始减速';
-  if(this.mode==='land'){if(!this.unpowered&&this.speed>60*KNOT)this.reverseTarget=1;this.landingBrake=.4;}
-  if(this.mode!=='land')this.mode='manual';
- }
  updateAirData(){
   const rho=this.atmosphere(),V=Math.max(0,this.speed);
   this.vs=this.onGround?0:V*Math.sin(this.gamma);
@@ -583,4 +366,11 @@ export class Flight{
  }
 }
 
-
+// Restore the extracted methods as own Flight prototype methods in their original order.
+const methods=Object.getOwnPropertyDescriptors(Flight.prototype),guidance=Object.getOwnPropertyDescriptors(Guidance.prototype),ground=Object.getOwnPropertyDescriptors(Ground.prototype);
+const names=Object.keys(methods);
+names.splice(names.indexOf('atmosphere'),0,'autoElevator');
+names.splice(names.indexOf('integrateAirborne'),0,'takeoffPitchTarget','landingPitchTarget','takeoffGuidance','landingGuidance','integrateGround','updateGroundPitch');
+names.splice(names.indexOf('updateAirData'),0,'touchdownOrCrash');
+for(const name of names)if(name!=='constructor')delete Flight.prototype[name];
+for(const name of names)if(name!=='constructor')Object.defineProperty(Flight.prototype,name,methods[name]||guidance[name]||ground[name]);
