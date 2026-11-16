@@ -35,26 +35,46 @@ export function aircraftFiles(type,{livery='BOE'}={}){
 }
 
 const jobs=new Map();
+// Every download, however it was started (background queue, picker click, loader), reports here so the UI never disagrees with the cache.
+const observers=new Set();
+export function observeAircraftDownloads(fn){observers.add(fn);return()=>observers.delete(fn);}
 const MAX_PARALLEL=4;
 // Downloaded bodies wait here until the model loader asks for the same URL. This does not rely on the
 // browser keeping multi-megabyte entries in its HTTP cache, which private windows do not.
 const store=new BoundedStore(MAX_PREFETCH_BODY_BYTES);
 const nativeFetch=globalThis.fetch?.bind(globalThis);
 
-async function pull(path,estimate,job,priority){
- const url=ASSETS+path;
+const FILE_ATTEMPTS=3;
+// Streams one file into a buffer sized from the manifest (one copy in memory, not two), retrying transient failures.
+async function pullOnce(url,estimate,job,priority){
  let counted=0;
  const add=n=>{job.loaded+=n-counted;counted=n;job.notify();};
- try{
-  const response=await nativeFetch(url,{priority});
-  if(!response.ok||!response.body)throw Error('Prefetch failed');
-  const reader=response.body.getReader(),chunks=[];let received=0;
-  for(;;){const {done,value}=await reader.read();if(done)break;chunks.push(value);received+=value.byteLength;add(Math.min(received,estimate));}
-  if(received!==estimate)throw Error('Prefetch size mismatch');
-  const body=new Uint8Array(received);let offset=0;for(const chunk of chunks){body.set(chunk,offset);offset+=chunk.byteLength;}
-  // Images are loaded through <img>, not fetch(); for those the download only warms the HTTP cache.
-  if(!/\.(png|jpe?g|webp)$/i.test(path))store.set(new URL(url,location.href).href,{body,type:response.headers.get('content-type')||'application/octet-stream'});
- }catch{job.failed=true;/* The real loader reports the failure with a proper message. */}
+ const response=await nativeFetch(url,{priority});
+ if(!response.ok||!response.body)throw Object.assign(Error(`HTTP ${response.status}`),{step:'status'});
+ const reader=response.body.getReader(),body=new Uint8Array(estimate);let received=0;
+ for(;;){
+  const {done,value}=await reader.read();if(done)break;
+  if(received+value.byteLength>estimate)throw Object.assign(Error('more data than the manifest lists'),{step:'size'});
+  body.set(value,received);received+=value.byteLength;add(Math.min(received,estimate));
+ }
+ if(received!==estimate)throw Object.assign(Error(`got ${received} of ${estimate} bytes`),{step:'size'});
+ return {body,type:response.headers.get('content-type')||'application/octet-stream'};
+}
+async function pull(path,estimate,job,priority){
+ const url=ASSETS+path;
+ for(let attempt=1;attempt<=FILE_ATTEMPTS;attempt++){
+  try{
+   const {body,type}=await pullOnce(url,estimate,job,priority);
+   // Images are loaded through <img>, not fetch(); for those the download only warms the HTTP cache.
+   if(!/\.(png|jpe?g|webp)$/i.test(path))store.set(new URL(url,location.href).href,{body,type});
+   return;
+  }catch(error){
+   job.loaded-=0;job.lastError={path,name:error?.name||'Error',message:error?.message||String(error),step:error?.step||'fetch',attempt};
+   if(attempt<FILE_ATTEMPTS)await new Promise(r=>setTimeout(r,1000*attempt));
+  }
+ }
+ job.failed=true;
+ console.warn('[747] aircraft download failed',job.lastError);
 }
 
 // Serve each preloaded file to the first fetch() that asks for it, then forget it. Anything else
@@ -85,11 +105,11 @@ export function preloadAircraft(type,{livery='BOE',priority='low',onProgress}={}
  let job=jobs.get(key);
  if(!job){
   const listeners=new Set();
-  job={loaded:0,total:files.reduce((n,f)=>n+f[1],0),listeners,done:false,
-   notify(){for(const fn of listeners)fn({loaded:Math.min(this.loaded,this.total),total:this.total,fraction:this.total?Math.min(1,this.loaded/this.total):1});}};
+  job={type,loaded:0,total:files.reduce((n,f)=>n+f[1],0),listeners,done:false,
+   notify(){const p={loaded:Math.min(this.loaded,this.total),total:this.total,fraction:this.total?Math.min(1,this.loaded/this.total):1};for(const fn of listeners)fn(p);for(const fn of observers)fn(type,{...p,done:false,failed:false});}};
   const queue=files.slice();
   const worker=async()=>{for(let file;(file=queue.shift());)await pull(file[0],file[1],job,priority);};
-  job.promise=Promise.all(Array.from({length:Math.min(MAX_PARALLEL,files.length)},worker)).then(()=>{job.done=!job.failed;if(job.failed)jobs.delete(key);job.notify();});
+  job.promise=Promise.all(Array.from({length:Math.min(MAX_PARALLEL,files.length)},worker)).then(()=>{job.done=!job.failed;if(job.failed)jobs.delete(key);job.notify();for(const fn of observers)fn(type,{fraction:job.done?1:0,done:job.done,failed:!!job.failed,error:job.lastError});});
   jobs.set(key,job);
  }
  if(onProgress){job.listeners.add(onProgress);onProgress({loaded:Math.min(job.loaded,job.total),total:job.total,fraction:job.done?1:job.total?Math.min(1,job.loaded/job.total):1});job.promise.then(()=>job.listeners.delete(onProgress));}

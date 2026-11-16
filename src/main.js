@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {Aircraft,LIVERIES} from './aircraft.js';
 import {realityFor} from './livery-reality.js';
-import {preloadAircraft,prefetchInOrder,isPreloaded,installPreloadedFetch} from './preload.js';
+import {preloadAircraft,prefetchInOrder,isPreloaded,observeAircraftDownloads,installPreloadedFetch} from './preload.js';
 installPreloadedFetch();
 import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
 import {World} from './world.js';
@@ -39,6 +39,7 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeig
 const world=new World(scene,renderer),sim=new Flight(),weather=new Weather(world,scene,sim);
 const landingLights=new LandingLights(scene);
 let plane=new Aircraft(),cockpit=null,airflow=null;
+let badgeFor=null;
 const aircraftCache=new Map();const parkedAircraft=[];let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
 import {REALITY_TAGS,AIRCRAFT_INFO} from './ui/aircraft-info.js';
 let originalAbout='',originalEmitters=null;
@@ -117,7 +118,7 @@ function getAircraft(type,onProgress,livery=desiredLivery){
    // dispose here if a later coordinator step failed after successful loading.
    catch(error){if(loaded)craft.dispose?.();throw error;}
   })();
-  p.preloadLivery=livery;aircraftCache.set(type,p);p.then(()=>{p.ready=true;},()=>{if(aircraftCache.get(type)===p)aircraftCache.delete(type);});
+  p.preloadLivery=livery;aircraftCache.set(type,p);p.then(()=>{p.ready=true;badgeFor?.(type,'已加载','ready');},()=>{if(aircraftCache.get(type)===p)aircraftCache.delete(type);});
  }else{
   const cached=aircraftCache.get(type),requested=cached.preloadLivery??livery;
   if(type!=='b747'&&!cached.ready&&!isPreloaded(type,{livery:requested}))preloadAircraft(type,{livery:requested,priority:'high',onProgress});
@@ -286,8 +287,10 @@ async function start(){
  // Background download of every other aircraft, in picker order, right after the first scene is shown.
  if(!/[?&]prefetch=0/.test(location.search)){
   const order=all('[data-aircraft]').map(b=>b.dataset.aircraft).filter(t=>t!=='b747');
-  const badge=(type,text,state)=>{const b=document.querySelector(`[data-aircraft="${type}"]`);if(!b)return;let tag=b.querySelector('.dl-state');if(!tag){tag=document.createElement('i');tag.className='dl-state';b.querySelector('b')?.after(tag);}tag.textContent=text;tag.dataset.state=state;};
+  const badge=badgeFor=(type,text,state)=>{const b=document.querySelector(`[data-aircraft="${type}"]`);if(!b)return;let tag=b.querySelector('.dl-state');if(!tag){tag=document.createElement('i');tag.className='dl-state';b.querySelector('b')?.after(tag);}tag.textContent=text;tag.dataset.state=state;};
   order.forEach(t=>badge(t,'排队下载','queued'));
+  // Every download (background queue, picker click or loader) updates the picker badges through one observer.
+  observeAircraftDownloads((type,p)=>{if(p.done)badgeFor?.(type,'已下载','ready');else if(p.failed)badgeFor?.(type,'下载未完成，选择机型可重试','failed');else if(p.fraction>=1)badgeFor?.(type,'校验中…','loading');else badgeFor?.(type,`后台下载 ${Math.round((p.fraction||0)*100)}%`,'loading');});
   setTimeout(()=>prefetchInOrder(order,{livery:()=>desiredLivery,onStatus:(type,p)=>p.done?badge(type,'已下载','ready'):p.failed?badge(type,'下载未完成，选择机型可重试','failed'):p.retrying?badge(type,`下载中断，${Math.round(p.delay/1000)} 秒后重试`,'failed'):p.fraction>=1?badge(type,'校验中…','loading'):badge(type,`后台下载 ${Math.round((p.fraction||0)*100)}%`,'loading')}),600);
  }
  window.flightLab={sim,landingLights,plane,cockpit:()=>cockpit,world,weather,airflow,camera,renderer,display,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit,cameraView,advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};

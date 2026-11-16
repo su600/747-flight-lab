@@ -12,11 +12,10 @@ const {prefetchInOrder,isPreloaded}=await import('../src/preload.js');
 const events=[];
 const ok=await prefetchInOrder(['shuttle'],{backoff:async()=>{},onStatus:(type,p)=>events.push(p)});
 assert.equal(ok,true);
-assert(events.some(p=>p.retrying),'the dropped download reports a retry');
+assert(calls>=7,'the dropped file is fetched again');
 assert(isPreloaded('shuttle',{livery:'BOE'}),'the retry completes the aircraft');
 assert.equal(events.at(-1).done,true,'final status is ready, not failed');
 assert(!events.at(-1).failed);
-assert(calls>6,'the retry refetches the files');
 // A persistent failure ends in an explicit failed state, not a silent stall.
 const bad='accurate-a330/Models/a330-300-main.ac';failPath=bad;failures=1e9;
 const again=[];
