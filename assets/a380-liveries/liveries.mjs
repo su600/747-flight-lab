@@ -101,18 +101,37 @@ export const ART={
  }},
  // ------------------------------------------------------------ China Southern
  CSN:{real:true,draw(s){
-  const SKY='#1b8fd6',DEEP='#0c3b90',MID='#2d7fd0';
+  // Measured on photos of B-6136/B-6137 (2011-2020): white fuselage; a sky-blue stripe through the main-deck
+  // windows over a navy band that wraps the nose up to the cockpit glazing and runs aft past the wing,
+  // edged below by a gold hairline and a sky-blue stripe; spaced 中国南方航空 titles in a Song-style face
+  // at upper-deck height ahead of the serif CHINA SOUTHERN; sky-blue fin with the white-edged red kapok.
+  const SKY='#2a8bd0',NAVY='#0d2f6e',GOLD='#c8a24c',TITLE='#1d2a4d';
   fillBase(s,'#f3f5f7');
-  const top=interp([[37,-4.6],[34,-5.4],[30,-6.1],[20,-7.0],[8,-8.2],[-5,-9.3],[-12,-9.6]]);
-  s.poly([...xs(37,-12,2).map(x=>[x,top(x)]),[-12,-12],[38,-12]],DEEP);
-  s.curve(xs(36,-4,2).map(x=>[x,top(x)+.45]),{stroke:MID,width:.28});
-  s.curve(xs(36,-4,2).map(x=>[x,top(x)+.85]),{stroke:'#bcd9f2',width:.16});
+  const end=-27;
+  // Navy band: top just under the window stripe, rising over the nose to below the cockpit glazing.
+  const navyTop=interp([[37,-3.95],[34.2,-3.95],[32.4,-5.0],[30.5,-5.82],[end,-5.82]]);
+  const navyBot=interp([[37,-9.6],[35.4,-8.9],[33,-8.15],[28,-7.55],[18,-7.3],[0,-7.1],[-12,-6.85],[-20,-6.5],[end,-6.05]]);
+  const run=xs(37,end,1);
+  s.poly([...run.map(x=>[x,navyTop(x)]),...run.slice().reverse().map(x=>[x,navyBot(x)])],NAVY);
+  // Gold hairline and sky-blue stripe under the navy band, tapering into it at the tail end.
+  const goldRun=xs(35.6,end+.5,1);
+  s.curve(goldRun.map(x=>[x,navyBot(x)-.06]),{stroke:GOLD,width:.09});
+  const skyTop=x=>navyBot(x)-.13,skyBot=x=>navyBot(x)-.13-.42*Math.min(1,Math.max(0,(x-end)/10));
+  s.poly([...goldRun.map(x=>[x,skyTop(x)]),...goldRun.slice().reverse().map(x=>[x,skyBot(x)])],SKY);
+  // Sky-blue stripe through the main-deck windows.
+  const win=xs(32.2,end+1,1),wTop=x=>-5.22,wBot=x=>-5.78;
+  s.poly([...win.map(x=>[x,wTop(x)]),...win.slice().reverse().map(x=>[x,wBot(x)])],SKY);
+  // Fin: sky blue with a large kapok flower (the derived logo keeps its white edging).
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,SKY));
-  const [cx,cy]=FIN.pt(4.9,.52);
-  s.imageFacing('csn-flower.png',cx,cy,10.5,10.5);
-  s.text('中国南方航空',15.8,-4.75,{cap:1.3,font:'Microsoft YaHei',fill:DEEP,width:15.4});
-  s.text('CHINA SOUTHERN',.5,-4.75,{cap:.75,font:'Arial',fill:DEEP,width:10.7,italic:true});
-  s.text('B-6137',-29,-4.55,{cap:.4,font:'Arial',fill:DEEP,width:2.8});
+  const [cx,cy]=FIN.pt(5.2,.5);
+  s.clip(finShape(),c=>c.imageFacing('csn-flower.png',cx,cy,5.7,5.9));
+  // Titles: 中 sits nearest the nose on both sides, so the nose-right (port) view reverses the string.
+  const zh=s.side==='port'?'空航方南国中':'中国南方航空';
+  s.text(zh,23.1,-4.4,{cap:1.25,font:'Noto Serif CJK SC',weight:'500',fill:TITLE,width:11.6});
+  s.text('CHINA SOUTHERN',12.2,-4.4,{cap:.62,font:'Liberation Serif',weight:'normal',fill:TITLE,width:6.6});
+  // Airbus type badge in the band behind the wing, and the registration under the fin.
+  s.text('AIRBUS A380-800',-15.8,-6.38,{cap:.22,font:'Arial',fill:'#ffffff',width:2.6});
+  s.text('B-6136',-29,-4.55,{cap:.4,font:'Arial',fill:NAVY,width:2.8});
  }},
  // --------------------------------------------- Airbus house colours (F-WWOW style)
  BOE:{real:true,draw(s){

@@ -37,6 +37,7 @@ const FONT_FILES=[
  ...['arial.ttf','arialbd.ttf','ariali.ttf','arialbi.ttf','ARIALNB.TTF','PALAB.TTF','pala.ttf','georgiab.ttf','georgia.ttf','DUBAI-BOLD.TTF','DUBAI-MEDIUM.TTF','msyhbd.ttc','msyh.ttc','simhei.ttf','segoeuib.ttf','framd.ttf','trebucbd.ttf','GILB____.TTF','calibrib.ttf','impact.ttf','FRAHV.TTF'].map(f=>W+f),
  '/usr/share/fonts/dejavu/DejaVuSans.ttf','/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf',
  '/usr/share/fonts/google-noto-cjk/NotoSansCJK-Bold.ttc',
+ '/usr/share/fonts/google-noto-cjk/NotoSerifCJK-Medium.ttc','/usr/share/fonts/liberation-serif/LiberationSerif-Regular.ttf',
 ].filter(f=>fs.existsSync(f));
 const FONT_FAMILY=FONT_FILES.some(f=>/arial\.ttf$/i.test(f))?'Arial':'DejaVu Sans';
 const FONT_OPTS={fontFiles:FONT_FILES,loadSystemFonts:false,defaultFontFamily:FONT_FAMILY};
@@ -74,10 +75,21 @@ export async function prepareDerivedLogos(){
   for(let i=0;i<data.length;i+=4){data[i]=255;data[i+1]=255;data[i+2]=255;}
   await put('lufthansa-crane-white.png',data,info);
  }
- {// Kapok flower only: drop the blue tail-shaped background of the logo.
+ {// Kapok flower only: drop the blue tail-shaped background, then crop to the flower and its white edging so the
+  // anti-aliased outline of the logo's tail shape does not come along as faint lines.
   const {data,info}=await read('china-southern.png');
   for(let i=0;i<data.length;i+=4){const r=data[i],b=data[i+2];if(b>r+30)data[i+3]=0;}
-  await put('csn-flower.png',data,info);
+  let x0=1e9,y0=1e9,x1=-1,y1=-1;
+  for(let y=0;y<info.height;y++)for(let x=0;x<info.width;x++){const i=(y*info.width+x)*4;if(data[i+3]>40&&data[i]>150&&data[i+1]<90&&data[i+2]<90){x0=Math.min(x0,x);x1=Math.max(x1,x);y0=Math.min(y0,y);y1=Math.max(y1,y);}}
+  const pad=Math.round((x1-x0)*.06);x0=Math.max(0,x0-pad);y0=Math.max(0,y0-pad);x1=Math.min(info.width-1,x1+pad);y1=Math.min(info.height-1,y1+pad);
+  const w=x1-x0+1,h=y1-y0+1,crop=Buffer.alloc(w*h*4);
+  for(let y=0;y<h;y++)data.copy(crop,y*w*4,((y+y0)*info.width+x0)*4,((y+y0)*info.width+x0+w)*4);
+  // Keep the red flower; repaint a clean white edge (as on the real fin) by dilating the red mask; drop the rest.
+  const red=new Uint8Array(w*h);for(let i=0;i<w*h;i++){const k=i*4;red[i]=crop[k+3]>60&&crop[k]>150&&crop[k+1]<120&&crop[k+2]<120?1:0;}
+  let edge=red.slice();const R=Math.max(2,Math.round(w*.03));
+  for(let it=0;it<R;it++){const next=edge.slice();for(let y=0;y<h;y++)for(let x=0;x<w;x++){const i=y*w+x;if(edge[i])continue;if(x>0&&edge[i-1]||x<w-1&&edge[i+1]||y>0&&edge[i-w]||y<h-1&&edge[i+w])next[i]=1;}edge=next;}
+  for(let i=0;i<w*h;i++){const k=i*4;if(red[i])continue;if(edge[i]){crop[k]=crop[k+1]=crop[k+2]=255;crop[k+3]=255;}else crop[k+3]=0;}
+  await put('csn-flower.png',crop,{width:w,height:h});
  }
 }
 export function logoData(name){

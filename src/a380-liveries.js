@@ -19,7 +19,7 @@ export const A380_STYLE={
  BOE:style({winglet:'#14307a'}),
  CCA:style(),
  CEA:style(),
- CSN:style({winglet:'#0b3a8f'}),
+ CSN:style(),
  CHH:style({stabilizer:'#ed1c24',winglet:'#ed1c24'}),
  UAE:style({stabilizer:'#f7f6f2',nacelle:'#f7f6f2',winglet:'#f7f6f2'}),
  BAW:style({nacelle:'#1f2a6b',winglet:'#1f2a6b'}),
