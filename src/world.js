@@ -44,6 +44,7 @@ export class World{
   const concrete=mat('#ffffff',.92);concrete.map=pavementTexture('#aaa89f',10,{joints:8,stains:22});this.ground(-300,-380,2200,410,concrete,.035);
   const taxi=mat('#555e5d',.86);taxi.map=pavementTexture('#626866',12,{stains:20});this.ground(0,-130,3850,30,taxi,.045);
   for(const x of [-1750,-850,200,1550])this.ground(x,-75,34,160,taxi,.06);
+  this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi];
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
   this.ground(0,-28,3740,.6,white,.07);this.ground(0,28,3740,.6,white,.07);this.ground(0,-130,3760,.3,yellow,.065);
   for(let x=-1810;x<1830;x+=60)this.ground(x,0,30,.9,white,.075);
@@ -410,6 +411,7 @@ export class World{
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
   this.scaleLamps(night?2:dusk?1.5:1);this.airportLights?.setTime(mode);
+  this.weather?.applyWorld();
  }
  updateServiceVehicles(dt){
   for(const vehicle of this.vehicles){
