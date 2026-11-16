@@ -1,5 +1,6 @@
 // Compact, deterministic districts away from the airport and the east/west approach corridor.
 import * as T from 'three';
+import {facadeBoxGeometry} from './procedural.js';
 
 // These reservations also keep the older scattered city and trees out of the new districts.
 export const SCENERY_ZONES=[
@@ -15,7 +16,7 @@ export class Scenery {
  constructor(scene,cityMaterial){
   this.root=new T.Group();this.root.name='scenery';scene.add(this.root);
   this.batches=[];this.boats=[];this.t=0;this.night=false;this.bladeTransform=new T.Object3D();
-  const box=new T.BoxGeometry(1,1,1),plane=new T.PlaneGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,12),cone=new T.ConeGeometry(1,1,4);
+  const box=new T.BoxGeometry(1,1,1),facadeBox=facadeBoxGeometry(),plane=new T.PlaneGeometry(1,1),cylinder=new T.CylinderGeometry(1,1,1,12),cone=new T.ConeGeometry(1,1,4);
   const transform=new T.Object3D(),color=new T.Color();
   const batch=(name,geometry,material,items,lowCount=items.length)=>{
    const mesh=new T.InstancedMesh(geometry,material,items.length);mesh.name=name;
@@ -41,8 +42,8 @@ export class Scenery {
     if(h>160){antennas.push({x,y:h+sh+9,z,w:2,h:18,d:2});beacons.push({x,y:h+sh+19,z,w:4,h:4,d:4});}
    }else roofs.push({x,y:h+12,z,w:w*.68,h:24,d:d*.68,ry:Math.PI/4});
   }
-  batch('city-towers',box,cityMaterial,buildings,20);
-  batch('city-setbacks',box,cityMaterial,setbacks,12);
+  batch('city-towers',facadeBox,cityMaterial,buildings,20);
+  batch('city-setbacks',facadeBox,cityMaterial,setbacks,12);
   batch('city-roofs',cone,roof,roofs,5);
   batch('city-antennas',box,dark,antennas,Math.ceil(antennas.length/2));
   this.beaconMaterial=new T.MeshBasicMaterial({color:'#ff4939',toneMapped:false});

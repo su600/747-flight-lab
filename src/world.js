@@ -4,7 +4,7 @@ import {Scenery,inSceneryZone} from './world/scenery.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
-import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,glowTexture,cumulusTexture,pavementTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
+import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
 export class World{
@@ -149,7 +149,7 @@ export class World{
   // Distant urban edge and tree belts use instancing to keep the airport responsive.
   const temp=new T.Object3D(),col=new T.Color();
   this.cityMat=new T.MeshStandardMaterial({color:'#ffffff',roughness:.38,metalness:.35,map:facadeTexture(false),emissive:'#ffffff',emissiveMap:facadeTexture(true),emissiveIntensity:0});
-  const city=new T.InstancedMesh(boxGeo(1,1,1),this.cityMat,250);for(let i=0;i<250;i++){const x=-6000+rnd()*12000,z=-1300-rnd()*3500,h=10+rnd()*90;if(nearLandmark(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}else{temp.position.set(x,h/2,z);temp.scale.set(35+rnd()*60,h,25+rnd()*55);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));if(inSceneryZone(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}}temp.updateMatrix();city.setMatrixAt(i,temp.matrix);}scene.add(city);
+  const city=new T.InstancedMesh(facadeBoxGeometry(),this.cityMat,250);for(let i=0;i<250;i++){const x=-6000+rnd()*12000,z=-1300-rnd()*3500,h=10+rnd()*90;if(nearLandmark(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}else{temp.position.set(x,h/2,z);temp.scale.set(35+rnd()*60,h,25+rnd()*55);city.setColorAt(i,col.setHSL(.5+rnd()*.06,.1+rnd()*.1,.62+rnd()*.25));if(inSceneryZone(x,z)){temp.position.set(0,-100,0);temp.scale.set(0,0,0);}}temp.updateMatrix();city.setMatrixAt(i,temp.matrix);}scene.add(city);
   // Two tree species, tinted individually, scattered outside the airfield.
   const spots=[];for(let i=0;i<1500;i++){let x=(rnd()-.5)*14000,z=(rnd()-.5)*11000;if(Math.abs(x)<2500&&z>-850&&z<200){z=350+rnd()*500;}if(!nearLandmark(x,z))spots.push([x,z,6+rnd()*13,rnd()]);}
   const pines=spots.filter(s=>s[3]<.55),oaks=spots.filter(s=>s[3]>=.55);
@@ -409,7 +409,7 @@ export class World{
   this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0x8fbde8);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
   this.renderer.toneMappingExposure=night?1:dusk?.95:.7;
   this.cloudMat.color.set(night?0x2c3a58:dusk?0xffb890:0xffffff);this.cloudMat.opacity=night?.7:dusk?.8:.85;
-  this.cityMat.emissiveIntensity=night?1.1:dusk?.35:0;this.scenery?.setTime(mode);
+  this.cityMat.emissiveIntensity=night?.9:dusk?.3:0;this.scenery?.setTime(mode);
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
   this.scaleLamps(night?2:dusk?1.5:1);this.airportLights?.setTime(mode);

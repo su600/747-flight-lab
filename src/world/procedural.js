@@ -34,9 +34,17 @@ export function fieldTexture(){const S=1024,c=document.createElement('canvas');c
  speckle(x,S,90000,.05,2,3);
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=8;return t;}
 // One window-grid texture serves both the colour map and the night-time glow of the distant city.
+// Row 0 is a blank parapet band: roofs sample it, so tops never show window noise from altitude.
+// At night only a sparse, warm-to-cool mix of windows is lit, which reads as city lights rather than black-and-white camouflage.
+export const FACADE_ROOF_V=1-8/256,FACADE_LIT_SHARE=.22;
+const LIT_TINTS=['#ffd48a','#ffe2b0','#ffc46e','#f3ead8','#cfe0ff'];
 export function facadeTexture(lit){const c=document.createElement('canvas');c.width=128;c.height=256;const x=c.getContext('2d');x.fillStyle=lit?'#000':'#e4e9e8';x.fillRect(0,0,128,256);
- for(let r=0;r<16;r++)for(let k=0;k<8;k++){const on=rnd()<.55;x.fillStyle=lit?(on?'#ffd98a':'#000'):(on?'#8fa7ae':'#b9c7ca');x.fillRect(k*16+3,r*16+3,10,9);}
- const t=canvasTex(c,!lit);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=4;return t;}
+ for(let r=1;r<16;r++)for(let k=0;k<8;k++){if(lit){if(rnd()>=FACADE_LIT_SHARE)continue;x.globalAlpha=.55+rnd()*.45;x.fillStyle=LIT_TINTS[Math.floor(rnd()*LIT_TINTS.length)];}else x.fillStyle=rnd()<.55?'#8fa7ae':'#b9c7ca';x.fillRect(k*16+3,r*16+3,10,9);}
+ x.globalAlpha=1;const t=canvasTex(c,!lit);t.wrapS=t.wrapT=T.RepeatWrapping;t.anisotropy=4;return t;}
+// Unit box for facade-textured buildings: side faces carry the window grid, top and bottom collapse onto the blank parapet band.
+export function facadeBoxGeometry(){const g=new T.BoxGeometry(1,1,1),uv=g.attributes.uv;
+ for(const grp of g.groups.slice(2,4))for(let i=grp.start;i<grp.start+grp.count;i++){const v=g.index.getX(i);uv.setXY(v,.5,FACADE_ROOF_V);}
+ uv.needsUpdate=true;return g;}
 export function glowTexture(){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return canvasTex(c);}
 // A puffy cumulus: white crowns, soft blue-grey undersides.
 export function cumulusTexture(){const W=256,H=160,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
