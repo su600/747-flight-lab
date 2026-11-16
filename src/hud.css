@@ -113,7 +113,7 @@ body.cockpit-mode .craft-chip{display:none}
 .copilot p{font-size:12.5px;line-height:1.7;color:var(--t2)}
 .modes-foot{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding:8px 6px 0;font-size:12px;color:var(--t3);border-top:1px solid var(--line)}
 .modes-foot>div{display:flex;gap:7px}
-.chip-btn{min-width:42px;height:34px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--line);font:600 13px/1 var(--num);color:var(--t1)}
+.chip-btn{min-width:42px;height:40px;padding:0 12px;border-radius:12px;background:rgba(255,255,255,.07);border:1px solid var(--line);font:600 13px/1 var(--num);color:var(--t1)}
 .chip-btn:hover{border-color:var(--cyan);color:var(--cyan)}
 
 /* ---------- Tool rail ---------- */
@@ -131,7 +131,7 @@ body.cockpit-mode .craft-chip{display:none}
 #drawer:not([hidden]){animation:slideIn .32s var(--ease)}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 13px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-size:21px;font-weight:700;margin-top:9px;letter-spacing:.02em}
-#closeDrawer{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t2)}
+#closeDrawer{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t2)}
 #closeDrawer:hover{color:var(--t1);border-color:var(--line-2);transform:rotate(90deg)}
 .drawer-content{padding:8px 20px 20px;overflow:auto;overscroll-behavior:contain}
 .hint{font-size:12.5px;line-height:1.75;color:var(--t2);margin:10px 0}
@@ -202,13 +202,13 @@ select option{background:#0b1b27;color:var(--t1)}
 /* ---------- Status + camera dock ---------- */
 .status{position:fixed;z-index:4;left:50%;transform:translateX(-50%);bottom:calc(var(--deck-b) + var(--deck-h) + 72px);display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;font-size:13.5px;font-weight:550;white-space:nowrap;max-width:calc(100vw - 48px);
  background:rgba(6,15,23,.58);border:1px solid var(--line);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);box-shadow:0 10px 26px rgba(0,8,16,.35)}
-#takeControl{padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:750;color:#1a0d00;background:linear-gradient(145deg,var(--amber),var(--amber-d));box-shadow:0 4px 14px rgba(255,160,40,.4)}
+#takeControl{min-height:40px;padding:6px 14px;border-radius:999px;font-size:12.5px;font-weight:750;color:#1a0d00;background:linear-gradient(145deg,var(--amber),var(--amber-d));box-shadow:0 4px 14px rgba(255,160,40,.4)}
 .cam-dock{z-index:4;left:50%;transform:translateX(-50%);bottom:calc(var(--deck-b) + var(--deck-h) + 14px);display:flex;align-items:center;gap:3px;padding:5px;border-radius:999px}
 .cam-dock::before{display:none}
-.cam-dock button{padding:9px 16px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--t2);white-space:nowrap}
+.cam-dock button{min-height:40px;padding:9px 16px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--t2);white-space:nowrap}
 .cam-dock button:hover{color:var(--t1);background:rgba(255,255,255,.07)}
 .cam-dock button.active{color:#031018;background:linear-gradient(145deg,var(--cyan),#2aa6cf);box-shadow:0 6px 16px rgba(85,217,255,.38)}
-.cam-dock #resetCamera{width:38px;height:38px;padding:0;display:grid;place-items:center;font-size:17px;margin-left:2px}
+.cam-dock #resetCamera{width:40px;height:40px;padding:0;display:grid;place-items:center;font-size:17px;margin-left:2px}
 
 /* ---------- Instrument deck ---------- */
 .deck{z-index:5;left:var(--pad);right:max(24px,env(safe-area-inset-right));bottom:calc(var(--deck-b) + env(safe-area-inset-bottom));height:var(--deck-h);display:flex;align-items:stretch;border-radius:20px;overflow:hidden;animation:rise .7s var(--ease) both .25s}
@@ -274,7 +274,7 @@ dialog[open]{animation:pop .3s var(--ease)}
 dialog::backdrop{background:rgba(2,8,14,.62);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 dialog h2{font-size:28px;font-weight:750;margin:14px 0 14px;letter-spacing:.01em}
 dialog>p{font-size:14.5px;line-height:1.8;color:var(--t2)}
-.dialog-close{position:absolute;right:22px;top:22px;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t2)}
+.dialog-close{position:absolute;right:22px;top:22px;width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t2)}
 .dialog-close:hover{color:var(--t1);transform:rotate(90deg)}
 .help-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:24px 0}
 .help-grid>div{display:flex;flex-direction:column;gap:9px;padding:13px 14px;border-radius:16px;background:rgba(255,255,255,.05);border:1px solid var(--line)}
@@ -286,7 +286,7 @@ dialog .primary-btn{margin-top:14px}
 
 /* ---------- Loading ---------- */
 #loading{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 38%,#0d2638 0,#06131d 55%,#02080d 100%)}
-.loading-inner{display:flex;flex-direction:column;align-items:center;text-align:center}
+.loading-inner{display:flex;flex-direction:column;align-items:center;text-align:center;max-width:calc(100vw - max(16px,env(safe-area-inset-left)) - max(16px,env(safe-area-inset-right)));overflow-wrap:anywhere}
 .loading-number{font:italic 800 clamp(96px,16vw,150px)/1 var(--num);letter-spacing:-.04em;background:linear-gradient(120deg,#fff 30%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 10px 40px rgba(85,217,255,.35))}
 .loading-line{width:240px;height:2px;margin:26px 0 20px;background:rgba(255,255,255,.12);overflow:hidden;border-radius:2px}
 .loading-line i{display:block;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scan 1.3s var(--ease) infinite}
@@ -441,7 +441,7 @@ dialog .primary-btn{margin-top:14px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* ---------- Aircraft download bar ---------- */
-#loadBar{position:fixed;z-index:60;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);pointer-events:none}
+#loadBar{position:fixed;z-index:60;top:env(safe-area-inset-top);left:env(safe-area-inset-left);right:env(safe-area-inset-right);height:3px;background:rgba(255,255,255,.08);pointer-events:none}
 #loadBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan-d),var(--cyan));box-shadow:0 0 12px rgba(85,217,255,.7);transition:width .25s var(--ease)}
 #loadProgress{position:fixed;top:148px;left:50%;transform:translateX(-50%);padding:7px 12px;border-radius:6px;background:rgba(6,19,29,.92);color:#fff;font:500 12px/1.4 var(--mono);white-space:nowrap}
 #loadBar.busy i{background:linear-gradient(90deg,var(--cyan-d),var(--cyan),var(--cyan-d));background-size:200% 100%;animation:loadbusy 1s linear infinite}
@@ -456,6 +456,64 @@ dialog .primary-btn{margin-top:14px}
 #liveryDetails.reality-real{border-color:rgba(126,240,176,.4)}
 #liveryDetails.reality-family{border-color:rgba(255,178,62,.4)}
 #liveryDetails.reality-none{border-style:dashed}
+
+/* Compact portrait HUD: reserve separate bands for heading, missions and cameras;
+   the rail and flight controls stay at the edges of the scene. */
+@media(max-width:760px) and (orientation:portrait){
+ .modes{top:calc(max(10px,env(safe-area-inset-top)) + 64px)}
+ .modes[open]{display:flex;align-items:center}
+ .modes-summary{float:none;flex:none}
+ .modes-content{min-width:0}
+ .cam-dock{top:calc(max(10px,env(safe-area-inset-top)) + 122px);display:grid;grid-template-columns:repeat(5,minmax(40px,1fr)) 40px;gap:0;overflow:visible}
+ .cam-dock button{min-width:40px;padding:0 2px;font-size:12px}
+ .cam-dock #resetCamera{width:40px;height:44px;margin:0}
+ .rail{top:calc(max(10px,env(safe-area-inset-top)) + 180px);gap:3px}
+ .rail button{width:40px;height:40px;gap:1px;font-size:17px;border-radius:12px}
+ .rail em{display:block;font-size:10px;line-height:1;letter-spacing:0}
+ #drawer{top:calc(max(10px,env(safe-area-inset-top)) + 180px);max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - 180px - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 114px)}
+ .drawer-head{padding:12px 14px 10px}.drawer-head h2{font-size:18px;margin-top:6px}
+ .drawer-content{padding:8px 14px 16px}
+ .deck{grid-template-columns:88px repeat(2,minmax(0,1fr));grid-template-rows:80px 72px minmax(0,1fr)}
+ .cell-att{display:flex;width:auto;padding:5px 4px;gap:3px;overflow:hidden}
+ .cell-att canvas{width:76px;height:57px;flex:none}
+ .cell-cap{font-size:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ .cell-metric{min-width:0;padding:4px 6px}.cell-metric strong{font-size:23px}
+ .cell-metric .cap{font-size:11px;gap:3px}.cell-metric .cap small{font-size:8px;letter-spacing:0}
+ .cell-metric em{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .cell-thrust,.cell-actions{grid-column:1/-1}
+ .cell-actions{padding:4px 8px}
+ .act{min-height:40px;padding:2px;gap:1px}
+ .status{max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)) - 160px);max-height:150px;overflow:auto;gap:6px}
+ #takeControl{min-height:40px}
+ #windHud{top:calc(max(10px,env(safe-area-inset-top)) + 180px);left:max(10px,env(safe-area-inset-left));transform:none;max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)) - 50px);white-space:normal}
+ #loadProgress{top:calc(max(10px,env(safe-area-inset-top)) + 218px)}
+}
+@media(max-width:950px) and (orientation:landscape) and (max-height:500px){
+ .compass-box{bottom:-11px}
+ .status{flex-wrap:wrap;gap:4px;max-height:96px;overflow:auto;padding:6px 10px}
+ .status #phase{flex:1 1 calc(100% - 20px);overflow:visible;text-overflow:clip;white-space:normal}
+ #loadProgress{top:calc(max(10px,env(safe-area-inset-top)) + 156px)}
+ .deck{grid-template-columns:80px minmax(80px,1fr) minmax(80px,1fr) minmax(150px,1.5fr) minmax(220px,2fr);overflow:hidden}
+ .cell-att{display:flex;width:auto;padding:4px;gap:2px;overflow:hidden}
+ .cell-att canvas{width:70px;height:53px;flex:none}.cell-cap{font-size:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+ .cam-dock{right:auto;width:min(380px,calc(100vw - 200px));left:max(10px,env(safe-area-inset-left));display:grid;grid-template-columns:repeat(5,minmax(40px,1fr)) 40px;gap:0;overflow:visible}
+ .cam-dock button{min-width:40px;padding:0 2px}.cam-dock #resetCamera{width:40px;height:44px;margin:0}
+ #drawer{left:calc(max(10px,env(safe-area-inset-left)) + 254px);top:calc(max(10px,env(safe-area-inset-top)) + 54px);max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - 54px - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 8px)}
+ #windHud{top:calc(max(10px,env(safe-area-inset-top)) + 112px);left:calc(max(10px,env(safe-area-inset-left)) + 254px);transform:none}
+ #takeControl{min-height:40px}
+}
+@media(max-width:760px),(max-width:950px) and (orientation:landscape) and (max-height:500px){
+ #loadProgress{max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)));white-space:normal;text-align:center;overflow-wrap:anywhere}
+}
+@media(max-width:760px) and (orientation:portrait){
+ #loadProgress{left:max(10px,env(safe-area-inset-left));transform:none;max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)) - 50px)}
+}
+@media(max-width:950px) and (orientation:landscape) and (max-height:500px){
+ #loadProgress{left:calc(max(10px,env(safe-area-inset-left)) + min(380px,calc(100vw - 200px)) + 10px);transform:none;max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - min(380px,calc(100vw - 200px)) - 10px - max(10px,env(safe-area-inset-right)) - 154px)}
+}
+/* Controls in scrollable drawers keep a generous hit area, including the range track. */
+.drawer-content button,.weather-settings select,.weather-settings input[type=number]{min-height:40px}
+.drawer-content input[type=range]{height:40px;margin:0;background:linear-gradient(transparent 17px,rgba(255,255,255,.14) 17px,rgba(255,255,255,.14) 23px,transparent 23px)}
 
 /* Space Shuttle: landing and ground observation only. Hide controls with no orbiter counterpart. */
 body.shuttle-mode #courseStart,body.shuttle-mode [data-mode="takeoff"],body.shuttle-mode [data-mode="free"],body.shuttle-mode #runwayStart,
