@@ -46,9 +46,11 @@ const nativeFetch=globalThis.fetch?.bind(globalThis);
 
 const FILE_ATTEMPTS=3;
 // Streams one file into a buffer sized from the manifest (one copy in memory, not two), retrying transient failures.
-async function pullOnce(url,estimate,job,priority,tally){
+// cache:'no-cache' revalidates with the server (a cheap 304 when unchanged). Without it a browser could serve a stale
+// copy cached under the old one-day max-age, whose size no longer matches the manifest. A size mismatch retries with 'reload'.
+async function pullOnce(url,estimate,job,priority,tally,cache){
  const add=n=>{job.loaded+=n-tally.counted;tally.counted=n;job.notify();};
- const response=await nativeFetch(url,{priority});
+ const response=await nativeFetch(url,{priority,cache});
  if(!response.ok||!response.body)throw Object.assign(Error(`HTTP ${response.status}`),{step:'status'});
  const reader=response.body.getReader(),body=new Uint8Array(estimate);let received=0;
  for(;;){
@@ -64,7 +66,7 @@ async function pull(path,estimate,job,priority){
  for(let attempt=1;attempt<=FILE_ATTEMPTS;attempt++){
   const tally={counted:0};
   try{
-   const {body,type}=await pullOnce(url,estimate,job,priority,tally);
+   const {body,type}=await pullOnce(url,estimate,job,priority,tally,job.lastError?.path===path&&job.lastError.step==='size'?'reload':'no-cache');
    // Images are loaded through <img>, not fetch(); for those the download only warms the HTTP cache.
    if(!/\.(png|jpe?g|webp)$/i.test(path))store.set(new URL(url,location.href).href,{body,type});
    return;

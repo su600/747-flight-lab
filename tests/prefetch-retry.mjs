@@ -7,12 +7,14 @@ globalThis.location={href:'http://localhost/'};
 Object.defineProperty(globalThis,'navigator',{value:{},configurable:true});
 
 // preload.js captures fetch at import time, so the mock reads its settings from these variables.
-let failPath=null,failures=0,calls=0;
+let failPath=null,failures=0,calls=0,staleCache=false;const cacheModes=[];
 // (Data is delivered on the first read; the error comes on the next read, as a real drop would.)
 const halfThenReset=size=>{let sent=false;return new ReadableStream({pull(c){if(!sent){sent=true;c.enqueue(new Uint8Array(Math.floor(size/2)));}else c.error(new TypeError('network reset'));}});};
-globalThis.fetch=async url=>{
- const path=url.replace('/assets/','');calls++;
+globalThis.fetch=async(url,init={})=>{
+ const path=url.replace('/assets/','');calls++;cacheModes.push(init.cache);
  const size=AIRCRAFT_DOWNLOAD_SIZES[path]??0;
+ // A browser HTTP cache holding an older file (cached under the former one-day max-age) answers unless asked to revalidate.
+ if(staleCache&&init.cache!=='no-cache'&&init.cache!=='reload')return new Response(new Uint8Array(size+4096));
  if(path===failPath&&failures>0){failures--;return new Response(halfThenReset(size));}
  return new Response(new Uint8Array(size));
 };
@@ -41,6 +43,15 @@ assert(peakExcess<=0,`counted bytes never exceed the manifest total (peak excess
  console.warn=origWarn;
  assert(!isPreloaded('a330',opts),'a persistent failure is not reported as ready');
  assert(statuses.at(-1).failed===true,'after the last attempt the aircraft is marked failed');
+}
+
+// 3. Stale HTTP cache: background downloads revalidate, so an outdated cached copy cannot fail the size check.
+{
+ failPath=null;staleCache=true;cacheModes.length=0;
+ await prefetchInOrder(['b777'],{backoff:async()=>{},onStatus:()=>{}});
+ assert(isPreloaded('b777',opts),'the 777 completes despite a stale cached copy');
+ assert(cacheModes.length&&cacheModes.every(m=>m==='no-cache'||m==='reload'),'every background request revalidates with the server');
+ staleCache=false;
 }
 
 console.log('Prefetch retry passed: dropped downloads retry without overshooting progress, and persistent failures end in an explicit failed state.');
