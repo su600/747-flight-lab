@@ -9,9 +9,11 @@ function rod(parent,start,end,radius,material,name){
  mesh.quaternion.setFromUnitVectors(UP,direction.normalize());
  mesh.castShadow=false;mesh.receiveShadow=false;mesh.renderOrder=20;parent.add(mesh);return mesh;
 }
+// Parked blades lie flat along the lower edge of the windshield, pointing toward the centre line (+Z for the left pivot).
+// Rotation about X moves them within the windshield plane (Y/Z), so 0 is parked and the sweep rises up the glass.
 function makeWiper(parent,name,z,side,armMaterial,bladeMaterial,pivotMaterial){
  const pivot=new T.Group();pivot.name=`cockpit-wiper-${name}`;pivot.position.set(25.52,3.50,z);parent.add(pivot);
- const start=new T.Vector3(),tip=new T.Vector3(.04,.24,.12*side),bladeEnd=tip.clone().add(new T.Vector3(0,.05,.19*side));
+ const start=new T.Vector3(),tip=new T.Vector3(0,.012,.18*side),bladeEnd=new T.Vector3(0,.02,.38*side);
  rod(pivot,start,tip,.012,armMaterial,`wiper-arm-${name}`);
  rod(pivot,tip,bladeEnd,.018,bladeMaterial,`wiper-blade-${name}`);
  const cap=new T.Mesh(new T.SphereGeometry(.032,8,6),pivotMaterial);cap.name=`wiper-pivot-${name}`;cap.castShadow=false;cap.receiveShadow=false;cap.renderOrder=20;pivot.add(cap);
@@ -26,5 +28,5 @@ export function createCockpitWipers(parent,scale=new T.Vector3(1,1,1)){
  const pivot=new T.MeshStandardMaterial({color:0x48545a,roughness:.58,metalness:.3,side:T.DoubleSide});
  const left=makeWiper(root,'left',-.95,1,arm,blade,pivot);
  const right=makeWiper(root,'right',-.15,-1,arm,blade,pivot);
- return {root,left,right,update(state){const angle=state.wipers?cockpitWiperSweepAngle(state.time)*Math.PI/180:0;left.rotation.x=angle;right.rotation.x=-angle;}};
+ return {root,left,right,update(state){const angle=state.wipers?cockpitWiperSweepAngle(state.time)*Math.PI/180:0;left.rotation.x=-angle;right.rotation.x=angle;}};
 }

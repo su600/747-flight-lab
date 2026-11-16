@@ -15,10 +15,18 @@ export function setCockpitAirframeVisibility(aircraft,cameraMode){
  aircraft.root.visible=!inCockpit;
 }
 
+// The cockpit eye is fixed to the airframe, so the camera must not ease toward it:
+// a lagging camera trails the aircraft and shows the cockpit model from outside.
+export function cameraFollowFactor(cameraMode,firstCamera,dt){
+ if(firstCamera||cameraMode==='cockpit')return 1;
+ return 1-Math.exp(-dt*6);
+}
+
 export function cameraModeForWiperToggle(cameraMode,wipersOn){
  return wipersOn&&cameraMode!=='cockpit'?'cockpit':cameraMode;
 }
 
+// 0 is parked (flat on the lower windshield edge); the sweep rises from 0 to 50 degrees and back.
 export function cockpitWiperSweepAngle(time){
- return Math.sin((Number(time)||0)*3)*26;
+ return (1-Math.cos((Number(time)||0)*3))/2*50;
 }
