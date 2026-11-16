@@ -5,6 +5,17 @@ import {Flight,atmosphere,AIRCRAFT} from '../src/flight.js';
 const KNOT=.514444;
 const run=(sim,seconds,input={})=>{for(let i=0;i<seconds*120;i++)sim.step(1/120,input);};
 
+// Extracted guidance and ground methods remain ordinary own prototype methods, in their original order.
+{
+ const names=Object.getOwnPropertyNames(Flight.prototype),ordered=['updateControlInput','autoElevator','atmosphere','trimThrottle','takeoffPitchTarget','landingPitchTarget','takeoffGuidance','landingGuidance','integrateGround','updateGroundPitch','integrateAirborne','touchdownOrCrash','updateAirData'];
+ let previous=-1;
+ for(const name of ordered){
+  const index=names.indexOf(name),descriptor=Object.getOwnPropertyDescriptor(Flight.prototype,name);
+  assert(index>previous,`${name} retains its prototype position`);previous=index;
+  assert.equal(typeof descriptor.value,'function');assert.equal(descriptor.enumerable,false);assert.equal(descriptor.writable,true);assert.equal(descriptor.configurable,true);
+ }
+}
+
 // 1. ISA stratosphere: above 11 km temperature is constant but pressure (and so
 //    density) must keep falling exponentially. ISA density at 12.5 km is 0.2880 kg/m3.
 {
