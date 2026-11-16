@@ -3,18 +3,22 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const D2R=Math.PI/180;
 const Y=new T.Vector3(0,1,0);
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
-export const TYRE_SMOKE_RGB=Object.freeze([.84,.93,.98]);
+export const TYRE_SMOKE_RGB=Object.freeze([.84,.90,.925]);
 
 // Round-robin particle pool drawn as soft points, with per-particle colour + alpha.
 class Pool{
- constructor(scene,{count,size,color,additive=false,map=null}){
+ constructor(scene,{count,size,color,additive=false,map=null,expand=false}){
   this.n=count;this.next=0;this.alive=0;this.activeIndices=new Int32Array(count);this.activePosition=new Int32Array(count).fill(-1);this.activeCount=0;
   this.pos=new Float32Array(count*3);this.col=new Float32Array(count*4);
   this.vel=new Float32Array(count*3);this.age=new Float32Array(count).fill(1e3);this.life=new Float32Array(count).fill(1);this.alpha=new Float32Array(count);
   for(let i=0;i<count;i++){this.col.set([color[0],color[1],color[2],0],i*4);}
   this.rgb=color;
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.pos,3));g.setAttribute('color',new T.BufferAttribute(this.col,4));
-  this.points=new T.Points(g,new T.PointsMaterial({size,map,vertexColors:true,transparent:true,depthWrite:false,blending:additive?T.AdditiveBlending:T.NormalBlending}));
+  this.sizes=expand?new Float32Array(count):null;
+  if(this.sizes)g.setAttribute('particleScale',new T.BufferAttribute(this.sizes,1));
+  const material=new T.PointsMaterial({size,map,vertexColors:true,transparent:true,depthWrite:false,blending:additive?T.AdditiveBlending:T.NormalBlending});
+  if(expand)material.onBeforeCompile=shader=>{shader.vertexShader=shader.vertexShader.replace('uniform float size;','attribute float particleScale;\nuniform float size;').replace('gl_PointSize = size;','gl_PointSize = size * particleScale;');};
+  this.points=new T.Points(g,material);
   this.points.frustumCulled=false;this.points.renderOrder=10;this.points.visible=false;this.wasLive=false;scene.add(this.points);
  }
  emit(p,v,life,alpha){
@@ -23,7 +27,7 @@ class Pool{
   this.points.visible=true;
   const k=i*3;this.pos[k]=p.x;this.pos[k+1]=p.y;this.pos[k+2]=p.z;
   this.vel[k]=v?v.x:0;this.vel[k+1]=v?v.y:0;this.vel[k+2]=v?v.z:0;
-  this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;
+  this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;if(this.sizes)this.sizes[i]=.4;
  }
  update(dt){
   // Empty or paused pools must not scan slots or upload unchanged particle buffers.
@@ -39,11 +43,12 @@ class Pool{
     continue;
    }
    const k=i*3;this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
-   const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);slot++;
+   const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);if(this.sizes)this.sizes[i]=.4+1.1*t;slot++;
   }
   this.alive=this.activeCount;
   const live=this.activeCount>0;this.points.visible=live||this.wasLive;this.wasLive=live;
   this.points.geometry.attributes.position.needsUpdate=true;this.points.geometry.attributes.color.needsUpdate=true;
+  if(this.sizes)this.points.geometry.attributes.particleScale.needsUpdate=true;
  }
 }
 
@@ -53,14 +58,13 @@ function softDot(){const c=document.createElement('canvas');c.width=c.height=64;
 // wind streaks that stream past at flight speed.
 export class Airflow{
  constructor(scene,plane){
-  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0,smoke:0};this.smokeT=99;this.smokePower=0;this.lastTouchdown=null;
+  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0};this.lastTouchdown=null;
   const dot=softDot();
   this.vortex=new Pool(scene,{count:520,size:3.2,color:[.96,.98,1],map:dot});
   this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
   this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
-  // Tyre smoke: rubber vaporised when the main wheels spin up at touchdown, and a thin wisp under hard braking.
-  // A subtle cool-cyan tint distinguishes burnt-rubber smoke from white contrails.
-  this.smoke=new Pool(scene,{count:1100,size:15,color:TYRE_SMOKE_RGB,map:dot});
+  // One short, expanding puff per main-gear touchdown, independent of the rolling aircraft.
+  this.smoke=new Pool(scene,{count:256,size:10,color:TYRE_SMOKE_RGB,map:dot,expand:true});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
@@ -75,11 +79,13 @@ export class Airflow{
   this.tmp=new T.Vector3();this.dir=new T.Vector3();this.v=new T.Vector3();this.pp=new T.Vector3();
  }
  setQuality(low){this.quality=low?.35:1;}
- emitSmoke(gear,dir,speed,boost){
-  const p=this.plane.root.localToWorld(this.tmp.copy(gear));p.y=Math.max(.25,Math.min(p.y,1.2));
-  const v=this.v.copy(dir);v.y=0;v.normalize().multiplyScalar(speed*(.12+Math.random()*.14));
-  v.x+=(Math.random()-.5)*4;v.z+=(Math.random()-.5)*4;v.y=.8+Math.random()*2.2;
-  this.smoke.emit(p,v,2.8+Math.random()*2.4,.38+.3*Math.random()*boost);
+ emitSmoke(gear,touchdown){
+  const heading=((touchdown.heading??90)-90)*D2R,c=Math.cos(heading),s=Math.sin(heading);
+  // Heading rotates local +X toward world +Z. Keep the contact on the runway.
+  const p=this.tmp.set(touchdown.x+gear.x*c-gear.z*s+(Math.random()-.5)*1.5,.4+Math.random()*.5,touchdown.z+gear.x*s+gear.z*c+(Math.random()-.5)*1.5);
+  const drift=3+Math.random()*5;
+  const v=this.v.set(-c*drift+(Math.random()-.5)*2,.6+Math.random()*1.3,-s*drift+(Math.random()-.5)*2);
+  this.smoke.emit(p,v,1.8+Math.random(),.55+Math.random()*.25);
  }
  respawn(i,planePos,dir,spread){
   const p=this.streakP[i],a=Math.random()*Math.PI*2,r=8+Math.random()*spread;
@@ -107,19 +113,13 @@ export class Airflow{
    this.acc.contrail+=dt*40*q*cold;
    while(this.acc.contrail>=1){this.acc.contrail--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-7,e.y,e.z));this.contrail.emit(p,null,9,.5*cold);}}
   }
-  // Tyre smoke: an initial puff at the instant of touchdown, then a fading stream while the wheels spin up.
-  if(sim.touchdown&&sim.touchdown!==this.lastTouchdown){
-   this.lastTouchdown=sim.touchdown;this.smokeT=0;
-   this.smokePower=clamp(sim.touchdown.speed/80,.35,1)*clamp(.65+sim.touchdown.rate/2.5,.65,1.4);
-   if(!sim.paused)for(const g of this.mainGear)for(let k=0;k<Math.round(16*q*this.smokePower);k++)this.emitSmoke(g,dir,speed,1.3);
-  }else if(!sim.touchdown)this.lastTouchdown=null;
-  if(!sim.paused&&dt>0&&sim.onGround){
-   let rate=0;
-   if(this.smokeT<1.8)rate=110*Math.pow(1-this.smokeT/1.8,1.4)*this.smokePower;
-   else if(sim.mode!=='inspect'&&speed>45&&(sim.brakePressure||0)>.6)rate=14*clamp(speed/80,0,1);
-   this.smokeT+=dt;this.acc.smoke+=dt*rate*q;
-   while(this.acc.smoke>=1){this.acc.smoke--;for(const g of this.mainGear)this.emitSmoke(g,dir,speed,1);}
-  }else if(sim.mode==='inspect'||!sim.onGround)this.acc.smoke=0;
+  // The flight model replaces this record on each successful contact, including a bounce.
+  if(!sim.touchdown)this.lastTouchdown=null;
+  else if(!sim.paused&&sim.touchdown!==this.lastTouchdown){
+   const td=this.lastTouchdown=sim.touchdown;
+   if(td.valid!==false&&(sim.time??0)-(td.time??0)<3)
+    for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(16*q));k++)this.emitSmoke(g,td);
+  }
   this.smoke.points.material.color.setScalar(timeOfDay==='night'?.32:timeOfDay==='dusk'?.82:1);
   this.smoke.update(sim.paused?0:dt);
   this.vortex.update(sim.paused?0:dt);this.exhaust.update(sim.paused?0:dt);this.contrail.update(sim.paused?0:dt);

@@ -11,7 +11,7 @@ globalThis.document={createElement(type){assert.equal(type,'canvas');return {wid
 const plane={root:new T.Group(),native:{scale:new T.Vector3(1,1,1)},contact:5,wingtipPoints:[]};
 const airflow=new Airflow(new T.Scene(),plane);
 const streakVersion=airflow.streaks.geometry.attributes.position.version;
-assert.deepEqual(airflow.smoke.rgb,[.84,.93,.98]);
+assert.deepEqual(airflow.smoke.rgb,[.84,.90,.925]);
 assert(airflow.smoke.rgb[0]<airflow.smoke.rgb[1]&&airflow.smoke.rgb[1]<airflow.smoke.rgb[2],'tire smoke should be lightly cyan, not neutral white');
 assert(airflow.smoke.rgb[2]-airflow.smoke.rgb[0]<.16,'tire smoke tint remains subtle');
 for(const [time,intensity] of [['day',1],['dusk',.82],['night',.32]]){

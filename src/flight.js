@@ -128,7 +128,7 @@ export class Flight{
   // Gear starts up for the approach and lowers during it (free flight starts up too).
   this.gear=mode==='free'||mode==='land'?0:1;this.gearTarget=this.gear;
   this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
-  this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;
+  this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;this.autoGroundSpoilers=false;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;this.chuteJettisoned=false;
   this.door=0;this.doorTarget=0;
   this.onGround=!['free','land'].includes(mode);
@@ -169,11 +169,12 @@ export class Flight{
   }
   if(name==='door'){if(!this.onGround||this.speed>1)return '请停稳飞机后再开货舱门';this.doorTarget=value;}
   if(name==='reverse'){
+   if(this.unpowered)return '这架飞机没有反推';
    if(!this.onGround)return '落地后才能使用反推';
    if(ias>170*KNOT)return '速度太高，先接地后再开反推';
    this.reverseTarget=value;
   }
-  if(name==='spoiler'){if(!this.onGround&&value&&ias>230*KNOT)return '高速飞行时不能完全打开扰流板';this.spoilerTarget=value;}
+  if(name==='spoiler'){if(!this.onGround&&value&&ias>230*KNOT)return '高速飞行时不能完全打开扰流板';this.spoilerTarget=value;this.autoGroundSpoilers=false;}
   if(name==='chute'){
    if(!this.chuteAvailable)return '这架飞机没有减速伞';
    if(value&&this.chuteJettisoned)return '减速伞已切除';
@@ -208,6 +209,10 @@ export class Flight{
   };
   if(this.mode==='takeoff')this.takeoffGuidance();
   else if(this.mode==='land')this.landingGuidance();
+  // Only retract spoilers we deployed automatically; manual speedbrake control remains independent.
+  if(!this.unpowered&&this.autoGroundSpoilers&&((this.mode!=='land'&&this.throttle>.2&&!this.reverseTarget&&this.reverse<.05)||(this.onGround&&this.speed<.5))){
+   this.spoilerTarget=0;this.autoGroundSpoilers=false;
+  }
   this.updateSystems(dt);
   this.updateControlInput(dt,pilot,guided);
   const aero=this.calculateAero();
@@ -393,8 +398,8 @@ export class Flight{
   }else if(this.speed>2){
    // An unpowered orbiter has no reversers; it relies on wheel brakes, the
    // speed brake and the drag chute.
-   this.throttle=this.unpowered?0:(this.speed>25?.6:0);
-   this.reverseTarget=this.unpowered?0:(this.speed>25?1:0);
+   this.throttle=this.unpowered?0:(this.speed>60*KNOT?.6:0);
+   this.reverseTarget=this.unpowered?0:(this.speed>60*KNOT?1:0);
    this.landingBrake=this.speed>25?.55:.28;
    this.spoilerTarget=1;
    // The orbiter pops its drag chute right after main-gear touchdown and jettisons it near 30 kt.
@@ -404,6 +409,7 @@ export class Flight{
    }
   }else{
    this.throttle=0;this.reverseTarget=0;this.landingBrake=0;this.park=true;
+   if(!this.unpowered){this.spoilerTarget=0;this.autoGroundSpoilers=false;}
   }
  }
  integrateGround(dt,pilot,aero){
@@ -519,7 +525,7 @@ export class Flight{
  touchdownOrCrash(sink){
   const runway=Math.abs(this.z)<RUNWAY.width/2&&this.x>RUNWAY.start&&this.x<RUNWAY.end;
   const gearDown=this.gear>.97,level=Math.abs(this.bank)<12&&this.pitch>-.5;
-  this.touchdown={rate:sink,x:this.x,z:this.z,speed:this.speed};
+  this.touchdown={rate:sink,x:this.x,z:this.z,speed:this.speed,heading:this.heading,time:this.time,valid:false};
   this.altitude=0;
   const maxTouchdown=this.unpowered?120:95;
   if(!runway||!gearDown||sink>4.6||!level||this.speed>maxTouchdown){
@@ -530,10 +536,12 @@ export class Flight{
   this.gamma=0;this.vs=0;this.onGround=true;this.pitchRate=0;
   // Simplified de-crab at touchdown; the wheels then track the runway.
   if(this.mode==='land'&&this.windCompensating)this.heading=90;
-  this.pitch=clamp(this.pitch,0,11.4);
-  this.spoilerTarget=1;
-  this.phase='主轮轻轻接地 · 扰流板与反推开始减速';
-  if(this.mode==='land'){this.reverseTarget=1;this.landingBrake=.4;}
+  this.pitch=clamp(this.pitch,0,11.4);this.touchdown.valid=true;
+  // The shuttle retains its existing rudder speed-brake/chute behavior.
+  if(this.unpowered)this.spoilerTarget=1;
+  else if(this.mode==='land'||this.throttle<=.2){this.spoilerTarget=1;this.autoGroundSpoilers=true;}
+  this.phase='主轮轻轻接地 · 开始减速';
+  if(this.mode==='land'){if(!this.unpowered&&this.speed>60*KNOT)this.reverseTarget=1;this.landingBrake=.4;}
   if(this.mode!=='land')this.mode='manual';
  }
  updateAirData(){
