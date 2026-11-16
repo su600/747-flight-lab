@@ -20,6 +20,7 @@
   <div class="compass-needle"></div>
   <div class="compass-box"><span>HDG</span><strong id="headingValue">090<small> °</small></strong></div>
  </div>
+ <div id="windHud" hidden aria-label="风向与风速"><i aria-hidden="true">↑</i><span></span></div>
  <div class="craft-chip"><b id="aircraftName">BOEING 747–400</b><i></i><span id="liveryName">波音经典涂装</span></div>
 
  <nav aria-label="飞行模式">
@@ -76,6 +77,14 @@
     <button data-time="day" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><span>晴朗白天</span></button>
     <button data-time="dusk"><svg viewBox="0 0 24 24"><path d="M6 17a6 6 0 0 1 12 0"/><path d="M2.5 17h19M12 5v3M4.6 9.6l2 2M19.4 9.6l-2 2"/></svg><span>温暖黄昏</span></button>
     <button data-time="night"><svg viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg><span>星夜机场</span></button>
+   </div>
+   <h3>天气</h3>
+   <div class="weather-settings">
+    <label>云量<select id="weatherCloud"><option value="clear">晴空 · 默认</option><option value="partly">局部多云</option><option value="overcast">阴天</option></select></label>
+    <label>降雨<select id="weatherRain"><option value="off">无雨</option><option value="light">小雨</option><option value="heavy">大雨</option></select></label>
+    <label>能见度<select id="weatherVisibility"><option value="good">良好</option><option value="moderate">一般</option><option value="low">低能见度</option></select></label>
+    <label>风向 · 来向（°）<input id="windDirection" type="number" min="0" max="359" step="10" value="0" inputmode="numeric"></label>
+    <label>风速（节）<input id="windSpeed" type="range" min="0" max="40" step="1" value="0"><output id="windSpeedValue">0 kt / 0.0 m/s</output></label>
    </div>
    <h3>驾驶辅助</h3>
    <button class="setting active" id="assist"><span>小机长辅助<small>松开方向键自动放平机翼，并防止失速</small></span><i></i></button>

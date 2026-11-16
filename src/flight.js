@@ -14,6 +14,8 @@
 // Everything is tuned to be readable for young pilots; it is an educational
 // approximation, not a trainer-level aerodynamic database.
 
+import {windVector,groundVelocity,runwayCrab} from './weather-math.js';
+
 export const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const mix=(a,b,t)=>a+(b-a)*t;
 const approach=(a,b,rate,dt)=>a+clamp(b-a,-rate*dt,rate*dt);
@@ -104,7 +106,7 @@ function flapDrag(flaps){
 }
 
 export class Flight{
- constructor(){this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
+ constructor(){this.windDirection=0;this.windSpeed=0;this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
  reset(mode='inspect'){
   this.mode=mode;
   this.mass=mode==='land'?AIRCRAFT.landingMass:AIRCRAFT.mass;
@@ -115,7 +117,7 @@ export class Flight{
   const glide=this.landingGlide||3,approach=this.landingSpeed||78;
   const pathAltitude=(RUNWAY.touch-this.x)*Math.tan(glide*D2R);
   this.altitude=mode==='land'?(this.unpowered?pathAltitude:Math.max(pathAltitude,LANDING_START_ALTITUDE)):mode==='free'?700:0;
-  this.heading=90;
+  this.heading=90;this.windCompensating=false;
   this.bank=0;this.rollRate=0;
   this.gamma=mode==='land'?-glide*D2R:0;
   this.speed=mode==='land'?approach:mode==='free'?125:0;
@@ -354,7 +356,9 @@ export class Flight{
   const distance=RUNWAY.touch-this.x;
   if(this.onGround)return 0;
   const glide=this.landingGlide||3,approach=this.landingSpeed||77;
-  const flareAlt=this.unpowered?24:14;
+  // A tailwind shortens the orbiter's time to flare on the runway approach.
+  const tailwind=this.unpowered?Math.max(0,windVector(this.windDirection,this.windSpeed).x):0;
+  const flareAlt=this.unpowered?24+tailwind*.9:14;
   const pathAltitude=Math.max(0,(distance-30)*Math.tan(glide*D2R));
   const minGamma=this.unpowered?-12:-4.5;
   let gammaTarget=this.altitude>flareAlt?clamp(-glide+(pathAltitude-this.altitude)*.06,minGamma,-1):clamp(-.8-this.altitude*.06,-1.6,-.6);
@@ -488,14 +492,21 @@ export class Flight{
   this.acceleration=along;
   this.speed=Math.max(10,this.speed+along*dt);
   this.heading=(this.heading+(turn*R2D+rudderYaw*R2D)*dt+360)%360;
+  // The demo flight director crabs into the wind and corrects runway displacement.
+  if((this.windSpeed>0||this.windCompensating)&&(this.mode==='land'||this.mode==='takeoff')){
+   this.windCompensating=true;
+   const target=runwayCrab(this.speed*Math.cos(this.gamma),windVector(this.windDirection,this.windSpeed).z,this.z);
+   const error=((target-this.heading+540)%360)-180;
+   this.heading=(this.heading+clamp(error,-15*dt,15*dt)+360)%360;
+  }
   this.gamma=clamp(this.gamma+normal*dt,-55*D2R,45*D2R);
   this.vs=this.speed*Math.sin(this.gamma);
   const oldAltitude=this.altitude;
   const nextAltitude=this.altitude+this.vs*dt;
   const groundSpeed=this.speed*Math.cos(this.gamma);
-  const heading=(this.heading-90)*D2R;
-  this.x+=Math.cos(heading)*groundSpeed*dt;
-  this.z+=Math.sin(heading)*groundSpeed*dt;
+  const velocity=groundVelocity(this.heading,groundSpeed,this.windDirection,this.windSpeed);
+  this.x+=velocity.x*dt;
+  this.z+=velocity.z*dt;
   // Also catch a descent that starts at exactly 0 m (just after lift-off), so the
   // aircraft can never sink beneath the runway.
   if(nextAltitude<0||(nextAltitude<=0&&oldAltitude>0))this.touchdownOrCrash(-this.vs);
@@ -517,6 +528,8 @@ export class Flight{
    this.speed=0;this.vs=0;this.gamma=0;this.pitch=0;this.onGround=true;return;
   }
   this.gamma=0;this.vs=0;this.onGround=true;this.pitchRate=0;
+  // Simplified de-crab at touchdown; the wheels then track the runway.
+  if(this.mode==='land'&&this.windCompensating)this.heading=90;
   this.pitch=clamp(this.pitch,0,11.4);
   this.spoilerTarget=1;
   this.phase='主轮轻轻接地 · 扰流板与反推开始减速';
@@ -526,7 +539,8 @@ export class Flight{
  updateAirData(){
   const rho=this.atmosphere(),V=Math.max(0,this.speed);
   this.vs=this.onGround?0:V*Math.sin(this.gamma);
-  this.groundSpeed=this.onGround?V:V*Math.cos(this.gamma);
+  const velocity=groundVelocity(this.heading,V*Math.cos(this.gamma),this.windDirection,this.onGround?0:this.windSpeed);
+  this.groundSpeed=Math.hypot(velocity.x,velocity.z);
   this.mach=V/speedOfSound(this.altitude);
   this.qbar=.5*rho*V*V;
   const flapFrac=clamp(this.flaps/30,0,1);

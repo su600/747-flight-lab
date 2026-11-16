@@ -295,6 +295,13 @@ dialog .primary-btn{margin-top:14px}
 #loading p{margin-top:10px;font:500 12px/1.6 var(--mono);letter-spacing:.08em;color:var(--t3)}
 
 /* ---------- Cockpit view ---------- */
+#weatherWindshield{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}
+#windHud{position:fixed;z-index:5;top:110px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:7px;padding:5px 10px;border-radius:12px;background:rgba(6,15,23,.72);color:var(--cyan);font:600 11px/1 var(--mono);white-space:nowrap;pointer-events:none}
+#windHud i{display:inline-block;font:700 20px/1 var(--ui);font-style:normal}
+.weather-settings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.weather-settings label{display:flex;flex-direction:column;gap:5px;color:var(--t2);font-size:12px;min-width:0}
+.weather-settings select,.weather-settings input[type=number]{width:100%;min-width:0;padding:9px;border-radius:10px;font:inherit;color:var(--t1);background:rgba(255,255,255,.06);border:1px solid var(--line)}
+.weather-settings output{font:11px var(--mono);color:var(--cyan)}
 #cockpitOverlay{position:fixed;inset:0;pointer-events:none;z-index:2}
 .windshield-bar{position:absolute;top:-10%;height:90%;width:18px;background:linear-gradient(90deg,#1c2930,#52616a,#26343a);box-shadow:0 0 4px #0005}
 .windshield-bar.left{left:31%;transform:rotate(19deg)}.windshield-bar.right{right:11%;transform:rotate(-20deg)}
