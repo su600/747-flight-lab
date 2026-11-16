@@ -64,7 +64,7 @@ export class Airflow{
   this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
   this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
   // One short, expanding puff per main-gear touchdown, independent of the rolling aircraft.
-  this.smoke=new Pool(scene,{count:256,size:10,color:TYRE_SMOKE_RGB,map:dot,expand:true});
+  this.smoke=new Pool(scene,{count:384,size:14,color:TYRE_SMOKE_RGB,map:dot,expand:true});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
@@ -85,7 +85,7 @@ export class Airflow{
   const p=this.tmp.set(touchdown.x+gear.x*c-gear.z*s+(Math.random()-.5)*1.5,.4+Math.random()*.5,touchdown.z+gear.x*s+gear.z*c+(Math.random()-.5)*1.5);
   const drift=3+Math.random()*5;
   const v=this.v.set(-c*drift+(Math.random()-.5)*2,.6+Math.random()*1.3,-s*drift+(Math.random()-.5)*2);
-  this.smoke.emit(p,v,1.8+Math.random(),.55+Math.random()*.25);
+  this.smoke.emit(p,v,2+Math.random()*.9,.75+Math.random()*.2);
  }
  respawn(i,planePos,dir,spread){
   const p=this.streakP[i],a=Math.random()*Math.PI*2,r=8+Math.random()*spread;
@@ -118,7 +118,7 @@ export class Airflow{
   else if(!sim.paused&&sim.touchdown!==this.lastTouchdown){
    const td=this.lastTouchdown=sim.touchdown;
    if(td.valid!==false&&(sim.time??0)-(td.time??0)<3)
-    for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(16*q));k++)this.emitSmoke(g,td);
+    for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(24*q));k++)this.emitSmoke(g,td);
   }
   this.smoke.points.material.color.setScalar(timeOfDay==='night'?.32:timeOfDay==='dusk'?.82:1);
   this.smoke.update(sim.paused?0:dt);
