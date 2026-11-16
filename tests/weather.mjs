@@ -27,4 +27,6 @@ weather.set({cloud:'overcast',rain:'heavy',visibility:'low'});assert(world.sun.i
 weather.setQuality(true);assert.equal(weather.extraClouds.filter(g=>g.visible).length,3);
 world.setTime('night');assert(world.scene.fog.color.b<.2);weather.set({cloud:'clear',rain:'off',visibility:'good'});near(world.sun.intensity,.35);near(material.roughness,.9);assert.equal(world.scene.fog.density,.00008);assert.equal(world.scene.fog.color.getHex(),0x142339);
 world.setTime('dusk');near(world.sun.intensity,2.6);assert.equal(world.scene.fog.color.getHex(),0xe0b79c);
+weather.set({cloud:'clear',rain:'heavy'});assert.equal(weather.rain,'off','clear sky cannot rain');weather.set({cloud:'partly',rain:'light'});assert.equal(weather.rain,'light');weather.set({cloud:'clear'});assert.equal(weather.rain,'off','switching to clear stops rain');
+{const src=(await import('node:fs')).readFileSync(new URL('../src/main.js',import.meta.url),'utf8');assert(src.includes("clear=$('#weatherCloud').value==='clear';if(clear)rain.value='off';rain.disabled=clear"),'panel disables the rain choice under a clear sky');}
 console.log('weather: presets, composition, wind drift and guided crosswind demos passed');

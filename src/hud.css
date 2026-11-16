@@ -303,6 +303,7 @@ dialog .primary-btn{margin-top:14px}
 .weather-settings label{display:flex;flex-direction:column;gap:5px;color:var(--t2);font-size:12px;min-width:0}
 .weather-settings select,.weather-settings input[type=number]{width:100%;min-width:0;padding:9px;border-radius:10px;font:inherit;color:var(--t1);background:rgba(255,255,255,.06);border:1px solid var(--line)}
 .weather-settings output{font:11px var(--mono);color:var(--cyan)}
+.weather-settings select:disabled{opacity:.45;cursor:not-allowed}
 #cockpitOverlay{position:fixed;inset:0;pointer-events:none;z-index:2}
 .windshield-bar{position:absolute;top:-10%;height:90%;width:18px;background:linear-gradient(90deg,#1c2930,#52616a,#26343a);box-shadow:0 0 4px #0005}
 .windshield-bar.left{left:31%;transform:rotate(19deg)}.windshield-bar.right{right:11%;transform:rotate(-20deg)}

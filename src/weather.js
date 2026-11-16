@@ -40,6 +40,8 @@ export class Weather{
  set(options){
   if(options.cloud in CLOUDS)this.cloud=options.cloud;
   if(['off','light','heavy'].includes(options.rain))this.rain=options.rain;
+  // Rain needs cloud: a clear sky always means no rain.
+  if(this.cloud==='clear')this.rain='off';
   if(options.visibility in VISIBILITY)this.visibility=options.visibility;
   if(options.windDirection!==undefined)this.sim.windDirection=((Number(options.windDirection)||0)%360+360)%360;
   if(options.windKnots!==undefined)this.sim.windSpeed=Math.max(0,Math.min(40,Number(options.windKnots)||0))*KNOT_MS;

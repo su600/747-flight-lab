@@ -58,13 +58,13 @@ function softDot(){const c=document.createElement('canvas');c.width=c.height=64;
 // wind streaks that stream past at flight speed.
 export class Airflow{
  constructor(scene,plane){
-  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0};this.lastTouchdown=null;
+  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0,smoke:0};this.smokeT=99;this.smokePower=0;this.lastTouchdown=null;
   const dot=softDot();
   this.vortex=new Pool(scene,{count:520,size:3.2,color:[.96,.98,1],map:dot});
   this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
   this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
-  // One short, expanding puff per main-gear touchdown, independent of the rolling aircraft.
-  this.smoke=new Pool(scene,{count:384,size:14,color:TYRE_SMOKE_RGB,map:dot,expand:true});
+  // Tyre smoke: an expanding puff left on the runway at main-gear contact, then a fading spin-up stream from the rolling wheels.
+  this.smoke=new Pool(scene,{count:1100,size:14,color:TYRE_SMOKE_RGB,map:dot,expand:true});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
@@ -86,6 +86,12 @@ export class Airflow{
   const drift=3+Math.random()*5;
   const v=this.v.set(-c*drift+(Math.random()-.5)*2,.6+Math.random()*1.3,-s*drift+(Math.random()-.5)*2);
   this.smoke.emit(p,v,2+Math.random()*.9,.75+Math.random()*.2);
+ }
+ emitRollingSmoke(gear,dir,speed){
+  const p=this.plane.root.localToWorld(this.tmp.copy(gear));p.y=Math.max(.3,Math.min(p.y,1.2));
+  const v=this.v.copy(dir);v.y=0;v.normalize().multiplyScalar(speed*(.12+Math.random()*.14));
+  v.x+=(Math.random()-.5)*4;v.z+=(Math.random()-.5)*4;v.y=.8+Math.random()*2;
+  this.smoke.emit(p,v,1.8+Math.random()*1.1,.45+Math.random()*.3);
  }
  respawn(i,planePos,dir,spread){
   const p=this.streakP[i],a=Math.random()*Math.PI*2,r=8+Math.random()*spread;
@@ -117,9 +123,19 @@ export class Airflow{
   if(!sim.touchdown)this.lastTouchdown=null;
   else if(!sim.paused&&sim.touchdown!==this.lastTouchdown){
    const td=this.lastTouchdown=sim.touchdown;
-   if(td.valid!==false&&(sim.time??0)-(td.time??0)<3)
+   if(td.valid!==false&&(sim.time??0)-(td.time??0)<3){
+    this.smokeT=0;this.smokePower=clamp((td.speed??70)/80,.35,1)*clamp(.65+(td.rate??1)/2.5,.65,1.4);
     for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(24*q));k++)this.emitSmoke(g,td);
+   }
   }
+  // Wheels spinning up keep smoking for ~1.8 s after contact; hard braking at speed leaves a thin wisp.
+  if(!sim.paused&&dt>0&&sim.onGround&&sim.mode!=='inspect'){
+   let rate=0;
+   if(this.smokeT<1.8)rate=110*Math.pow(1-this.smokeT/1.8,1.4)*this.smokePower;
+   else if(speed>45&&(sim.brakePressure||0)>.6)rate=14*clamp(speed/80,0,1);
+   this.smokeT+=dt;this.acc.smoke+=dt*rate*q;
+   while(this.acc.smoke>=1){this.acc.smoke--;for(const g of this.mainGear)this.emitRollingSmoke(g,dir,speed);}
+  }else if(!sim.onGround||sim.mode==='inspect'){this.acc.smoke=0;if(!sim.onGround)this.smokeT=99;}
   this.smoke.points.material.color.setScalar(timeOfDay==='night'?.32:timeOfDay==='dusk'?.82:1);
   this.smoke.update(sim.paused?0:dt);
   this.vortex.update(sim.paused?0:dt);this.exhaust.update(sim.paused?0:dt);this.contrail.update(sim.paused?0:dt);
