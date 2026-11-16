@@ -252,7 +252,7 @@ function bindUI(){
  $('#neutral').onclick=()=>{surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);};
  $('#spoiler').onclick=()=>notify(sim.control('spoiler',sim.spoilerTarget?0:1));$('#reverse').onclick=()=>notify(sim.control('reverse',sim.reverseTarget?0:1));$('#chute').onclick=()=>notify(sim.control('chute',sim.chuteTarget?0:1));$('#door').onclick=()=>{focusPart('engine');cameraControl.orbitAngle=-.8;if(plane.type==='a330')cameraControl.focus.set(13.6,1,-2.8);else cameraControl.focus.set(16,-1,0);cameraControl.orbitDistance=46;notify(sim.control('door',sim.doorTarget?0:1));};
  $('#lights').onclick=()=>sim.lights=!sim.lights;$('#wipers').onclick=()=>{sim.wipers=!sim.wipers;const next=cameraModeForWiperToggle(cameraControl.mode,sim.wipers);if(next!==cameraControl.mode)setCam(next);};
- $('#engineInspect').onclick=()=>{focusPart('engine');if(sim.mode==='inspect'){setThrottle(sim.throttle>.4?0:.7);}};
+ $('#landingLights').onclick=()=>{sim.landingLights=!sim.landingLights;};
  $('#home')?.addEventListener('click',()=>go('inspect'));
  $('#pause').onclick=()=>sim.paused=!sim.paused;
  $('#rate').onclick=()=>{rate=rate===1?2:rate===2?4:1;$('#rate').textContent=rate+'×';};

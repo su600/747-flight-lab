@@ -75,7 +75,7 @@ export class Flight{
   this.park=mode==='inspect';this.brake=0;this.landingBrake=0;this.brakePressure=0;
   this.aileron=0;this.elevator=0;this.rudder=0;this.trim=0;
   this.elevatorCmd=0;this.rollCmd=0;
-  this.lights=true;this.wipers=false;this.paused=false;this.failed=false;this.message='';
+  this.lights=true;this.landingLights=false;this.wipers=false;this.paused=false;this.failed=false;this.message='';
   this.touchdown=null;this.complete=false;this.stalled=false;
   this.stallWarning=false;this.overspeed=false;this.buffet=false;this.tailStrike=false;this.gearOverspeed=false;
   this.alpha=0;this.alphaTrim=0;this.lift=0;this.drag=0;this.thrust=0;this.reverseThrust=0;

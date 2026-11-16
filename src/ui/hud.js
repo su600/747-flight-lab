@@ -58,7 +58,7 @@ function updateUI(){
  setText($('#brakeState'),sim.park?'停留刹车中':press>.05?'刹车中…':held?'刹车中…':'按住不放');
  setText($('#parkState'),sim.park?'已拉起':'已松开');$('#parkBrake').classList.toggle('active',sim.park);
  for(const [id,val,mult] of [['aileron',sim.aileron,18],['elevator',sim.elevator,20],['rudder',sim.rudder,29]])setText($('#'+id+'Value'),Math.round(val*mult)+'°');
- for(const [id,on,a,b] of [['spoiler',sim.spoilerTarget,'升起','收起'],['reverse',sim.reverseTarget,'打开','关闭'],['door',sim.doorTarget,'打开','关闭'],['lights',sim.lights,'开启','关闭'],['wipers',sim.wipers,'开启','关闭'],['chute',sim.chuteTarget,'放出','收起']]){$('#'+id).classList.toggle('active',!!on);setText($('#'+id+' span'),id==='door'&&$('#door').disabled?(sim.door>.02?'关闭中…':'仅货运外观可用'):on?a:b);}
+ for(const [id,on,a,b] of [['spoiler',sim.spoilerTarget,'升起','收起'],['reverse',sim.reverseTarget,'打开','关闭'],['door',sim.doorTarget,'打开','关闭'],['lights',sim.lights,'开启','关闭'],['landingLights',sim.landingLights,'开启','关闭'],['wipers',sim.wipers,'开启','关闭'],['chute',sim.chuteTarget,'放出','收起']]){$('#'+id).classList.toggle('active',!!on);setText($('#'+id+' span'),id==='door'&&$('#door').disabled?(sim.door>.02?'关闭中…':'仅货运外观可用'):on?a:b);}
  const n1=Math.round(sim.engineN1*100);
  for(const id of ['n1a','n1b','n1c','n1d']){const el=$('#'+id);el.style.setProperty('--n1',n1+'%');el.parentElement.querySelector('b').textContent=n1;}
  const [no,text]=manualTakeoffLesson()||lessons[sim.mode]||lessons.manual;$('#lessonNo').textContent=no;$('#lesson').textContent=text;$('#modeLabel').textContent={inspect:'观察模式',takeoff:'自动起飞演示',land:'自动降落演示',free:'自由飞行',manual:getManualTakeoffGuide()?'手动起飞练习':'手动驾驶'}[sim.mode];drawAttitude();

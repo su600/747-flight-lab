@@ -1,17 +1,30 @@
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {LandingLights,landingLightLevel,LANDING_LIGHT_CEILING} from '../src/landing-lights.js';
-const approach={mode:'land',onGround:false,altitude:200,gear:1,speed:75};
-assert.equal(landingLightLevel(approach,'day'),0,'off by day');
-assert.equal(landingLightLevel(approach,'night'),1);assert(landingLightLevel(approach,'dusk')<1&&landingLightLevel(approach,'dusk')>0);
-assert.equal(landingLightLevel({...approach,altitude:LANDING_LIGHT_CEILING+10},'night'),0,'off at cruise');
-assert.equal(landingLightLevel({...approach,gear:0},'night'),0,'tied to gear down');
-assert.equal(landingLightLevel({...approach,onGround:true,altitude:0,speed:40},'night'),1,'on during the landing roll');
-assert.equal(landingLightLevel({...approach,mode:'inspect',onGround:true,altitude:0,speed:0},'night'),0,'parked display aircraft stays dark');
-const scene=new T.Scene(),lights=new LandingLights(scene),plane={root:new T.Group(),contact:5};plane.root.position.set(-2400,40,0);plane.root.rotation.y=0;
+import {LandingLights,landingLightLevel,landingLightsWanted,LANDING_LIGHT_CEILING} from '../src/landing-lights.js';
+const approach={mode:'land',onGround:false,altitude:200,gear:1,speed:75,time:10,landingLights:false};
+// Switch → output.
+assert.equal(landingLightLevel({...approach,landingLights:true},'day'),0,'no beam by day');
+assert.equal(landingLightLevel({...approach,landingLights:true},'night'),1);
+assert(landingLightLevel({...approach,landingLights:true},'dusk')>0&&landingLightLevel({...approach,landingLights:true},'dusk')<1);
+assert.equal(landingLightLevel(approach,'night'),0,'switch off means dark');
+assert.equal(landingLightLevel({mode:'inspect',landingLights:true},'night'),1,'manual switch works for a parked aircraft too');
+// When the automatic switch wants the lights.
+assert(landingLightsWanted(approach,'night')&&landingLightsWanted(approach,'dusk'));
+assert(!landingLightsWanted(approach,'day'));
+assert(!landingLightsWanted({...approach,mode:'manual',altitude:LANDING_LIGHT_CEILING+10},'night'),'not at cruise');
+assert(!landingLightsWanted({...approach,mode:'manual',gear:0},'night'),'tied to gear down outside the demo');
+assert(landingLightsWanted({...approach,mode:'manual'},'night'),'manual night approach with gear down');
+assert(!landingLightsWanted({...approach,mode:'inspect',onGround:true,altitude:0},'night'),'ground observation is not an approach');
+
+const scene=new T.Scene(),lights=new LandingLights(scene),plane={root:new T.Group(),contact:5};plane.root.position.set(-2400,40,0);
 assert(scene.children.includes(lights.light),'light lives in the scene permanently');
-for(let i=0;i<60;i++)lights.update(approach,'night',plane,.05);
+const sim={...approach};
+lights.update(sim,'day',plane,.05);assert.equal(sim.landingLights,false,'daytime approach leaves the switch alone');
+for(let i=0;i<60;i++){sim.time+=.05;lights.update(sim,'night',plane,.05);}
+assert.equal(sim.landingLights,true,'night landing turns the lights on automatically');
 assert(lights.light.visible&&lights.light.intensity>0);
 assert(lights.target.position.x>lights.light.position.x+200&&lights.target.position.y<lights.light.position.y-40,'beam aims ahead and down at the runway');
-for(let i=0;i<60;i++)lights.update(approach,'day',plane,.05);assert(!lights.light.visible);
-console.log('Landing lights: dusk/night approach and roll, gear-linked, beam aimed ahead and down.');
+sim.landingLights=false;for(let i=0;i<60;i++){sim.time+=.05;lights.update(sim,'night',plane,.05);}
+assert.equal(sim.landingLights,false,'pilot can switch them off during the same approach');assert(!lights.light.visible);
+sim.time=0;lights.update(sim,'night',plane,.05);assert.equal(sim.landingLights,true,'a restarted landing re-arms the automatic switch');
+console.log('Landing lights: menu switch, automatic on for dusk/night approaches, pilot override, beam aimed at the runway.');
