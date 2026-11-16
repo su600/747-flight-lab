@@ -140,6 +140,8 @@ const b777VisualMappings=[
  ...['left','right'].flatMap(side=>['in','out'].map(part=>({state:'aileron',property:`fcs/${side}-${part}-aileron/final-deg`,gain:side==='left'?-20:20,min:-1,max:1}))),
  ...['left','right'].map(side=>({state:'elevator',property:`fcs/${side}-elevator/final-deg`,gain:20,min:-1,max:1})),
  {state:'rudder',property:'fcs/rudder/final-deg',gain:25,min:-1,max:1},
+ // The candidate's four spoiler channels take degrees, with their own hinge signs in the source XML.
+ ...[50,51,60,61].map(i=>({state:'spoiler',property:`sim/multiplay/generic/float[${i}]`,gain:45,min:0,max:1})),
  ...[0,1].map(i=>({state:'engine',property:`engines/engine[${i}]/rpm`,gain:80,min:0,max:1})),
 ];
 let b777LiveryLoader;
@@ -240,7 +242,8 @@ function setEmitters(craft){
  airflow.engines=positions.map(z=>new T.Vector3(0,-2,span*z));
  // A380 points are raycast onto its normalized wing and shared with its nav lights.
  airflow.tips=isA380?craft.wingtipPoints.map(p=>p.clone()):[new T.Vector3(-17,0,-span/2),new T.Vector3(-17,0,span/2)];
- airflow.mainGear=[-4.2,4.2].map(z=>new T.Vector3(-3,-craft.contact,z));
+ // A380 body and wing bogie centres, measured from the loaded tyre meshes in root coordinates.
+ airflow.mainGear=(isA380?[[-.6,-2.63],[-.6,2.63],[3.1,-6.16],[3.1,6.16]]:[[-3,-4.2],[-3,4.2]]).map(([x,z])=>new T.Vector3(x,-craft.contact,z));
 }
 async function selectAircraft(type){
  if(!AIRCRAFT_INFO[type])return false;

@@ -16,7 +16,7 @@ export const AUDIO_PROFILES={
 };
 
 // Level and pitch targets for the current airframe and flight state.
-export function audioTargets(type,sim){
+export function audioTargets(type,sim,spoilerPulse=0){
  const p=AUDIO_PROFILES[type]||AUDIO_PROFILES.b747;
  const n1=clamp(sim.engine??0,0,1);
  // Twin engines are quieter overall than four: scale by the square root of the engine count.
@@ -24,18 +24,19 @@ export function audioTargets(type,sim){
  const airspeed=clamp((sim.speed??0)/120,0,1);
  const wind=Math.pow(airspeed,1.5)*p.wind*.06;
  if(!p.core)return{core:{gain:0,hz:0,filter:0,type:'sine'},fan:{gain:0,hz:0},roar:{gain:0,hz:0},wind:{gain:wind,hz:500+900*airspeed}};
+ const reverse=clamp(sim.reverse??0,0,1),pulse=clamp(spoilerPulse,0,1)*airspeed;
  return{
-  core:{gain:(.025+n1*.08)*powered,hz:p.core.hz+n1*(p.core.span),filter:p.core.filter,type:p.core.type},
+  core:{gain:(.025+n1*.08)*(1+reverse*n1*.35)*powered,hz:p.core.hz+n1*(p.core.span),filter:p.core.filter*(1+reverse*.4),type:p.core.type},
   fan:{gain:p.fan.gain*n1*powered,hz:p.fan.hz+n1*p.fan.span},
-  roar:{gain:p.roar.gain*n1*powered,hz:p.roar.hz},
-  wind:{gain:wind,hz:500+900*airspeed}
+  roar:{gain:p.roar.gain*n1*(1+reverse*1.6)*powered,hz:p.roar.hz*(1-reverse*.4)},
+  wind:{gain:wind+pulse*.025,hz:500+900*airspeed-pulse*250}
  };
 }
 
 // Web Audio graph shared by every airframe; the profile switches with the aircraft.
 export class EngineSound{
  constructor(ctx){
-  this.ctx=ctx;this.type='b747';
+  this.ctx=ctx;this.type='b747';this.lastSpoilerTarget=0;this.spoilerPulse=0;this.lastUpdate=ctx.currentTime;
   this.master=ctx.createGain();this.master.gain.value=0;this.master.connect(ctx.destination);
   this.core=ctx.createOscillator();this.coreFilter=ctx.createBiquadFilter();this.coreFilter.type='lowpass';
   this.coreGain=ctx.createGain();this.coreGain.gain.value=0;
@@ -57,7 +58,11 @@ export class EngineSound{
  setAircraft(type){this.type=AUDIO_PROFILES[type]?type:'b747';}
  // Called once per frame; levels glide so switching aircraft or throttle never clicks.
  update(sim,enabled,paused){
-  const t=this.ctx.currentTime,targets=audioTargets(this.type,sim);
+  const t=this.ctx.currentTime,dt=Math.max(0,Math.min(1,t-this.lastUpdate));this.lastUpdate=t;
+  if(enabled&&!paused&&this.type!=='shuttle'&&(sim.spoilerTarget??0)>this.lastSpoilerTarget)this.spoilerPulse=1;
+  this.lastSpoilerTarget=sim.spoilerTarget??0;
+  this.spoilerPulse*=Math.exp(-dt/1.1);
+  const targets=audioTargets(this.type,sim,this.spoilerPulse);
   this.master.gain.setTargetAtTime(enabled&&!paused?.9:0,t,.15);
   this.core.type=targets.core.type||'sine';
   this.core.frequency.setTargetAtTime(targets.core.hz,t,.2);
@@ -66,7 +71,7 @@ export class EngineSound{
   this.fan.frequency.setTargetAtTime(targets.fan.hz,t,.3);
   this.fanGain.gain.setTargetAtTime(targets.fan.gain,t,.3);
   const roar=AUDIO_PROFILES[this.type].roar;
-  this.roarFilter.frequency.setTargetAtTime(roar?roar.hz:800,t,.3);
+  this.roarFilter.frequency.setTargetAtTime(roar?targets.roar.hz:800,t,.3);
   this.roarGain.gain.setTargetAtTime(roar?targets.roar.gain:0,t,.2);
   this.windFilter.frequency.setTargetAtTime(targets.wind.hz,t,.2);
   this.windGain.gain.setTargetAtTime(targets.wind.gain,t,.2);
