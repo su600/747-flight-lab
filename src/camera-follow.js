@@ -1,5 +1,6 @@
 import * as T from 'three';
 
+export const ORBIT_MIN_HEIGHT=1.2;
 const yAxis=new T.Vector3(0,1,0),headingRotation=new T.Quaternion();
 const offset=new T.Vector3(),lookDir=new T.Vector3(),lookRight=new T.Vector3();
 const COCKPIT_EYE=new T.Vector3(24.05,3.8,-.55),COCKPIT_LOOK=new T.Vector3(124.05,-13.83,-.55);
@@ -12,6 +13,8 @@ export function cameraPose({mode,planePosition,planeQuaternion,heading,aircraftT
  if(mode==='orbit'){
   offset.set(Math.cos(orbitAngle)*Math.cos(orbitHeight)*orbitDistance,Math.sin(orbitHeight)*orbitDistance,Math.sin(orbitAngle)*Math.cos(orbitHeight)*orbitDistance).applyQuaternion(headingRotation);
   target.copy(focus).applyQuaternion(headingRotation).add(planePosition);position.copy(target).add(offset);
+  // The user drags the orbit view freely; keep it above the ground (it does not follow the aircraft's attitude, so this causes no drift).
+  position.y=Math.max(position.y,ORBIT_MIN_HEIGHT);
  }else if(mode==='chase'){
   const k=aircraftType==='shuttle'?.55:1;
   target.copy(CHASE_LOOK).multiplyScalar(k).applyQuaternion(headingRotation).add(planePosition);

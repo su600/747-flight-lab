@@ -66,4 +66,10 @@ for(const [mode,buffet,paused] of [['cockpit',true,true],['wing',false,false],['
  applyCameraBuffet(mode,buffet,paused,position,target,()=>1);
  near(position,cleanPosition,`${mode} steady position`);near(target,cleanTarget,`${mode} steady target`);
 }
+{
+ const {cameraPose:pose,ORBIT_MIN_HEIGHT:minY}=await import('../src/camera-follow.js');
+ const P=new T.Vector3(),Q=new T.Vector3();
+ pose({mode:'orbit',planePosition:new T.Vector3(0,0,0),planeQuaternion:new T.Quaternion(),heading:90,orbitAngle:.9,orbitHeight:-1,orbitDistance:80,focus:new T.Vector3(0,2,0)},P,Q);
+ assert(P.y>=minY,'orbit view never goes below the ground when dragged downward');
+}
 console.log('Camera lock passed: all views, airframes, translations, attitude, buffet, and 1x/2x/4x playback.');
