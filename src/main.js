@@ -293,7 +293,7 @@ async function start(){
   observeAircraftDownloads((type,p)=>{
    const set=(text,state)=>{if(typeof badgeFor==='function')badgeFor(type,text,state);};
    if(p.done)set('已下载','ready');
-   else if(p.failed)set('下载未完成，选择机型可重试','failed');
+   else if(p.failed){const e=p.error||{};const why=e.message?`：${e.step==='size'?'文件大小不符':e.step==='status'?`服务器 ${e.message}`:e.message}`:'';set(`下载未完成${why}，选择机型可重试`,'failed');}
    else if(p.fraction>=1)set('校验中…','loading');
    else set(`后台下载 ${Math.round((p.fraction||0)*100)}%`,'loading');
   });

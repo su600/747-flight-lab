@@ -46,9 +46,8 @@ const nativeFetch=globalThis.fetch?.bind(globalThis);
 
 const FILE_ATTEMPTS=3;
 // Streams one file into a buffer sized from the manifest (one copy in memory, not two), retrying transient failures.
-async function pullOnce(url,estimate,job,priority){
- let counted=0;
- const add=n=>{job.loaded+=n-counted;counted=n;job.notify();};
+async function pullOnce(url,estimate,job,priority,tally){
+ const add=n=>{job.loaded+=n-tally.counted;tally.counted=n;job.notify();};
  const response=await nativeFetch(url,{priority});
  if(!response.ok||!response.body)throw Object.assign(Error(`HTTP ${response.status}`),{step:'status'});
  const reader=response.body.getReader(),body=new Uint8Array(estimate);let received=0;
@@ -63,13 +62,15 @@ async function pullOnce(url,estimate,job,priority){
 async function pull(path,estimate,job,priority){
  const url=ASSETS+path;
  for(let attempt=1;attempt<=FILE_ATTEMPTS;attempt++){
+  const tally={counted:0};
   try{
-   const {body,type}=await pullOnce(url,estimate,job,priority);
+   const {body,type}=await pullOnce(url,estimate,job,priority,tally);
    // Images are loaded through <img>, not fetch(); for those the download only warms the HTTP cache.
    if(!/\.(png|jpe?g|webp)$/i.test(path))store.set(new URL(url,location.href).href,{body,type});
    return;
   }catch(error){
-   job.loaded-=0;job.lastError={path,name:error?.name||'Error',message:error?.message||String(error),step:error?.step||'fetch',attempt};
+   // Bytes already counted for this attempt are taken back, so a retry never pushes progress past 100%.
+   job.loaded-=tally.counted;job.notify();job.lastError={path,name:error?.name||'Error',message:error?.message||String(error),step:error?.step||'fetch',attempt};
    if(attempt<FILE_ATTEMPTS)await new Promise(r=>setTimeout(r,1000*attempt));
   }
  }
@@ -106,7 +107,7 @@ export function preloadAircraft(type,{livery='BOE',priority='low',onProgress}={}
  if(!job){
   const listeners=new Set();
   job={type,loaded:0,total:files.reduce((n,f)=>n+f[1],0),listeners,done:false,
-   notify(){const p={loaded:Math.min(this.loaded,this.total),total:this.total,fraction:this.total?Math.min(1,this.loaded/this.total):1};for(const fn of listeners)fn(p);for(const fn of observers)fn(type,{...p,done:false,failed:false});}};
+   notify(){const p={loaded:Math.min(this.loaded,this.total),total:this.total,fraction:this.total?Math.min(1,this.loaded/this.total):1,excess:this.loaded-this.total};for(const fn of listeners)fn(p);for(const fn of observers)fn(type,{...p,done:false,failed:false});}};
   const queue=files.slice();
   const worker=async()=>{for(let file;(file=queue.shift());)await pull(file[0],file[1],job,priority);};
   job.promise=Promise.all(Array.from({length:Math.min(MAX_PARALLEL,files.length)},worker)).then(()=>{job.done=!job.failed;if(job.failed)jobs.delete(key);job.notify();for(const fn of observers)fn(type,{fraction:job.done?1:0,done:job.done,failed:!!job.failed,error:job.lastError});});
