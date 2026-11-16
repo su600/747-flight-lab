@@ -101,14 +101,23 @@ export const downloadSizeMB=(type,options)=>aircraftFiles(type,options).reduce((
 
 // Download the other aircraft in the background, one after another, as soon as the first scene is up,
 // so switching models later only pays for parsing. Respects the browser's Data Saver setting only.
-// onStatus(type,{loaded,total,fraction,done}) reports progress for the aircraft picker.
-export function prefetchInOrder(types,{livery,onStatus}={}){
+// A failed download (network drop, timeout) is retried with a short back-off; each failed attempt drops its
+// job so the next attempt starts clean. onStatus(type,{fraction,done,retrying,attempt}) drives the picker badges.
+const PREFETCH_ATTEMPTS=4;
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+export function prefetchInOrder(types,{livery,onStatus,backoff=ms=>wait(ms)}={}){
  if(navigator.connection?.saveData)return Promise.resolve(false);
  let chain=Promise.resolve();
- for(const type of types)chain=chain.then(()=>{
+ for(const type of types)chain=chain.then(async()=>{
   const options={livery:livery?.()??'BOE'};
-  return preloadAircraft(type,{...options,priority:'low',onProgress:p=>onStatus?.(type,{...p,done:false})})
-   .then(()=>onStatus?.(type,{fraction:1,done:isPreloaded(type,options)}));
+  for(let attempt=1;attempt<=PREFETCH_ATTEMPTS;attempt++){
+   await preloadAircraft(type,{...options,priority:'low',onProgress:p=>onStatus?.(type,{...p,done:false,attempt})});
+   if(isPreloaded(type,options)){onStatus?.(type,{fraction:1,done:true,attempt});break;}
+   if(attempt===PREFETCH_ATTEMPTS){onStatus?.(type,{fraction:0,done:false,failed:true,attempt});break;}
+   const delay=2000*attempt;
+   onStatus?.(type,{fraction:0,done:false,retrying:true,attempt,delay});
+   await backoff(delay);
+  }
  });
  return chain.then(()=>true);
 }
