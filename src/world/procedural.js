@@ -59,6 +59,20 @@ export function pavementTexture(base,scale=1,{joints=0,stains=18}={}){const S=10
  x.strokeStyle='rgba(10,12,12,.28)';x.lineWidth=1;for(let i=0;i<26;i++){let px=rnd()*S,py=rnd()*S;x.beginPath();x.moveTo(px,py);for(let k=0;k<8;k++){px+=(rnd()-.5)*46;py+=(rnd()-.35)*34;x.lineTo(px,py);}x.stroke();}
  if(joints){x.strokeStyle='rgba(20,22,22,.34)';x.lineWidth=2;for(let k=0;k<=joints;k++){const q=k*S/joints;x.beginPath();x.moveTo(q,0);x.lineTo(q,S);x.stroke();x.beginPath();x.moveTo(0,q);x.lineTo(S,q);x.stroke();}}
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}
+// One aircraft stand (64 m x 190 m, 4 px per metre): 7.5 m concrete slabs in slightly different ages, rubber tracks
+// along the lead-in line and dark oil/fuel stains where engines and the APU sit on a nose-in 747.
+// Canvas top is the terminal end of the stand.
+export function standPadTexture(){const W=256,H=768,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ x.fillStyle='#aaa8a0';x.fillRect(0,0,W,H);const slab=30;
+ for(let j=0;j<H/slab;j++)for(let i=0;i<W/slab+1;i++){const t=Math.round((rnd()-.5)*20);x.fillStyle=`rgb(${170+t},${168+t},${160+t})`;x.fillRect(i*slab-14,j*slab,slab,slab);}
+ speckle(x,H,40000,.06,1,1);
+ const blob=(px,py,r,a)=>{const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,`rgba(38,36,32,${a})`);g.addColorStop(1,'rgba(38,36,32,0)');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);};
+ for(const ex of [44,80,176,212])for(let k=0;k<5;k++)blob(ex+(rnd()-.5)*14,141+(rnd()-.5)*30,10+rnd()*16,.18+rnd()*.14);
+ for(let k=0;k<6;k++)blob(128+(rnd()-.5)*16,299+(rnd()-.5)*30,8+rnd()*12,.16);
+ for(let k=0;k<4;k++)blob(128+(rnd()-.5)*8,30+(rnd()-.5)*20,6+rnd()*8,.2);
+ for(const tx of [106,128,150]){const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'rgba(30,30,30,.22)');g.addColorStop(1,'rgba(30,30,30,.04)');x.fillStyle=g;x.fillRect(tx-3,0,6,H);}
+ x.strokeStyle='rgba(55,55,52,.55)';x.lineWidth=1;for(let i=-14;i<W;i+=slab){x.beginPath();x.moveTo(i+.5,0);x.lineTo(i+.5,H);x.stroke();}for(let j=0;j<H;j+=slab){x.beginPath();x.moveTo(0,j+.5);x.lineTo(W,j+.5);x.stroke();}
+ const t=canvasTex(c);t.anisotropy=8;return t;}
 // Greyscale lumps for a gentle bump on grass, so the low sun grazes real relief.
 export function grassBumpTexture(){const S=512,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle='#808080';x.fillRect(0,0,S,S);
  speckle(x,S,90000,1,2,4,90,80);

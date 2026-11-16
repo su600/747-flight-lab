@@ -4,13 +4,18 @@ import {Scenery,inSceneryZone} from './world/scenery.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
-import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
+import {AirportMarkings} from './world/airport-markings.js';
+import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
+// Large ground quads are tessellated (about 250 m cells): with a logarithmic depth buffer, two triangles spanning
+// kilometres interpolate depth poorly at grazing angles and the grass beneath showed through the apron.
+const groundPlanes=new Map();
+function groundPlane(w,d){const sx=Math.min(160,Math.max(1,Math.round(w/250))),sz=Math.min(160,Math.max(1,Math.round(d/250)));if(sx===1&&sz===1)return UNIT_PLANE;const key=sx+'x'+sz;let g=groundPlanes.get(key);if(!g){g=new T.PlaneGeometry(1,1,sx,sz);groundPlanes.set(key,g);}return g;}
 export class World{
  constructor(scene,renderer){this.scene=scene;this.renderer=renderer;this.lamps=[];this.lampData=[];this.lampMesh=null;this.time='day';this.clouds=[];this.t=0;this.build();}
  box(x,y,z,w,h,d,m,shadow=false){const o=new T.Mesh(boxGeo(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;o.castShadow=shadow;this.scene.add(o);return o;}
- ground(x,z,w,d,m,y=0){const o=new T.Mesh(UNIT_PLANE,m);o.scale.set(w,d,1);o.rotation.x=-Math.PI/2;o.position.set(x,y,z);o.receiveShadow=true;o.matrixAutoUpdate=false;o.updateMatrix();
+ ground(x,z,w,d,m,y=0){const o=new T.Mesh(groundPlane(w,d),m);o.scale.set(w,d,1);o.rotation.x=-Math.PI/2;o.position.set(x,y,z);o.receiveShadow=true;o.matrixAutoUpdate=false;o.updateMatrix();
   // Render pavement layers from bottom to top; equal-depth fragments then have a stable winner.
   o.renderOrder=Math.round(y*1000);this.scene.add(o);return o;}
  line(points,color,width=1){const m=new T.LineBasicMaterial({color,linewidth:width});const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));const o=new T.Line(g,m);this.scene.add(o);return o;}
@@ -42,17 +47,22 @@ export class World{
   this.waterNormal=waterNormalTexture();this.waterNormal.repeat.set(28,9);const sea=new T.MeshStandardMaterial({color:'#176f96',roughness:.24,metalness:.0,normalMap:this.waterNormal,normalScale:new T.Vector2(.09,.09),envMapIntensity:.7});this.ground(0,16000,100000,22000,sea,.02);this.ground(0,5090,100000,200,mat('#3fa8b8'),.024);this.ground(0,4970,100000,140,mat('#e4d6ae'),.03);
   const asphalt=mat('#343e42',.88);asphalt.map=pavementTexture('#4a5254',14,{stains:26});this.ground(0,0,3900,82,asphalt,.03);
   const runway=mat('#424c51',.82);runway.map=pavementTexture('#50575a',16,{stains:30});this.ground(0,0,3800,60,runway,.05);
-  const concrete=mat('#ffffff',.92);concrete.map=pavementTexture('#aaa89f',10,{joints:8,stains:22});this.ground(-300,-380,2200,410,concrete,.035);
+  // Apron: 7.5 m concrete slabs; each stand gets older, oil-stained slabs and the taxilane a smoother, tyre-polished strip.
+  const concrete=new T.MeshStandardMaterial({color:'#ffffff',roughness:.92,envMapIntensity:.4});concrete.map=pavementTexture('#b0aea6',18,{joints:16,stains:8});this.ground(-300,-380,2200,410,concrete,.035);
+  const standPad=new T.MeshStandardMaterial({color:'#ffffff',roughness:.9,envMapIntensity:.4});standPad.map=standPadTexture();
+  for(let i=0;i<9;i++)this.ground(-1200+i*230,-345,64,190,standPad,.04);
+  const lane=new T.MeshStandardMaterial({color:'#ffffff',roughness:.86,envMapIntensity:.4});lane.map=pavementTexture('#9d9c96',14,{joints:0,stains:34});lane.map.repeat.set(40,1);this.ground(-300,-205,2180,36,lane,.042);
   const taxi=mat('#555e5d',.86);taxi.map=pavementTexture('#626866',12,{stains:20});this.ground(0,-130,3850,30,taxi,.045);
   for(const x of [-1750,-850,200,1550])this.ground(x,-75,34,160,taxi,.06);
-  this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi];
+  // Apron entrances through the grass islands, wide enough for the fillets.
+  for(const x of [-1030,235])this.ground(x,-160,64,40,taxi,.046);
+  this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi,standPad,lane];
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
-  this.ground(0,-28,3740,.6,white,.07);this.ground(0,28,3740,.6,white,.07);this.ground(0,-130,3760,.3,yellow,.065);
-  for(let x=-1810;x<1830;x+=60)this.ground(x,0,30,.9,white,.075);
+  this.ground(0,-130,3760,.3,yellow,.065);
+  // ICAO runway, taxiway and apron paint (threshold keys, aiming point, touchdown zone, lead-on lines, signs).
+  this.markings=new AirportMarkings(scene);this.weatherGround.push(...this.markings.materials);
   for(const end of [-1,1]){
-   for(let z=-24;z<=24;z+=4)if(Math.abs(z)>3)this.ground(end*1835,z,32,1.8,white,.075);
-   for(const x of [1550,1450,1250])for(const z of [-17,17])this.ground(end*x,z,x===1550?42:24,x===1550?5:1.5,white,.075);
-   const number=this.label(end<0?'09':'27',end*1760,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
+   const number=this.label(end<0?'09':'27',end*1838,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
    if(end>0)for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
   }
   const groundRects=(rects,material,y,order)=>{
@@ -65,24 +75,20 @@ export class World{
    taxiEdges.push([(start+end)/2,-143.5,end-start,.5],[(start+end)/2,-116.5,end-start,.5]);
   }
   groundRects(taxiEdges,yellow,.078,82);
-  const connectorLines=[],holdSolid=[],holdDashed=[],standStops=[];
+  const holdSolid=[],holdDashed=[];
   for(const x of [-1750,-850,200,1550]){
-   for(let z=-143;z<=-63;z+=12)connectorLines.push([x,z,.55,4.5]);
    holdSolid.push([x,-57,34,.5],[x,-59,34,.5]);
    for(let i=0;i<7;i++){const dx=-15.6+i*5.2;holdDashed.push([x+dx,-52,3.2,.5],[x+dx,-50,3.2,.5]);}
   }
-  for(let i=0;i<9;i++){const x=-1200+i*230;standStops.push([x,-311,28,.55],[x,-314,28,.55]);}
-  groundRects(connectorLines,yellow,.079,83);
-  groundRects([...holdSolid,...holdDashed,...standStops],yellow,.081,84);
+  groundRects([...holdSolid,...holdDashed],yellow,.081,84);
   // Rubber deposits in the touchdown zones.
   for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),.078);}
   for(let x=-1890;x<1900;x+=60)if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);
   for(let x=-1800;x<=1800;x+=60)this.lamp(x,.16,-130,0x36c982);
   for(let x=-1890;x<1900;x+=180){this.box(x,.55,-46,5,1.1,.22,mat('#272f25'));this.label('A  →',x,.7,-45.83,4,1,false,'#f2cf6a');}
-  for(let x=-1380;x<790;x+=65){this.ground(x,-380,.05,410,mat('#8b968d'),.052);}
-  for(let z=-570;z<-175;z+=55)this.ground(-300,z,2180,.045,mat('#8b968d'),.052);
   // Gate guidance, parking boxes, and safe movement boundaries.
-  for(let i=0;i<9;i++){const x=-1200+i*230;this.ground(x,-370,.35,170,yellow,.08);this.ground(x,-286,38,.45,yellow,.08);this.ground(x-48,-350,.35,180,red,.08);this.ground(x+48,-350,.35,180,red,.08);const n=this.label(String(i+1).padStart(2,'0'),x,.09,-288,12,9,true,'#d8b34c');n.rotation.z=Math.PI;}
+  // Stand numbers painted on each lead-in line (the line work itself lives in AirportMarkings).
+  for(let i=0;i<9;i++){const x=-1200+i*230;const n=this.label(String(i+1).padStart(2,'0'),x,.09,-262,12,9,true,'#e2b23a');n.rotation.z=Math.PI;}
   const terminalMetal=mat('#dfe2dc',.4,.28),glass=mat('#497179',.23,.52),atriumGlass=mat('#315f6b',.2,.48),atriumRoof=mat('#c3d0cb',.38,.22),dark=mat('#293e45',.52,.25),terminalBase=mat('#4c5554',.82,.05),towerBody=mat('#d3d7d0',.7,.06);glass.envMapIntensity=atriumGlass.envMapIntensity=1.3;this.glass=glass;
   // Layered glass wings, a raised atrium, and a broad sculpted canopy form a modern terminal.
   this.box(-300,3,-603,1940,6,116,terminalBase,true);
@@ -118,16 +124,6 @@ export class World{
   this.label('STAR BAY INTERNATIONAL',-300,39,-555.1,336,5,false,'#f3eddd');
   this.label('星湾国际机场 · TERMINAL 1',-300,34.8,-555.1,300,3.2,false,'#d7e2dc');
   for(let i=0;i<9;i++){const x=-1200+i*230;this.box(x,7,-510,9,6,105,glass,true);this.box(x,11,-510,11,1.2,110,terminalMetal,true);this.box(x,6,-455,13,8,10,dark,true);this.box(x,3,-495,1,6,1,terminalMetal);this.box(x,3,-478,1.2,6,1.2,terminalBase,true);this.box(x,11,-455,14,1.4,20,terminalMetal);this.box(x,8.5,-444,11,1,5,glass);this.label('G'+(i+1),x,9,-449,7,3,false,'#ffda7e','#243941');}
-  // Instanced yellow lead-in lanes and white stand edges guide traffic without dozens of draw calls.
-  const apronGuides=new T.InstancedMesh(UNIT_PLANE,yellow,18),apronEdges=new T.InstancedMesh(UNIT_PLANE,white,18),mark=new T.Object3D();
-  for(let i=0;i<9;i++){
-   const x=-1200+i*230;
-   mark.rotation.set(-Math.PI/2,0,0);mark.position.set(x,.083,-245);mark.scale.set(.5,210,1);mark.updateMatrix();apronGuides.setMatrixAt(i,mark.matrix);
-   mark.position.set(x,.084,-352);mark.scale.set(62,.6,1);mark.updateMatrix();apronGuides.setMatrixAt(9+i,mark.matrix);
-   for(const [j,side] of [-1,1].entries()){mark.position.set(x+side*35,.084,-385);mark.scale.set(.45,64,1);mark.updateMatrix();apronEdges.setMatrixAt(i*2+j,mark.matrix);}
-  }
-  apronGuides.instanceMatrix.needsUpdate=true;apronGuides.renderOrder=83;apronGuides.castShadow=false;apronGuides.receiveShadow=false;
-  apronEdges.instanceMatrix.needsUpdate=true;apronEdges.renderOrder=84;apronEdges.castShadow=false;apronEdges.receiveShadow=false;scene.add(apronGuides,apronEdges);
   // Tapered control-tower shaft, octagonal glazed cab, roof deck, and rotating radar.
   const towerX=0,towerZ=-520;
   // A distinct apron-side control tower with an octagonal glazed cab and rotating radar.
