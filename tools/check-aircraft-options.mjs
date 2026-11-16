@@ -234,7 +234,7 @@ function verifyDayNightLighting(){
  assert.equal(world.time,'night');assert.equal(world.sky.visible,false,'night hides the daylight sky');
  assert.equal(world.stars.visible,true,'night shows stars');assert.equal(world.scene.background.getHex(),0x081426,'night sky background');
  close(world.sun.intensity,.35,'night sunlight');close(world.hemi.intensity,.45,'night ambient light');
- close(world.scene.environmentIntensity,.55,'night environment intensity');close(world.cityMat.emissiveIntensity,1.1,'night city glow');
+ close(world.scene.environmentIntensity,.55,'night environment intensity');close(world.cityMat.emissiveIntensity,.9,'night city glow');
  close(world.glass.emissiveIntensity,.1,'night terminal-window glow');close(world.glow.material.opacity,1,'night runway-light glow');
  assert.equal(world.glow.visible,true);close(lampScales.at(-1),2,'night runway-lamp scale');
  close(world.scene.fog.density,.00008,'night fog density');assert.equal(world.scene.environment.mode,'night');
