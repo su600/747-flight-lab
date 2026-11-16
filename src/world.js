@@ -2,6 +2,7 @@ import * as T from 'three';
 import {Sky} from 'three/addons/objects/Sky.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {AirportLights} from './world/airport-lights.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,glowTexture,cumulusTexture,pavementTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
@@ -50,7 +51,7 @@ export class World{
    for(let z=-24;z<=24;z+=4)if(Math.abs(z)>3)this.ground(end*1835,z,32,1.8,white,.075);
    for(const x of [1550,1450,1250])for(const z of [-17,17])this.ground(end*x,z,x===1550?42:24,x===1550?5:1.5,white,.075);
    const number=this.label(end<0?'09':'27',end*1760,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
-   for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
+   if(end>0)for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
   }
   const groundRects=(rects,material,y,order)=>{
    const mesh=new T.InstancedMesh(UNIT_PLANE,material,rects.length),transform=new T.Object3D();
@@ -73,14 +74,8 @@ export class World{
   groundRects([...holdSolid,...holdDashed,...standStops],yellow,.081,84);
   // Rubber deposits in the touchdown zones.
   for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),.078);}
-  for(let x=-1890;x<1900;x+=60){this.lamp(x,.3,-32,0xffe8bd);this.lamp(x,.3,32,0xffe8bd);if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);}
-  // Centerline, threshold, and approach lights make the runway readable at night.
-  for(let x=-1800;x<=1800;x+=30)this.lamp(x,.2,0,0xf6f2dc);
+  for(let x=-1890;x<1900;x+=60)if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);
   for(let x=-1800;x<=1800;x+=60)this.lamp(x,.16,-130,0x36c982);
-  for(const end of [-1,1]){
-   for(let z=-20;z<=20;z+=4)this.lamp(end*1834,.24,z,0x38d482);
-   for(let i=1;i<=12;i++)this.lamp(end*(1880+i*35),.32,0,0xf6f2dc);
-  }
   for(let x=-1890;x<1900;x+=180){this.box(x,.55,-46,5,1.1,.22,mat('#272f25'));this.label('A  →',x,.7,-45.83,4,1,false,'#f2cf6a');}
   for(let x=-1380;x<790;x+=65){this.ground(x,-380,.05,410,mat('#8b968d'),.052);}
   for(let z=-570;z<-175;z+=55)this.ground(-300,z,2180,.045,mat('#8b968d'),.052);
@@ -169,7 +164,7 @@ export class World{
   for(let i=0;i<26;i++)mkCloud(6,1900+rnd()*1400,700,700,380);
   for(let i=0;i<14;i++)mkCloud(4,1000+rnd()*600,420,420,230);
   this.glowTex=glowTexture();
-  this.buildLamps();this.setTime('day');
+  this.buildLamps();this.airportLights=new AirportLights(scene,this.glowTex);this.setTime('day');
  }
  buildServiceVehicles(dark){
   const scene=this.scene,asphalt=mat('#30383a',.9),yellow=mat('#e4aa27',.58,.08),white=mat('#e6e9e4',.55,.08),green=mat('#55966a',.56,.04),windowMat=mat('#294b53',.26,.22),reflective=mat('#f2d85e',.42,.12),tankerMat=mat('#d7ddda',.3,.24),aluminium=mat('#aeb6b3',.38,.55);
@@ -414,7 +409,7 @@ export class World{
   this.cityMat.emissiveIntensity=night?1.1:dusk?.35:0;
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
-  this.scaleLamps(night?2:dusk?1.5:1);
+  this.scaleLamps(night?2:dusk?1.5:1);this.airportLights?.setTime(mode);
  }
  updateServiceVehicles(dt){
   for(const vehicle of this.vehicles){

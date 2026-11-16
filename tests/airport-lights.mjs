@@ -1,0 +1,48 @@
+import assert from 'node:assert/strict';
+import * as T from 'three';
+import {RUNWAY} from '../src/flight.js';
+import {AirportLights,airportLightLayout,papiColors,PAPI_POSITION,RABBIT_DISTANCES,RABBIT_PERIOD,rabbitIndex} from '../src/world/airport-lights.js';
+
+const cameraAt=degrees=>({x:PAPI_POSITION.x-1000,y:PAPI_POSITION.y+1000*Math.tan(degrees*Math.PI/180),z:0});
+assert.deepEqual(papiColors(cameraAt(3)),['white','white','red','red']);
+assert.deepEqual(papiColors(cameraAt(3.6)),Array(4).fill('white'));
+assert.deepEqual(papiColors(cameraAt(2.4)),Array(4).fill('red'));
+assert.deepEqual(papiColors(cameraAt(3.3)),['white','white','white','red']);
+assert.deepEqual(papiColors(cameraAt(2.7)),['white','red','red','red']);
+
+const layout=airportLightLayout(),low=airportLightLayout(true);
+assert.equal(layout.edge.length,128);
+assert.equal(layout.center.length,126);
+assert.equal(layout.threshold.length,19);
+assert.equal(layout.end.length,19);
+assert(layout.edge.every(p=>Math.abs(p.z)===RUNWAY.width/2&&p.x>=RUNWAY.start&&p.x<=RUNWAY.end));
+assert(layout.threshold.every(p=>p.x===RUNWAY.start&&p.color===0x22ff72));
+assert(layout.end.every(p=>p.x===RUNWAY.end&&p.color===0xff2525));
+assert(layout.center.some(p=>p.x<RUNWAY.end-900&&p.color===0xffffff));
+assert.deepEqual(new Set(layout.center.filter(p=>RUNWAY.end-p.x<=900&&RUNWAY.end-p.x>300).map(p=>p.color)),new Set([0xffffff,0xff2525]));
+assert(layout.center.filter(p=>RUNWAY.end-p.x<=300).every(p=>p.color===0xff2525));
+assert(layout.approach.every(p=>p.x<RUNWAY.start&&p.x>=RUNWAY.start-900));
+assert(layout.approach.filter(p=>p.x===RUNWAY.start-300).length>=7);
+assert(layout.papi.every(p=>p.x===RUNWAY.touch&&p.z<-RUNWAY.width/2));
+assert(low.edge.length<layout.edge.length&&low.center.length<layout.center.length&&low.approach.length<layout.approach.length);
+assert.deepEqual(RABBIT_DISTANCES,[900,750,600,450,300,150]);
+for(let i=0;i<RABBIT_DISTANCES.length;i++)assert.equal(rabbitIndex((i+.5)*.8/6*RABBIT_PERIOD),i);
+assert.equal(rabbitIndex(.9*RABBIT_PERIOD),-1);
+assert.equal(rabbitIndex(RABBIT_PERIOD),0);
+assert.equal(rabbitIndex(RABBIT_PERIOD*1.25),rabbitIndex(RABBIT_PERIOD*.25));
+
+const lights=new AirportLights(new T.Scene(),new T.Texture());
+assert(!lights.full.visible&&!lights.cheap.visible&&!lights.rabbit.visible);
+assert.equal(lights.papi.material.opacity,.15);
+lights.setTime('night');lights.update(.01,cameraAt(3));
+assert(lights.full.visible&&lights.rabbit.visible);
+const colors=lights.papi.geometry.getAttribute('color');
+assert(colors.getY(0)>.9&&colors.getY(1)>.9&&colors.getY(2)<.1&&colors.getY(3)<.1);
+assert.equal(lights.rabbit.geometry.getAttribute('position').getX(0),RUNWAY.start-900);
+lights.update(.39,cameraAt(3));assert.equal(lights.rabbit.geometry.getAttribute('position').getX(0),RUNWAY.start-150);
+lights.update(.45,cameraAt(3));assert(!lights.rabbit.visible);
+lights.update(.51,cameraAt(3));assert.equal(lights.rabbit.geometry.getAttribute('position').getX(0),RUNWAY.start-900);
+lights.setQuality(true);assert(!lights.full.visible&&lights.cheap.visible);
+lights.setTime('dusk');assert.equal(lights.cheap.material.opacity,.48);
+lights.setTime('day');lights.update(.1,cameraAt(3));assert(!lights.full.visible&&!lights.cheap.visible&&!lights.rabbit.visible);
+console.log('Airport runway/approach layout, PAPI, time of day, quality, and rabbit sequencing passed.');
