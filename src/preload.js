@@ -73,6 +73,9 @@ async function pull(path,estimate,job,priority){
   }catch(error){
    // Bytes already counted for this attempt are taken back, so a retry never pushes progress past 100%.
    job.loaded-=tally.counted;job.notify();job.lastError={path,name:error?.name||'Error',message:error?.message||String(error),step:error?.step||'fetch',attempt};
+   // An HTTP error is the server's answer: stop here (the aircraft-level retry and the loader handle it). Dropped
+   // connections and stale/short bodies are retried at once with a short back-off.
+   if(job.lastError.step==='status')break;
    if(attempt<FILE_ATTEMPTS)await new Promise(r=>setTimeout(r,1000*attempt));
   }
  }
