@@ -15,13 +15,6 @@ export function setCockpitAirframeVisibility(aircraft,cameraMode){
  aircraft.root.visible=!inCockpit;
 }
 
-// The cockpit eye is fixed to the airframe, so the camera must not ease toward it:
-// a lagging camera trails the aircraft and shows the cockpit model from outside.
-export function cameraFollowFactor(cameraMode,firstCamera,dt){
- if(firstCamera||cameraMode==='cockpit')return 1;
- return 1-Math.exp(-dt*6);
-}
-
 export function cameraModeForWiperToggle(cameraMode,wipersOn){
  return wipersOn&&cameraMode!=='cockpit'?'cockpit':cameraMode;
 }
