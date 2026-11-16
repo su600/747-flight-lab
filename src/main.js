@@ -1,7 +1,7 @@
 import * as T from 'three';
 import {Aircraft,LIVERIES} from './aircraft.js';
 import {realityFor} from './livery-reality.js';
-import {preloadAircraft,scheduleIdlePrefetch,downloadSizeMB,installPreloadedFetch} from './preload.js';
+import {preloadAircraft,scheduleIdlePrefetch,isPreloaded,installPreloadedFetch} from './preload.js';
 installPreloadedFetch();
 import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
 import {World} from './world.js';
@@ -153,20 +153,23 @@ async function modelFactory(type,initialLivery=desiredLivery){
 }
 // Thin loading bar plus a status line; a newer request owns the display, so a superseded load never clears it.
 let loadToken=0,loadHideTimer;
+const progressText=({loaded,total,fraction})=>`已下载 ${(loaded/1048576).toFixed(1)} / ${(total/1048576).toFixed(1)} MB · ${fraction>=1?100:Math.floor(fraction*100)}%`;
 function beginLoad(type,livery=desiredLivery){
- const token=++loadToken,bar=$('#loadBar'),fill=bar.firstElementChild,status=$('#aircraftStatus'),name=AIRCRAFT_INFO[type].name,size=downloadSizeMB(type,{livery});
- clearTimeout(loadHideTimer);bar.hidden=false;bar.classList.remove('busy');fill.style.width='2%';
- status.textContent=aircraftCache.has(type)?`正在切换到 ${name}…`:`正在载入 ${name}…（约 ${Math.round(size)} MB，之后会缓存）`;
+ const token=++loadToken,bar=$('#loadBar'),fill=bar.firstElementChild,status=$('#aircraftStatus'),name=AIRCRAFT_INFO[type].name;
+ const cached=aircraftCache.get(type),downloading=!cached?.ready&&!isPreloaded(type,{livery:cached?.preloadLivery??livery})&&!(type==='b747'&&cached);
+ clearTimeout(loadHideTimer);bar.hidden=!downloading;bar.classList.remove('busy');fill.style.width='0%';
+ status.textContent=downloading?`正在载入 ${name}…`:`正在切换到 ${name}…`;$('#loadProgress').textContent=status.textContent;
  return {
-  update({fraction}){
+  update(progress){
    if(token!==loadToken)return;
-   const pct=Math.round(fraction*100);
-   if(fraction>=1){bar.classList.add('busy');fill.style.width='100%';status.textContent=`${name} 已下载，正在构建模型…`;}
-   else{fill.style.width=Math.max(2,pct)+'%';status.textContent=`正在载入 ${name}… ${pct}%`;}
+   const {fraction}=progress,pct=fraction>=1?100:Math.floor(fraction*100);
+   bar.hidden=false;fill.style.width=pct+'%';
+   if(fraction>=1)bar.classList.add('busy');
+   status.textContent=`${name} · ${progressText(progress)}`+(fraction>=1?' · 正在构建模型…':'');$('#loadProgress').textContent=status.textContent;
   },
   done(){
    if(token!==loadToken)return;
-   bar.classList.remove('busy');fill.style.width='100%';
+   bar.classList.remove('busy');
    loadHideTimer=setTimeout(()=>{if(token===loadToken)bar.hidden=true;},380);
   },
  };
@@ -178,7 +181,7 @@ function getAircraft(type,onProgress,livery=desiredLivery){
  if(!aircraftCache.has(type)){
   const p=(async()=>{
    // Download first (reported as progress); the loader below then reads from the HTTP cache.
-   await preloadAircraft(type,{livery,priority:'high',onProgress});
+   await preloadAircraft(type,{livery,priority:'high',onProgress:isPreloaded(type,{livery})?undefined:onProgress});
    const craft=await modelFactory(type,livery);
    let loaded=false;
    try{await craft.load();loaded=true;fixAircraftWingShading(craft);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
@@ -186,7 +189,10 @@ function getAircraft(type,onProgress,livery=desiredLivery){
    // dispose here if a later coordinator step failed after successful loading.
    catch(error){if(loaded)craft.dispose?.();throw error;}
   })();
-  aircraftCache.set(type,p);p.catch(()=>{if(aircraftCache.get(type)===p)aircraftCache.delete(type);});
+  p.preloadLivery=livery;aircraftCache.set(type,p);p.then(()=>{p.ready=true;},()=>{if(aircraftCache.get(type)===p)aircraftCache.delete(type);});
+ }else{
+  const cached=aircraftCache.get(type),requested=cached.preloadLivery??livery;
+  if(type!=='b747'&&!cached.ready&&!isPreloaded(type,{livery:requested}))preloadAircraft(type,{livery:requested,priority:'high',onProgress});
  }
  return aircraftCache.get(type);
 }
@@ -245,12 +251,12 @@ function setEmitters(craft){
 async function selectAircraft(type){
  if(!AIRCRAFT_INFO[type])return false;
  const request=++aircraftRequest;
- if(type===plane.type){$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;return true;}
+ if(type===plane.type){$('#loadBar').hidden=true;$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;return true;}
  const initialLivery=Aircraft.liveryForModel(desiredLivery,type)?desiredLivery:(type==='shuttle'?'NASA_SHUTTLE':'BOE');
  $('#aircraftSelect').value=type;
  const load=beginLoad(type,initialLivery);
  try{
-  const next=await getAircraft(type,load.update,initialLivery);if(request!==aircraftRequest)return false;
+  const next=await getAircraft(type,progress=>{if(request===aircraftRequest)load.update(progress);},initialLivery);if(request!==aircraftRequest)return false;
   // Reconcile changes made to the livery while the model was loading.
   let selected,applied,retries=0;do{
    const requestedLivery=desiredLivery;
@@ -437,7 +443,9 @@ function resize(){cancelCameraGestures();display.requestResize();if(camMode==='o
 addEventListener('resize',resize);
 let running=true;
 async function start(){
- try{await plane.load();fixAircraftWingShading(plane);sim.chuteAvailable=!!plane.hasDragChute;sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
+ try{const line=document.querySelector('.loading-line i');line.classList.add('progress');
+ await preloadAircraft('b747',{priority:'high',onProgress:progress=>{line.style.width=Math.floor(progress.fraction*100)+'%';$('#loadingText').textContent=progressText(progress)+(progress.fraction>=1?' · 正在构建模型…':'');}});
+ await plane.load();fixAircraftWingShading(plane);sim.chuteAvailable=!!plane.hasDragChute;sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
  // Parked aircraft share geometry and textures, with animations fixed at their current neutral state.
  for(const [x,z] of [[-1200,-390],[-510,-390],[180,-390],[640,-390]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=-Math.PI/2;world.softShadow(x+6,z+2,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=$('#quality')?.value!=='low';parkedAircraft.push(p);}
  addCabinLights(plane);syncCabinTime(plane);

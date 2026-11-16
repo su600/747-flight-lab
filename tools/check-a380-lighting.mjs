@@ -2,6 +2,7 @@
 // Parse the real local GLBs with Three's GLTFLoader/MeshoptDecoder, without a
 // server or WebGL. Node stubs image decoding only; all geometry, materials,
 // skeletons, hierarchy and the aircraft's load/centering path are real.
+import '../tests/webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

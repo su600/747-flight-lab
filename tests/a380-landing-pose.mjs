@@ -2,6 +2,7 @@
 // flap surfaces may move. Any other skin that moves lifts off the wing. The left wing
 // is the reference: it has no moving skins except the flaps.
 // Run: node tests/a380-landing-pose.mjs.
+import './webp-image-stub.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import * as T from 'three';

@@ -290,6 +290,7 @@ dialog .primary-btn{margin-top:14px}
 .loading-number{font:italic 800 clamp(96px,16vw,150px)/1 var(--num);letter-spacing:-.04em;background:linear-gradient(120deg,#fff 30%,var(--cyan));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 10px 40px rgba(85,217,255,.35))}
 .loading-line{width:240px;height:2px;margin:26px 0 20px;background:rgba(255,255,255,.12);overflow:hidden;border-radius:2px}
 .loading-line i{display:block;width:40%;height:100%;background:linear-gradient(90deg,transparent,var(--cyan),transparent);animation:scan 1.3s var(--ease) infinite}
+.loading-line i.progress{width:0;animation:none;background:var(--cyan);transition:width .25s var(--ease)}
 @keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(260%)}}
 #loading h2{font-size:18px;font-weight:600;letter-spacing:.08em}
 #loading p{margin-top:10px;font:500 12px/1.6 var(--mono);letter-spacing:.08em;color:var(--t3)}
@@ -435,6 +436,7 @@ dialog .primary-btn{margin-top:14px}
 /* ---------- Aircraft download bar ---------- */
 #loadBar{position:fixed;z-index:60;top:0;left:0;right:0;height:3px;background:rgba(255,255,255,.08);pointer-events:none}
 #loadBar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan-d),var(--cyan));box-shadow:0 0 12px rgba(85,217,255,.7);transition:width .25s var(--ease)}
+#loadProgress{position:fixed;top:66px;left:50%;transform:translateX(-50%);padding:7px 12px;border-radius:6px;background:rgba(6,19,29,.92);color:#fff;font:500 12px/1.4 var(--mono);white-space:nowrap}
 #loadBar.busy i{background:linear-gradient(90deg,var(--cyan-d),var(--cyan),var(--cyan-d));background-size:200% 100%;animation:loadbusy 1s linear infinite}
 @keyframes loadbusy{to{background-position:-200% 0}}
 
