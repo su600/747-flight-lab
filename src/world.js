@@ -9,7 +9,11 @@ import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTe
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
 // Heights of the far-field ground layers (metres). Layers that can overlap are at least 4 cm apart; the coast stack 15 cm.
-export const COAST_Y={patch:-.01,sea:.15,foam:.3,sand:.45};
+// Heights (metres) of every ground layer. The renderer uses a logarithmic depth buffer, which writes gl_FragDepth in the
+// shader, so polygonOffset has no effect on it: layers that are close in height z-fight at distance. Each layer below is
+// at least 5 cm from its neighbours, and the big grass plane sits deepest.
+export const GROUND_Y={grass:-.6,patch:-.4,mow:-.2,rubber:.078,asphalt:.03,runway:.05,taxi:.045,paint:.074,yellowPaint:.078};
+export const COAST_Y={sea:.15,foam:.3,sand:.45};
 export const GRASS_Z0=-50000,GRASS_Z1=5150;
 // Large ground quads are tessellated (about 250 m cells): with a logarithmic depth buffer, two triangles spanning
 // kilometres interpolate depth poorly at grazing angles and the grass beneath showed through the apron.
@@ -32,20 +36,17 @@ export class World{
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
   // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
   // in green streaks at long range where the depth buffer cannot separate the layers.
-  this.ground(0,(GRASS_Z0+GRASS_Z1)/2,100000,GRASS_Z1-GRASS_Z0,grass,-.05);
+  this.ground(0,(GRASS_Z0+GRASS_Z1)/2,100000,GRASS_Z1-GRASS_Z0,grass,GROUND_Y.grass);
   // Mowed stripes beside the runway and soft far-field patches break up the horizon.
-  // Mowing stripes and far patches sit on the grass; polygon offset wins the depth test against it at any distance,
-  // which a few centimetres of height cannot do with a depth buffer over several kilometres.
-  const coplanar=m=>{m.polygonOffset=true;m.polygonOffsetFactor=-4;m.polygonOffsetUnits=-4;return m;};
-  const mowA=coplanar(mat('#78905f',.95)),mowB=coplanar(mat('#869d68',.95));for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,-.045);
+  const mowA=mat('#78905f',.95),mowB=mat('#869d68',.95);for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,GROUND_Y.mow);
   // Far-field colour patches overlap each other and the coast, so they resolve by draw order (renderOrder) instead of by depth.
-  const patchMats=['#9a9c66','#667f55','#86996a','#758f68','#a7a173','#5f7a52'].map(c=>coplanar(new T.MeshStandardMaterial({color:c,roughness:.95,depthWrite:false})));
+  const patchMats=['#9a9c66','#667f55','#86996a','#758f68','#a7a173','#5f7a52'].map(c=>new T.MeshStandardMaterial({color:c,roughness:.95}));
   for(let i=0;i<26;i++){
    const px=(rnd()-.5)*16000,pz=600+rnd()*4200,pw=500+rnd()*1700,pd=300+rnd()*900;
    // Keep each patch on land: its far edge ends before the beach.
    const far=Math.min(pz+pd/2,GRASS_Z1-250),near=pz-pd/2;
    if(far-near<80)continue;
-   this.ground(px,(near+far)/2,pw,far-near,patchMats[i%6],COAST_Y.patch).renderOrder=-49+i*.01;
+   this.ground(px,(near+far)/2,pw,far-near,patchMats[i%6],GROUND_Y.patch).renderOrder=-49+i*.01;
   }
   const islandShape=new T.Shape();islandShape.moveTo(-.5,-.24);islandShape.lineTo(-.37,-.5);islandShape.lineTo(.34,-.5);islandShape.lineTo(.5,-.18);islandShape.lineTo(.43,.34);islandShape.lineTo(.22,.5);islandShape.lineTo(-.37,.43);islandShape.lineTo(-.5,.12);islandShape.closePath();
   const islandGeo=new T.ShapeGeometry(islandShape);islandGeo.rotateX(-Math.PI/2);
@@ -101,7 +102,7 @@ export class World{
   }
   groundRects([...holdSolid,...holdDashed],yellow,.081,84);
   // Rubber deposits in the touchdown zones.
-  for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),.078);}
+  for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),GROUND_Y.rubber);}
   for(let x=-1890;x<1900;x+=60)if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);
   for(let x=-1800;x<=1800;x+=60)this.lamp(x,.16,-130,0x36c982);
   for(let x=-1890;x<1900;x+=180){this.box(x,.55,-46,5,1.1,.22,mat('#272f25'));this.label('A  →',x,.7,-45.83,4,1,false,'#f2cf6a');}
