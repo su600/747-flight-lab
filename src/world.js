@@ -15,6 +15,14 @@ const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_an
 export const GROUND_Y={grass:-.6,patch:-.4,mow:-.2,rubber:.078,asphalt:.03,runway:.05,taxi:.045,paint:.074,yellowPaint:.078};
 export const COAST_Y={sea:.15,foam:.3,sand:.45};
 export const GRASS_Z0=-50000,GRASS_Z1=5150;
+// Ground layers are painted in draw order rather than resolved by depth. They never write depth, so two layers at the same
+// height cannot fight over a pixel, even on phones whose depth buffers have 16 bits. Objects above the ground are unaffected:
+// they are drawn after the ground and still depth-test against each other. Clones are cached per source material.
+const flatMaterials=new Map();
+export function flatGround(m){
+ if(!flatMaterials.has(m.uuid)){const c=m.clone();c.depthWrite=false;c.polygonOffset=false;flatMaterials.set(m.uuid,c);}
+ return flatMaterials.get(m.uuid);
+}
 // Large ground quads are tessellated (about 250 m cells): with a logarithmic depth buffer, two triangles spanning
 // kilometres interpolate depth poorly at grazing angles and the grass beneath showed through the apron.
 const groundPlanes=new Map();
@@ -22,14 +30,14 @@ function groundPlane(w,d){const sx=Math.min(160,Math.max(1,Math.round(w/250))),s
 export class World{
  constructor(scene,renderer){this.scene=scene;this.renderer=renderer;this.lamps=[];this.lampData=[];this.lampMesh=null;this.time='day';this.clouds=[];this.t=0;this.build();}
  box(x,y,z,w,h,d,m,shadow=false){const o=new T.Mesh(boxGeo(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;o.castShadow=shadow;this.scene.add(o);return o;}
- ground(x,z,w,d,m,y=0){const o=new T.Mesh(groundPlane(w,d),m);o.scale.set(w,d,1);o.rotation.x=-Math.PI/2;o.position.set(x,y,z);o.receiveShadow=true;o.matrixAutoUpdate=false;o.updateMatrix();
+ ground(x,z,w,d,m,y=0){const o=new T.Mesh(groundPlane(w,d),flatGround(m));o.scale.set(w,d,1);o.rotation.x=-Math.PI/2;o.position.set(x,y,z);o.receiveShadow=true;o.matrixAutoUpdate=false;o.updateMatrix();
   // Render pavement layers from bottom to top; equal-depth fragments then have a stable winner.
   o.renderOrder=Math.round(y*1000);this.scene.add(o);return o;}
  line(points,color,width=1){const m=new T.LineBasicMaterial({color,linewidth:width});const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));const o=new T.Line(g,m);this.scene.add(o);return o;}
  label(text,x,y,z,w,h,ground=false,fg='#f5f3dc',bg=null){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);}ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';let fontSize=175;ctx.font=`bold ${fontSize}px Arial`;while(fontSize>54&&ctx.measureText(text).width>930){fontSize-=8;ctx.font=`bold ${fontSize}px Arial`;}ctx.fillText(text,512,132,960);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:T.DoubleSide});const o=new T.Mesh(new T.PlaneGeometry(w,h),m);o.position.set(x,y,z);if(ground)o.rotation.x=-Math.PI/2;this.scene.add(o);return o;}
  build(){
   const scene=this.scene;scene.fog=new T.FogExp2(0x8fbde8,.000055);
-  this.sky=new Sky();this.sky.scale.setScalar(200000);scene.add(this.sky);const u=this.sky.material.uniforms;u.skyTint={value:new T.Vector3(.45,.72,1.7)};this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('varying vec3 vWorldPosition;','uniform vec3 skyTint;\nvarying vec3 vWorldPosition;').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyTint, 1.0 );');this.sky.material.customProgramCacheKey=()=> 'sky-day-blue-tint-v1';this.sky.material.needsUpdate=true;u.turbidity.value=2.5;u.rayleigh.value=.7;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
+  this.sky=new Sky();this.sky.scale.setScalar(200000);this.sky.renderOrder=-1000;scene.add(this.sky);const u=this.sky.material.uniforms;u.skyTint={value:new T.Vector3(.45,.72,1.7)};this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('varying vec3 vWorldPosition;','uniform vec3 skyTint;\nvarying vec3 vWorldPosition;').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyTint, 1.0 );');this.sky.material.customProgramCacheKey=()=> 'sky-day-blue-tint-v1';this.sky.material.needsUpdate=true;u.turbidity.value=2.5;u.rayleigh.value=.7;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
   this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
@@ -76,7 +84,8 @@ export class World{
   for(const x of [-1750,-850,200,1550])this.ground(x,-75,34,160,taxi,.06);
   // Apron entrances through the grass islands, wide enough for the fillets.
   for(const x of [-1030,235])this.ground(x,-160,64,40,taxi,.046);
-  this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi,standPad,lane];
+  // Weather darkens and wets the materials the ground meshes actually draw with: the flat clones, except the instanced turf.
+  this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi,standPad,lane].map((m,i)=>i===1?m:flatGround(m));
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
   this.ground(0,-130,3760,.3,yellow,.065);
   // ICAO runway, taxiway and apron paint (threshold keys, aiming point, touchdown zone, lead-on lines, signs).

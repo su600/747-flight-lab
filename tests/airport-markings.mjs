@@ -26,7 +26,7 @@ assert(ap.yellow.some(([x,z,l])=>z===TAXILANE_Z&&l>2000),'apron taxilane centrel
 assert.equal(ap.black.length,ap.yellow.length,'every yellow apron line has a black contrast border');
 const world=readFileSync(new URL('../src/world.js',import.meta.url),'utf8'),main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 assert.match(world,/function groundPlane\(w,d\)/,'large ground quads are tessellated');
-assert.match(world,/new T\.Mesh\(groundPlane\(w,d\),m\)/);
+assert.match(world,/new T\.Mesh\(groundPlane\(w,d\),flatGround\(m\)\)/);
 assert.doesNotMatch(world,/const concrete=mat\(/,'apron concrete no longer shares the cached tree material');
 assert.match(main,/\[\[-1200,-406\],\[-510,-406\],\[180,-406\],\[640,-406\]\]\)\{[^}]*p\.rotation\.y=Math\.PI\/2/,'parked 747s are nose-in');
 console.log('Airport markings passed: ICAO runway paint, taxiway lead-on lines, apron stands and tessellated ground.');
