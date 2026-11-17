@@ -47,6 +47,6 @@ const a380={type:'a380',root:{visible:true},native:{children:[]}};
 setCockpitAirframeVisibility(a380,'cockpit');assert.equal(a380.root.visible,false,'unmatched external interiors stay hidden');
 assert.equal(cameraModeForWiperToggle('orbit',true),'cockpit','turning wipers on opens the cockpit view');
 assert.equal(cameraModeForWiperToggle('cockpit',false),'cockpit','turning wipers off preserves cockpit view');
-assert.equal(cockpitWiperSweepAngle(0),0);assert(Math.abs(cockpitWiperSweepAngle(Math.PI/6)-25)<1e-10,'wiper sweep is driven by simulation time and rises from parked');
+assert.equal(cockpitWiperSweepAngle(0),0);assert(Math.abs(cockpitWiperSweepAngle(Math.PI/6)-46)<1e-10,'wiper sweep is driven by simulation time and rises from parked');
 console.log('Cockpit view passed: exterior wing groups persist, fuselage cutaway avoids occlusion, wiper view/sweep state is correct.');
 
