@@ -4,7 +4,7 @@ export const A380_REALITY={
  UAE:{status:'real',note:'阿联酋航空 A380-800（如 A6-EDA）：全白机身、红绿黑三色垂尾、金色 Emirates 与阿拉伯文机身标识。'},
  DLH:{status:'real',note:'汉莎航空 A380-800（D-AIMA 等）：白色机身、深蓝垂尾和黄色圆形鹤标、深蓝 Lufthansa 字样。'},
  BAW:{status:'real',note:'英国航空 A380-800（G-XLEA 等）：深蓝下机身与发动机、红白蓝英国国旗垂尾、红色 Speedmarque。'},
- CSN:{status:'real',note:'中国南方航空 A380-800（B-6136 等）：天蓝垂尾配白边红色木棉花；深蓝色机头包到驾驶舱窗下，并沿主舱窗下方延伸到机身后段，上沿是穿过主舱窗的天蓝细条，下沿是金色细线和天蓝条；上舱高度的宋体“中国南方航空”与衬线体 CHINA SOUTHERN。'},
+ CSN:{status:'real',note:'南航 A380-800（B-6136）：天蓝垂尾，深蓝机头与蓝带，白色机身。'},
  CCA:{status:'none',note:'国航没有购买过 A380，真机无此涂装；此处是国航现行涂装的兼容适配。'},
  CEA:{status:'none',note:'东航没有购买过 A380，真机无此涂装；此处是东航现行涂装的兼容适配。'},
  CHH:{status:'none',note:'海航没有购买过 A380，真机无此涂装；此处是海航红色垂尾涂装的兼容适配。'},
