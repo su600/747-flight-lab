@@ -8,6 +8,9 @@ import {AirportMarkings} from './world/airport-markings.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
+// Heights of the far-field ground layers (metres). Layers that can overlap are at least 4 cm apart; the coast stack 15 cm.
+export const COAST_Y={patch:-.01,sea:.15,foam:.3,sand:.45};
+export const GRASS_Z0=-50000,GRASS_Z1=5150;
 // Large ground quads are tessellated (about 250 m cells): with a logarithmic depth buffer, two triangles spanning
 // kilometres interpolate depth poorly at grazing angles and the grass beneath showed through the apron.
 const groundPlanes=new Map();
@@ -26,10 +29,24 @@ export class World{
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
   this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
-  const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;this.ground(0,0,100000,100000,grass,-.05);
+  const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
+  // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
+  // in green streaks at long range where the depth buffer cannot separate the layers.
+  this.ground(0,(GRASS_Z0+GRASS_Z1)/2,100000,GRASS_Z1-GRASS_Z0,grass,-.05);
   // Mowed stripes beside the runway and soft far-field patches break up the horizon.
-  const mowA=mat('#78905f',.95),mowB=mat('#869d68',.95);for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,-.045);
-  for(let i=0;i<26;i++){const m=mat(['#9a9c66','#667f55','#86996a','#758f68','#a7a173','#5f7a52'][i%6],.95);this.ground((rnd()-.5)*16000,600+rnd()*4200,500+rnd()*1700,300+rnd()*900,m,-.049).renderOrder=-49+i*.01;}
+  // Mowing stripes and far patches sit on the grass; polygon offset wins the depth test against it at any distance,
+  // which a few centimetres of height cannot do with a depth buffer over several kilometres.
+  const coplanar=m=>{m.polygonOffset=true;m.polygonOffsetFactor=-4;m.polygonOffsetUnits=-4;return m;};
+  const mowA=coplanar(mat('#78905f',.95)),mowB=coplanar(mat('#869d68',.95));for(let i=0;i<22;i++)this.ground(0,60+i*14,4300,14,i%2?mowA:mowB,-.045);
+  // Far-field colour patches overlap each other and the coast, so they resolve by draw order (renderOrder) instead of by depth.
+  const patchMats=['#9a9c66','#667f55','#86996a','#758f68','#a7a173','#5f7a52'].map(c=>coplanar(new T.MeshStandardMaterial({color:c,roughness:.95,depthWrite:false})));
+  for(let i=0;i<26;i++){
+   const px=(rnd()-.5)*16000,pz=600+rnd()*4200,pw=500+rnd()*1700,pd=300+rnd()*900;
+   // Keep each patch on land: its far edge ends before the beach.
+   const far=Math.min(pz+pd/2,GRASS_Z1-250),near=pz-pd/2;
+   if(far-near<80)continue;
+   this.ground(px,(near+far)/2,pw,far-near,patchMats[i%6],COAST_Y.patch).renderOrder=-49+i*.01;
+  }
   const islandShape=new T.Shape();islandShape.moveTo(-.5,-.24);islandShape.lineTo(-.37,-.5);islandShape.lineTo(.34,-.5);islandShape.lineTo(.5,-.18);islandShape.lineTo(.43,.34);islandShape.lineTo(.22,.5);islandShape.lineTo(-.37,.43);islandShape.lineTo(-.5,.12);islandShape.closePath();
   const islandGeo=new T.ShapeGeometry(islandShape);islandGeo.rotateX(-Math.PI/2);
   const airportTurf=new T.MeshStandardMaterial({color:'#ffffff',roughness:.96,map:fieldTexture(),bumpMap:grassBumpTexture(),bumpScale:.22});
@@ -44,7 +61,9 @@ export class World{
    const [x,z,w,d]=greenIslands[i];turfTransform.position.set(x,.055,z);turfTransform.scale.set(w,1,d);turfTransform.updateMatrix();turf.setMatrixAt(i,turfTransform.matrix);
   }
   turf.instanceMatrix.needsUpdate=true;turf.receiveShadow=true;turf.castShadow=false;scene.add(turf);
-  this.waterNormal=waterNormalTexture();this.waterNormal.repeat.set(28,9);const sea=new T.MeshStandardMaterial({color:'#176f96',roughness:.24,metalness:.0,normalMap:this.waterNormal,normalScale:new T.Vector2(.09,.09),envMapIntensity:.7});this.ground(0,16000,100000,22000,sea,.02);this.ground(0,5090,100000,200,mat('#3fa8b8'),.024);this.ground(0,4970,100000,140,mat('#e4d6ae'),.03);
+  this.waterNormal=waterNormalTexture();this.waterNormal.repeat.set(28,9);const sea=new T.MeshStandardMaterial({color:'#176f96',roughness:.24,metalness:.0,normalMap:this.waterNormal,normalScale:new T.Vector2(.09,.09),envMapIntensity:.7});// Coast layers sit 15 cm apart (not millimetres): 5 km out the depth buffer cannot tell layers closer than that apart, which
+  // showed up as flickering streaks along the shore. The offset is invisible from the airport.
+  this.ground(0,16000,100000,22000,sea,COAST_Y.sea);this.ground(0,5090,100000,200,mat('#3fa8b8'),COAST_Y.foam);this.ground(0,4970,100000,140,mat('#e4d6ae'),COAST_Y.sand);
   const asphalt=mat('#343e42',.88);asphalt.map=pavementTexture('#4a5254',14,{stains:26});this.ground(0,0,3900,82,asphalt,.03);
   const runway=mat('#424c51',.82);runway.map=pavementTexture('#50575a',16,{stains:30});this.ground(0,0,3800,60,runway,.05);
   // Apron: 7.5 m concrete slabs; each stand gets older, oil-stained slabs and the taxilane a smoother, tyre-polished strip.
