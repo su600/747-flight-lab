@@ -87,7 +87,10 @@ export class Aircraft{
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
-  for(const part of raw.slice(0,3)){const group=parseAC(part.ac);this.native.add(group);if(part.n==='747-400_wings')this.wingSurface=group;this.bind(group,part.doc);}
+  for(const part of raw.slice(0,3)){const group=parseAC(part.ac);this.native.add(group);if(part.n==='747-400_wings')this.wingSurface=group;this.bind(group,part.doc);
+   // Replaced by the shared cockpit/exterior blades on the forward panes.
+   if(part.n==='747-400_fuselage')for(const side of ['LH','RH'])for(const suffix of ['','.arm','.blade']){const legacy=group.getObjectByName(side+'wiper'+suffix);if(legacy)legacy.visible=false;}
+  }
   const engineBase=parseAC(raw[3].ac);
   for(const [x,y,z] of [[4.83,-21.23,-1.99],[-2.67,-13.46,-2.60],[-2.67,13.46,-2.60],[4.83,21.23,-1.99]]){const g=engineBase.clone(true);g.position.copy(fg(x,y,z));this.native.add(g);this.bind(g,raw[3].doc);}
   this.native.traverse(o=>{if(o.isMesh&&o.userData.texture==='BOE.png'){const mats=Array.isArray(o.material)?o.material:[o.material];this.liveryMats.push(...mats);}});

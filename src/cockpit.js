@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {Aircraft,parseAC} from './aircraft.js';
 import {createCockpitWipers} from './cockpit-wipers.js';
+import {createCockpitWindshield} from './cockpit-windshield.js';
 export class Cockpit extends Aircraft{
  async loadInterior(scale,attitudeCanvas){
   const origin=new T.Group();origin.position.set(-25.6,2.65,0);this.native.add(origin);this.native.scale.copy(scale);
@@ -12,6 +13,7 @@ export class Cockpit extends Aircraft{
   }
   this.root.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;for(const m of Array.isArray(o.material)?o.material:[o.material]){m.metalness=.05;m.roughness=.85;}}});
   this.wiperBlades=createCockpitWipers(this.root,scale);
+  this.windshield=createCockpitWindshield(this.root,scale);
   this.pfd=new T.CanvasTexture(attitudeCanvas);this.pfd.colorSpace=T.SRGBColorSpace;
   this.navigation=document.createElement('canvas');this.navigation.width=this.navigation.height=256;this.navTex=new T.CanvasTexture(this.navigation);this.navTex.colorSpace=T.SRGBColorSpace;
   this.engineCanvas=document.createElement('canvas');this.engineCanvas.width=this.engineCanvas.height=256;this.engineTex=new T.CanvasTexture(this.engineCanvas);this.engineTex.colorSpace=T.SRGBColorSpace;

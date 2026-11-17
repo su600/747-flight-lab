@@ -19,7 +19,8 @@ export function cameraModeForWiperToggle(cameraMode,wipersOn){
  return wipersOn&&cameraMode!=='cockpit'?'cockpit':cameraMode;
 }
 
-// 0 is parked (flat on the lower windshield edge); the sweep rises from 0 to 50 degrees and back.
+// Measured forward-pane corners require just over 90 degrees from the lower edge.
+export const COCKPIT_WIPER_MAX_ANGLE=92;
 export function cockpitWiperSweepAngle(time){
- return (1-Math.cos((Number(time)||0)*3))/2*50;
+ return (1-Math.cos((Number(time)||0)*3))/2*COCKPIT_WIPER_MAX_ANGLE;
 }
