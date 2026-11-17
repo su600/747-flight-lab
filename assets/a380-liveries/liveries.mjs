@@ -206,7 +206,8 @@ export const ART={
  AF1_CLASSIC:{real:false,draw(s){
   const CY='#6cb4e0',NAVY='#143a6b';
   fillBase(s,'#f5f6f7');
-  const top=interp([[37,-5.2],[30,-6.0],[10,-6.0],[-20,-6.0],[-37.5,-4.5]]);
+  // The blue cove wraps the nose tip and rises to just under the cockpit glazing, as on the real aircraft.
+  const top=interp([[37,-3.1],[34,-3.9],[31,-4.7],[27,-5.5],[22,-5.95],[10,-6.0],[-20,-6.0],[-37.5,-4.5]]);
   s.poly([...xs(37,-37.5).map(x=>[x,top(x)]),[-38.5,-12],[38,-12]],CY);
   s.curve(xs(36,-34,3).map(x=>[x,top(x)+.35]),{stroke:NAVY,width:.16});
   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,'#f1f3f5'));
@@ -220,14 +221,18 @@ export const ART={
   fillBase(s,'#f5f6f7');
   const top=interp([[37,-5.0],[30,-6.1],[10,-6.1],[-20,-6.0],[-37.5,-4.5]]);
   s.poly([...xs(37,-37.5).map(x=>[x,top(x)]),[-38.5,-12],[38,-12]],NAVY);
-  s.curve(xs(36,-34,3).map(x=>[x,top(x)+.35]),{stroke:RED,width:.2});
+  // Wide red cheatline covering the main-deck window row (y ≈ -5.45 m): from the navy edge up to 1.1 m above it.
+  const cheatTop=x=>top(x)+1.1;
+  const cheatX=xs(36,-34,3);
+  s.poly([...cheatX.map(x=>[x,cheatTop(x)]),...cheatX.slice().reverse().map(x=>[x,top(x)+.02])],RED);
   s.clip(finShape(),c=>{
    c.rect(-40,-2,-15,13,'#f5f6f7');
    for(let i=0;i<7;i++){c.poly([...finEdge(.92-i*.13,.98-i*.13-.02+(i%2?0:0),.0,2),...finEdge(.92-i*.13-.065,.98-i*.13-.085,.0,2).reverse()],i%2?'#f5f6f7':RED);}
    c.poly([...finEdge(.97,1.0,0,2),...finEdge(.62,.7,0,2).reverse()].slice(0,0),NAVY);
    c.poly([[-24,12.5],[-30.5,12.5],[-27.5,8.8],[-22.5,6.5]],NAVY);
   });
-  s.text('UNITED STATES OF AMERICA',9,-4.3,{cap:1.1,font:'Georgia',fill:'#1f3560',width:33,weight:'normal'});
+  // The national lettering sits 6 m further aft than on the classic scheme, clear of the forward door and the nose.
+  s.text('UNITED STATES OF AMERICA',3,-4.3,{cap:1.1,font:'Georgia',fill:'#1f3560',width:33,weight:'normal'});
  }},
  // --------------------------------------------------------- Freight adaptations
  fedex:{real:false,draw(s){
