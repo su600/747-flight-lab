@@ -200,12 +200,20 @@ def paint_body(im, kind):
             rect(d, (0,dy+186,2358,dy+228), (156,206,228))
             rect(d, (0,dy+229,2358,dy+280), (190,218,229))
             line(d, [(0,dy+185),(2358,dy+185)], (113,180,212), 1)
+            # The nose is blue as well: the cove wraps the forward fuselage from the nose tip back to the cockpit.
+            # A sloped edge from the crown down to the belt, not a hard vertical step.
+            if side == 0:
+                nose = [(0,dy),(330,dy),(382,dy+140),(0,dy+140)]
+            else:
+                nose = [(2358,dy),(2028,dy),(1976,dy+140),(2358,dy+140)]
+            poly(d, nose, (91,164,203))
         elif kind == "2026":
             # Keep the original dark cabin windows above the dark lower paint.
-            rect(d, (0,dy+162,2358,dy+172), RED)
-            rect(d, (0,dy+173,2358,dy+177), GOLD)
-            rect(d, (0,dy+178,2358,dy+280), NAVY)
-            line(d, [(0,dy+179),(2358,dy+179)], (38,62,90), 1)
+            # Red cheatline sits on the main-deck window row (y 154-156 in the UV layout), so the windows sit inside the red band.
+            rect(d, (0,dy+146,2358,dy+160), RED)
+            rect(d, (0,dy+161,2358,dy+164), GOLD)
+            rect(d, (0,dy+165,2358,dy+280), NAVY)
+            line(d, [(0,dy+165),(2358,dy+165)], (38,62,90), 1)
         if kind == "uae":
             # Cabin titles stay clear of both the door and the upper deck windows.
             # Do not mirror the artwork: each side is readable from the outside.
@@ -219,7 +227,8 @@ def paint_body(im, kind):
             title = (560,79,1480,125) if side == 0 else (878,dy+79,1798,dy+125)
             text_fit(im, "UNITED STATES OF AMERICA", title, SERIF, NAVY+(255,), 52, tracking=1.5)
             # Same fore-aft position on both sides, kept away from the cabin doors.
-            seal(d, 230 if side == 0 else 2128, dy+207, 27)
+            # The seal sits about 6 m further aft than before (it was 230 px from the nose tip).
+            seal(d, 420 if side == 0 else 1938, dy+207, 27)
             if kind == "2026":
                 # The official 2026 scheme adds a Stars-and-Bars roundel aft of the cabin title.
                 stars_and_bars(d, 2070 if side == 0 else 288, dy+201, 14)
