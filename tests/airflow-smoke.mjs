@@ -26,4 +26,9 @@ smoke.emit(new T.Vector3(1,2,3),new T.Vector3(1,0,0),.1,1);const positionVersion
 smoke.update(0);assert.equal(posAttribute.version,positionVersion,'paused particles do not dirty position buffers');assert.equal(colorAttribute.version,colorVersion,'paused particles do not dirty color buffers');
 smoke.update(.05);assert.equal(smoke.activeCount,1);assert(colorAttribute.array[3]>0,'live particle fades in');
 smoke.update(.1);assert.equal(smoke.activeCount,0);assert.equal(smoke.alive,0);assert.equal(colorAttribute.array[3],0,'expired particle leaves the active set');
+const index=smoke.next;smoke.emit(new T.Vector3(),new T.Vector3(),2,1);
+const startX=smoke.pos[index*3];smoke.update(.5,8,0);assert(smoke.pos[index*3]>startX,'existing tire pool drifts with the simulated crosswind');
+airflow.setQuality(false,true);assert(airflow.vortex.limit<520&&airflow.contrail.limit<700&&airflow.streakCount<airflow.streakN,'tablet particle and streak budgets are below desktop');
+airflow.setQuality(true);assert(airflow.vortex.limit<=120&&airflow.exhaust.limit<=55&&airflow.smoke.limit<=240,'low quality caps every airborne and runway pool');
+airflow.setReducedMotion(true);assert.equal(airflow.streakCount,0);assert(airflow.profile.emission<.32,'reduced motion suppresses cosmetic emission work without disabling the pools');
 console.log('Landing tire smoke passed: subtle cyan hue is preserved; particle pools update only active, advancing particles.');

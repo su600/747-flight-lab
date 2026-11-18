@@ -155,13 +155,15 @@ assert.equal(plane.animationCoverage,null);assert.equal(plane.native.children[0]
 assert.ok(lamp(first.window));assert.equal(lamp(first.window).visible,false);assert.equal(lamp(first.body),undefined);
 plane.setCabinLights(true);assert.equal(lamp(first.window).visible,true);assert.equal(first.body.material.emissiveIntensity,1);
 plane.setCabinLights(false);assert.equal(lamp(first.window).visible,false);plane.setCabinLights(true);
-plane.update({gear:.25},.1);assert.equal(first.updates.at(-1)[0]['gear/gear[0]/position-norm'],.25);
+const gearState={gear:.25};plane.update(gearState,.1);
+const gearPose=first.updates.at(-1)[0]['gear/gear[0]/position-norm'];assert(gearPose>.25&&gearPose<1,'777 gear follows a damped visual pose');assert.equal(gearState.gear,.25);
 assert.equal(await plane.setLivery('fedex'),true);
 const cargo=bundles.at(-1),cargoLease=leases.at(-1);
 assert.equal(first.disposed,1);assert.equal(first.restored,true);assert.equal(firstLease.disposed,1);
 assert.equal(plane.contact,5.6);assert.deepEqual(plane.dimensions.toArray(),[63.6,18.55,64.7]);assert.equal(plane.native.children[0],cargo.scene);
 const cargoMat=cargo.window.material;plane.setCabinLights(true);assert.equal(cargo.window.material,cargoMat);assert.equal(cargoMat.emissive.getHex(),0);
-plane.update({door:1,mainCargoDoor:.5},.1);assert.equal(cargo.updates.at(-1)[0]['sim/multiplay/generic/float[52]'],.5);
+const cargoState={door:1,mainCargoDoor:.5};plane.update(cargoState,.1);
+const doorPose=cargo.updates.at(-1)[0]['sim/multiplay/generic/float[52]'];assert(doorPose>0&&doorPose<.5,'777 cargo door follows its bound rig with damped motion');assert.equal(cargoState.mainCargoDoor,.5);
 assert.equal(await plane.setLivery('CCA'),true);assert.equal(cargo.disposed,1);assert.equal(cargoLease.disposed,1);
 assert.equal(plane.contact,5.2);assert.deepEqual(plane.dimensions.toArray(),[63.7,18.6,64.8]);assert.equal(lamp(bundles.at(-1).window).visible,true);
 const active=bundles.at(-1);

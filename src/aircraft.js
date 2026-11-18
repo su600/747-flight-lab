@@ -3,6 +3,7 @@ import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {liveryForModel} from './livery-for-model.js';
 import {projectWingtipPoints} from './navigation-lights.js';
+import {createVisualControls,updateVisualControls} from './aircraft-motion.js';
 const ROOT='/assets/aircraft/';
 const LIVERY_TEXTURE_VERSION='20261110-1';
 const VERSIONED_LIVERIES=new Set(['CEA.png','CHH.png','CSN.png','sf.png']);
@@ -83,7 +84,7 @@ export const LIVERIES=[
 
 export class Aircraft{
  static liveryForModel(id,type){return liveryForModel(LIVERIES.find(x=>x.id===id),type);}
- constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;this.groundSettle=0;this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
+ constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;this.groundSettle=0;this.visualControls=createVisualControls();this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
@@ -124,38 +125,41 @@ export class Aircraft{
   }
  }
  value(prop,s){
-  if(prop.includes('position-norm')&&prop.includes('gear/'))return s.gear??1;
+  const v=this.visualControls;
+  if(prop.includes('position-norm')&&prop.includes('gear/'))return v.gear;
   if(prop.includes('steering'))return s.rudder||0;
   if(prop.includes('compression-ft'))return this.gearCompression*2;
   if(prop.includes('compression'))return this.gearCompression;
   if(prop.includes('rollspeed'))return s.onGround?s.speed||0:0;
   // Main bogies keep their airborne tilt until wheel contact, then rotate level.
   if(prop.includes('altitude-agl'))return s.onGround?0:100;
-  if(prop.includes('flap-pos'))return (s.flaps||0)/30;
-  if(prop.includes('aileron'))return (s.aileron||0)*.32;
-  if(prop.includes('elevator'))return (s.elevator||0)*.35;
-  if(prop.includes('rudder-pos'))return (s.rudder||0)*.5;
-  if(prop.includes('spoiler'))return (s.spoiler||0)*.8;
-  if(prop.includes('reverser'))return s.reverse||0;
-  if(prop.includes('cargo1'))return s.door||0;
+  if(prop.includes('flap-pos'))return v.flaps/30;
+  if(prop.includes('aileron'))return v.aileron*.32;
+  if(prop.includes('elevator'))return v.elevator*.35;
+  if(prop.includes('rudder-pos'))return v.rudder*.5;
+  if(prop.includes('spoiler'))return v.spoiler*.8;
+  if(prop.includes('reverser'))return v.reverse;
+  if(prop.includes('cargo1'))return v.door;
   if(prop.includes('wiper'))return s.wipers?(Math.sin((s.time||0)*3)+1)/2:0;
-  if(prop.includes('n1')||!prop)return (s.engine||0)*800;
+  if(prop.includes('n1')||!prop)return v.engine*800;
   return 0;
  }
+ updateVisualControls(s,dt){return updateVisualControls(this.visualControls,s,dt);}
  update(s,dt){
+  this.updateVisualControls(s,dt);
   if(this.type==='b747'){
    const compressionTarget=s.onGround&&(s.gear??1)>.95?.25:0;
    this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
    this.groundSettle=this.gearCompression*.6*this.native.scale.y;
   }else this.groundSettle=0;
   for(const a of this.animations){
-   if(a.type==='visibility'){a.targets.forEach(o=>o.visible=(s.gear??1)>.01);continue;}
+   if(a.type==='visibility'){for(const o of a.targets)o.visible=this.visualControls.gear>.01;continue;}
    let v=this.value(a.prop,s);if(a.table.length){const t=a.table;if(v<=t[0][0])v=t[0][1];else if(v>=t.at(-1)[0])v=t.at(-1)[1];else for(let i=1;i<t.length;i++)if(v<=t[i][0]){v=T.MathUtils.lerp(t[i-1][1],t[i][1],(v-t[i-1][0])/(t[i][0]-t[i-1][0]));break;}}
    v=v*a.factor+a.offset;
    if(a.type==='spin'){a.phase=(a.phase+v*dt*6)%360;v=a.phase;}
    for(const o of a.wrappers){if(a.type==='translate')o.position.copy(a.axis).multiplyScalar(v);else{o.quaternion.setFromAxisAngle(a.axis,v*Math.PI/180);o.position.copy(a.center).sub(_pivot.copy(a.center).applyQuaternion(o.quaternion));}}
   }
-  this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
+  for(let i=0;i<this.lights.length;i++)this.lights[i].visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17);
  }
  async setLivery(id){
   const livery=Aircraft.liveryForModel(id,this.type);if(!livery)return false;

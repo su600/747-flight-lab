@@ -1,6 +1,6 @@
 import {advanceCourse} from '../lesson-course.js';
 import {AIRCRAFT_INFO} from './aircraft-info.js';
-import {$,setText,setHTML} from './dom.js';
+import {$,setText,setAnimatedText} from './dom.js';
 const radians=x=>x*Math.PI/180;
 
 export function createHUD({sim,attitude,keys,touch,getPlane,getManualTakeoffGuide,getCourseProgress,syncThrottleUI,notify}){
@@ -43,9 +43,9 @@ function warningList(){
 function updateUI(){
  document.body.classList.toggle('ground-inspect',sim.mode==='inspect');
  setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[getPlane().type].name:(copilotHidden()&&manualTakeoffLesson()?.join(' · '))||sim.phase);$('#takeControl').hidden=!['takeoff','land'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
- setHTML($('#speedValue'),Math.round(sim.speed*3.6)+'<small> km/h</small>');setText($('#speedKts'),Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
- setHTML($('#altValue'),Math.round(sim.altitude)+'<small> m</small>');setText($('#verticalValue'),'垂直速度 '+(sim.vs>=0?'+':'')+sim.vs.toFixed(1)+' m/s');
- setHTML($('#headingValue'),String(Math.round(sim.heading)%360).padStart(3,'0')+'<small> °</small>');
+ setAnimatedText($('#speedDigits'),Math.round(sim.speed*3.6));setText($('#speedKts'),Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
+ setAnimatedText($('#altDigits'),Math.round(sim.altitude));setText($('#verticalValue'),'垂直速度 '+(sim.vs>=0?'+':'')+sim.vs.toFixed(1)+' m/s');
+ setAnimatedText($('#headingDigits'),String(Math.round(sim.heading)%360).padStart(3,'0'),240);
  setText($('#flightState'),(sim.onGround?'地面':'空中')+' · α '+sim.alpha.toFixed(1)+'° · '+sim.loadFactor.toFixed(1)+' G');
  syncThrottleUI();
  const gearText=Math.abs(sim.gear-sim.gearTarget)>.02?'运动中…':sim.gear>.98?'已放下':'已收起';

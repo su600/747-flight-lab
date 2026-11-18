@@ -110,11 +110,11 @@ const aircraftButtons=['b747','a380','a330','b777'].map(id=>({dataset:{aircraft:
 const all=selector=>selector==='[data-livery]'?liveryButtons:selector==='[data-aircraft]'?aircraftButtons:selector==='.engine-meter'?[{},{},{},{}]:[];
 const $=selector=>{if(!elements.has(selector))elements.set(selector,{textContent:'',innerHTML:'',value:'',title:'',disabled:false,hidden:false});return elements.get(selector);};
 let genericAdds=0,genericUpdates=0,wingFixes=0;
-const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,sound:{engine:null},document:{body:{classList:{toggle(){}}}},tailSamples:()=>[],makePitchLimit:()=>()=>40,
- realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},beginLoad:()=>({update(){},done(){}}),preloadAircraft:async()=>{},isPreloaded:()=>false,modelFactory:async type=>{if(type==='a330')return new AccurateA330();throw Error('unexpected model '+type);},fixAircraftWingShading:()=>wingFixes++,addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
+const context=vm.createContext({T,Aircraft,AccurateA330,LIVERIES,$,all,console,sound:{engine:null},document:{body:{classList:{toggle(){}}}},tailSamples:()=>[],makePitchLimit:()=>()=>40,renderLow:false,
+ realityFor,REALITY_TAGS:{real:'真机',family:'同系列',none:'无真机'},beginLoad:()=>({update(){},done(){}}),preloadAircraft:async()=>{},isPreloaded:()=>false,modelFactory:async type=>{if(type==='a330')return new AccurateA330();throw Error('unexpected model '+type);},fixAircraftWingShading:()=>wingFixes++,applyAircraftMaterialQuality:()=>{},addCabinLights:()=>genericAdds++,updateCabinLights:()=>genericUpdates++,notify:()=>{}});
 vm.runInContext(`
  const world={time:'day'},sim={gear:1,flaps:0,engine:0,onGround:true,door:0,doorTarget:0};
- const scene=new T.Scene(),window={flightLab:{}},airflow={},display={diagnostics:()=>({})},renderer={info:{render:{calls:0,triangles:0}}};let fps=0;const warningList=()=>[];
+ const scene=new T.Scene(),window={flightLab:{}},airflow={},display={diagnostics:()=>({})},rendering={diagnostics:()=>({})},renderer={info:{render:{calls:0,triangles:0}}};let fps=0;const warningList=()=>[];
  let plane=new Aircraft();scene.add(plane.root);
  const originalEmitters={engines:[],tips:[],mainGear:[]};let originalAbout='<p>747</p>';
  const aircraftCache=new Map([['b747',Promise.resolve(plane)]]);let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';

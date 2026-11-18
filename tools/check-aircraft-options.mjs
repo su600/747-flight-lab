@@ -209,6 +209,7 @@ function verifyDayNightLighting(){
   scene:{environment:null,environmentIntensity:0,background:null,fog:{color:color(),density:0}},
   renderer:{toneMappingExposure:0},
   sun:{intensity:0,color:color()},
+  fill:{intensity:0,color:color()},
   hemi:{intensity:0,color:color(),groundColor:color()},
   sky:{visible:true,material:{uniforms:{sunPosition:{value:vector},turbidity:{value:0},rayleigh:{value:0},mieCoefficient:{value:0}}}},
   stars:{visible:false},envs:{},
@@ -224,7 +225,7 @@ function verifyDayNightLighting(){
   city:world.cityMat.emissiveIntensity,glass:world.glass.emissiveIntensity,
   glow:world.glow.material.opacity,glowVisible:world.glow.visible,lampScale:lampScales.at(-1),
   environment:world.scene.environment.mode};
- close(day.sun,3.2,'day sunlight');close(day.hemi,1.15,'day ambient light');
+ close(day.sun,2.65,'day sunlight');close(day.hemi,1.15,'day ambient light');
  assert.equal(day.sky,true);assert.equal(day.stars,false);assert.equal(day.background,null);
  close(day.city,0,'day city glow');close(day.glass,0,'day terminal-window glow');
  close(day.glow,0,'day runway-light glow');assert.equal(day.glowVisible,false);close(day.lampScale,1,'day runway-lamp scale');
@@ -233,11 +234,11 @@ function verifyDayNightLighting(){
  world.setTime('night');
  assert.equal(world.time,'night');assert.equal(world.sky.visible,false,'night hides the daylight sky');
  assert.equal(world.stars.visible,true,'night shows stars');assert.equal(world.scene.background.getHex(),0x081426,'night sky background');
- close(world.sun.intensity,.35,'night sunlight');close(world.hemi.intensity,.45,'night ambient light');
- close(world.scene.environmentIntensity,.55,'night environment intensity');close(world.cityMat.emissiveIntensity,.9,'night city glow');
+ close(world.sun.intensity,.28,'night sunlight');close(world.hemi.intensity,.7,'night ambient light');
+ close(world.scene.environmentIntensity,.62,'night environment intensity');close(world.cityMat.emissiveIntensity,.9,'night city glow');
  close(world.glass.emissiveIntensity,.1,'night terminal-window glow');close(world.glow.material.opacity,1,'night runway-light glow');
  assert.equal(world.glow.visible,true);close(lampScales.at(-1),2,'night runway-lamp scale');
- close(world.scene.fog.density,.00008,'night fog density');assert.equal(world.scene.environment.mode,'night');
+ close(world.scene.fog.density,.000055,'night fog density');assert.equal(world.scene.environment.mode,'night');
 
  world.setTime('day');
  assert.equal(world.sky.visible,true,'returning to day restores the sky');assert.equal(world.stars.visible,false,'returning to day hides stars');

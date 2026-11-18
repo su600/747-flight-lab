@@ -1,6 +1,6 @@
 import {clamp,THRUST_DETENTS} from './flight.js';
 import {createCameraGestures} from './camera-gestures.js';
-import {$,all} from './ui/dom.js';
+import {$,all,setAnimatedText} from './ui/dom.js';
 
 export function createInput({sim,renderer,keys,touch,surface,manualControl,notify,toggleGear,flapStep,setCam,beginCameraGesture,rotateCamera,panCamera,zoomCamera,cancelCameraGestures,setCancelCameraGestures}){
 // ---- Thrust lever ---------------------------------------------------------
@@ -15,11 +15,15 @@ function setThrottle(value,snap=false){
 }
 function syncThrottleUI(){
  const value=clamp(sim.throttle,0,1),pct=Math.round(value*100);
- throttleEl.style.setProperty('--p',String(value));
- throttleEl.setAttribute('aria-valuenow',String(pct));
- throttleEl.setAttribute('aria-valuetext',detentName(value)+' '+pct+'%');
- const det=THRUST_DETENTS.find(d=>Math.abs(d.value-value)<.05);
- $('#throttleValue').textContent=(det?det.en+' ':'')+pct+'%';
+ const det=THRUST_DETENTS.find(d=>Math.abs(d.value-value)<.05),text=(det?det.en+' ':'')+pct+'%';
+ if(throttleEl.dataset.value!==String(value)){
+  throttleEl.dataset.value=String(value);
+  throttleEl.style.setProperty('--p',String(value));
+ }
+ if(throttleEl.getAttribute('aria-valuenow')!==String(pct))throttleEl.setAttribute('aria-valuenow',String(pct));
+ const valueText=detentName(value)+' '+pct+'%';
+ if(throttleEl.getAttribute('aria-valuetext')!==valueText)throttleEl.setAttribute('aria-valuetext',valueText);
+ setAnimatedText($('#throttleValue'),text,240);
 }
 function throttleValueFromPointer(event){
  const rect=throttleEl.getBoundingClientRect();

@@ -373,7 +373,7 @@ export class A380Aircraft extends Aircraft {
   }catch(error){this.dispose();throw error;}
  }
  update(s,dt){
-  super.update(s,dt);this.paint?.sync();this.fanPhase=(this.fanPhase+(s.engine||0)*dt*1.8)%1;
+  super.update(s,dt);this.paint?.sync();this.fanPhase=(this.fanPhase+this.visualControls.engine*Math.max(0,dt)*1.8)%1;
   // Drive the GLB's c_gear_comp nose-strut clip from wheel contact, smoothing touchdown and liftoff.
   const compressionTarget=s.onGround&&(s.gear??1)>.95?NOSE_GEAR_LOADED_COMPRESSION:0;
   this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
@@ -381,7 +381,8 @@ export class A380Aircraft extends Aircraft {
   // opposite deflections. Elevator clip direction is reversed relative to the
   // simulation: negative elevator (pull up) raises the trailing edge.
   for(const b of this.bindings){
-   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='gearTilt'?(s.onGround&&(s.gear??1)>.95?0:1):b.control==='elevator'?(1-(s.elevator||0))/2:['rudder','aileron'].includes(b.control)?((s[b.control]||0)+1)/2:b.control==='flaps'?(s.flaps||0)/30:(s[b.control]||0);
+   const visual=this.visualControls;
+   let v=b.control==='engine'?this.fanPhase:b.control==='gearCompression'?this.gearCompression:b.control==='gearTilt'?(s.onGround&&visual.gear>.95?0:1):b.control==='elevator'?(1-visual.elevator)/2:['rudder','aileron'].includes(b.control)?((visual[b.control])+1)/2:b.control==='flaps'?visual.flaps/30:b.control in visual?visual[b.control]:0;
    b.action.time=T.MathUtils.clamp(v,0,1)*b.duration;
   }
   for(const mixer of this.mixers)mixer.update(0);

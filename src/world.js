@@ -5,6 +5,7 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
 import {AirportMarkings} from './world/airport-markings.js';
+import {LIGHTING_PRESETS} from './render-quality.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
@@ -40,7 +41,9 @@ export class World{
   this.sky=new Sky();this.sky.scale.setScalar(200000);this.sky.renderOrder=-1000;scene.add(this.sky);const u=this.sky.material.uniforms;u.skyTint={value:new T.Vector3(.45,.72,1.7)};this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('varying vec3 vWorldPosition;','uniform vec3 skyTint;\nvarying vec3 vWorldPosition;').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyTint, 1.0 );');this.sky.material.customProgramCacheKey=()=> 'sky-day-blue-tint-v1';this.sky.material.needsUpdate=true;u.turbidity.value=2.5;u.rayleigh.value=.7;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
-  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
+  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;
+  this.fill=new T.DirectionalLight(0xb7d2f2,LIGHTING_PRESETS.day.fill);this.fill.position.set(-420,260,360);this.fill.castShadow=false;
+  scene.add(this.sun,this.sun.target,this.fill,this.fill.target);
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
   // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
   // in green streaks at long range where the depth buffer cannot separate the layers.
@@ -402,6 +405,10 @@ export class World{
   const floor=new T.Mesh(new T.CircleGeometry(95,32),new T.MeshBasicMaterial({color:night?0x070b12:dusk?0x6a5a50:0x7d9266}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.5;s.add(floor);
   const pmrem=new T.PMREMGenerator(this.renderer),tex=pmrem.fromScene(s,.02).texture;pmrem.dispose();this.envs[mode]=tex;return tex;
  }
+ restoreEnvironment(){
+  for(const texture of Object.values(this.envs))texture.dispose();
+  this.envs={};this.scene.environment=null;this.setTime(this.time);
+ }
  // A soft contact shadow so aircraft that cast no real shadow still sit on the apron.
  softShadow(x,z,w,d,rotY=0,opacity=.42){
   if(!this.blobTex){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,6,64,64,64);r.addColorStop(0,'rgba(0,0,0,1)');r.addColorStop(.55,'rgba(0,0,0,.55)');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,128,128);this.blobTex=canvasTex(c);this.blobMat=new T.MeshBasicMaterial({map:this.blobTex,transparent:true,depthWrite:false,opacity});}
@@ -423,16 +430,17 @@ export class World{
   this.scene.add(this.stars);
  }
  setTime(mode){
-  this.time=mode;const night=mode==='night',dusk=mode==='dusk',u=this.sky.material.uniforms;
-  this.sun.intensity=night?.35:dusk?2.6:3.2;this.sun.color.set(night?0x9db4ff:dusk?0xffa868:0xfff2d8);
-  this.hemi.intensity=night?.45:dusk?.75:1.15;this.scene.environment=this.envFor(mode);this.scene.environmentIntensity=night?.55:dusk?.8:1;this.hemi.color.set(night?0x6b86bf:dusk?0xffcfa8:0xbddcff);this.hemi.groundColor.set(night?0x1e2a3a:dusk?0x6a5a56:0x72835f);
+  this.time=mode;const night=mode==='night',dusk=mode==='dusk',u=this.sky.material.uniforms,preset=LIGHTING_PRESETS[mode]||LIGHTING_PRESETS.day;
+  this.sun.intensity=preset.sun;this.sun.color.set(night?0xa7bdff:dusk?0xffa868:0xfff2d8);
+  this.fill.intensity=preset.fill;this.fill.color.set(night?0x91ace5:dusk?0xffc79f:0xb7d2f2);
+  this.hemi.intensity=preset.hemi;this.scene.environment=this.envFor(mode);this.scene.environmentIntensity=preset.environment;this.hemi.color.set(night?0x7890c7:dusk?0xffcfa8:0xbddcff);this.hemi.groundColor.set(night?0x243247:dusk?0x6a5a56:0x72835f);
   // Daylight: a slightly lower sun models the airframe with longer shadows, and a cleaner,
   // bluer sky/haze keeps the white fuselage from merging into a washed-out horizon.
   this.sunOffset=new T.Vector3(300,night?160:dusk?90:360,-250);
   if(u.skyTint)u.skyTint.value.set(night||dusk?1:.45,night||dusk?1:.72,night||dusk?1:1.7);u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:2.5;u.rayleigh.value=dusk?2.4:.7;u.mieCoefficient.value=dusk?.02:.005;
   this.sky.visible=!night;this.stars.visible=night;this.scene.background=night?new T.Color('#081426'):null;
-  this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0x8fbde8);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
-  this.renderer.toneMappingExposure=night?1:dusk?.95:.7;
+  this.scene.fog.color.set(preset.fog);this.scene.fog.density=preset.fogDensity;
+  this.renderer.toneMappingExposure=preset.exposure;
   this.cloudMat.color.set(night?0x2c3a58:dusk?0xffb890:0xffffff);this.cloudMat.opacity=night?.7:dusk?.8:.85;
   this.cityMat.emissiveIntensity=night?.9:dusk?.3:0;this.scenery?.setTime(mode);
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
@@ -459,7 +467,16 @@ export class World{
    for(const wheel of vehicle.wheels)wheel.rotation.y+=moved/wheel.userData.radius;
   }
  }
- setQuality(low){this.scenery?.setQuality(low);}
+ setQuality(low,tablet=false){
+  this.scenery?.setQuality(low);
+  const size=tablet?1024:2048;
+  if(this.sun){
+   if(low){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;}
+   else if(this.sun.shadow.mapSize.x!==size){
+    this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(size,size);this.sun.shadow.needsUpdate=true;
+   }
+  }
+ }
  update(dt,pos){
   this.scenery?.update(dt);
   this.t+=dt;if(this.waterNormal){this.waterNormal.offset.x=(this.t*.0021)%1;this.waterNormal.offset.y=(this.t*.0013)%1;}

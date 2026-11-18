@@ -1,4 +1,5 @@
 import * as T from 'three';
+import {effectQualityProfile} from './render-quality.js';
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const D2R=Math.PI/180;
 const Y=new T.Vector3(0,1,0);
@@ -7,12 +8,12 @@ export const TYRE_SMOKE_RGB=Object.freeze([.84,.90,.925]);
 
 // Round-robin particle pool drawn as soft points, with per-particle colour + alpha.
 class Pool{
- constructor(scene,{count,size,color,additive=false,map=null,expand=false}){
+ constructor(scene,{count,size,color,additive=false,map=null,expand=false,start=.4,end=1.5,fade=1.5,fadeIn=6,wind=.35,drag=.05,buoyancy=0}){
   this.n=count;this.next=0;this.alive=0;this.activeIndices=new Int32Array(count);this.activePosition=new Int32Array(count).fill(-1);this.activeCount=0;
   this.pos=new Float32Array(count*3);this.col=new Float32Array(count*4);
   this.vel=new Float32Array(count*3);this.age=new Float32Array(count).fill(1e3);this.life=new Float32Array(count).fill(1);this.alpha=new Float32Array(count);
   for(let i=0;i<count;i++){this.col.set([color[0],color[1],color[2],0],i*4);}
-  this.rgb=color;
+  this.rgb=color;this.limit=count;this.startScale=start;this.endScale=end;this.fade=fade;this.fadeIn=fadeIn;this.wind=wind;this.drag=drag;this.buoyancy=buoyancy;
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.pos,3));g.setAttribute('color',new T.BufferAttribute(this.col,4));
   this.sizes=expand?new Float32Array(count):null;
   if(this.sizes)g.setAttribute('particleScale',new T.BufferAttribute(this.sizes,1));
@@ -21,15 +22,32 @@ class Pool{
   this.points=new T.Points(g,material);
   this.points.frustumCulled=false;this.points.renderOrder=10;this.points.visible=false;this.wasLive=false;scene.add(this.points);
  }
- emit(p,v,life,alpha){
-  const i=this.next;this.next=(i+1)%this.n;
+ emit(p,v,life,alpha,replace=false){
+  let i;
+  if(this.activeCount>=this.limit){
+   if(!replace||this.activeCount===0)return false;
+   i=this.activeIndices[0];
+  }else{i=this.next;this.next=(i+1)%this.n;}
   if(this.activePosition[i]<0){const slot=this.activeCount++;this.activeIndices[slot]=i;this.activePosition[i]=slot;this.alive=this.activeCount;}
   this.points.visible=true;
   const k=i*3;this.pos[k]=p.x;this.pos[k+1]=p.y;this.pos[k+2]=p.z;
   this.vel[k]=v?v.x:0;this.vel[k+1]=v?v.y:0;this.vel[k+2]=v?v.z:0;
-  this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;if(this.sizes)this.sizes[i]=.4;
+  this.age[i]=0;this.life[i]=life;this.alpha[i]=alpha;if(this.sizes)this.sizes[i]=this.startScale;
+  return true;
  }
- update(dt){
+ setLimit(limit,trimTo=limit){
+  this.limit=Math.max(0,Math.min(this.n,Math.floor(limit)));
+  trimTo=Math.max(0,Math.min(this.limit,Math.floor(trimTo)));
+  while(this.activeCount>trimTo){
+   const i=this.activeIndices[0],last=--this.activeCount;
+   if(last){const moved=this.activeIndices[last];this.activeIndices[0]=moved;this.activePosition[moved]=0;}
+   this.col[i*4+3]=0;this.activePosition[i]=-1;
+  }
+  this.alive=this.activeCount;
+  this.points.geometry.attributes.color.needsUpdate=true;
+  this.points.geometry.attributes.position.needsUpdate=true;
+ }
+ update(dt,windX=0,windZ=0){
   // Empty or paused pools must not scan slots or upload unchanged particle buffers.
   if(this.activeCount===0){if(this.wasLive){this.points.visible=false;this.wasLive=false;}this.alive=0;return;}
   if(dt<=0)return;
@@ -42,8 +60,15 @@ class Pool{
     if(slot<last){const moved=this.activeIndices[last];this.activeIndices[slot]=moved;this.activePosition[moved]=slot;}
     continue;
    }
-   const k=i*3;this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
-   const t=age/this.life[i];this.col[i*4+3]=this.alpha[i]*Math.pow(1-t,1.5)*Math.min(1,age*6);if(this.sizes)this.sizes[i]=.4+1.1*t;slot++;
+   const k=i*3,follow=1-Math.exp(-dt*this.wind),drag=Math.exp(-dt*this.drag);
+   this.vel[k]=(this.vel[k]+(windX-this.vel[k])*follow)*drag;
+   this.vel[k+2]=(this.vel[k+2]+(windZ-this.vel[k+2])*follow)*drag;
+   this.vel[k+1]+=this.buoyancy*dt;
+   this.pos[k]+=this.vel[k]*dt;this.pos[k+1]+=this.vel[k+1]*dt;this.pos[k+2]+=this.vel[k+2]*dt;
+   const t=age/this.life[i],edge=Math.pow(Math.max(0,1-t),this.fade);
+   this.col[i*4+3]=this.alpha[i]*edge*Math.min(1,age*this.fadeIn);
+   if(this.sizes)this.sizes[i]=this.startScale+(this.endScale-this.startScale)*(1-edge);
+   slot++;
   }
   this.alive=this.activeCount;
   const live=this.activeCount>0;this.points.visible=live||this.wasLive;this.wasLive=live;
@@ -57,14 +82,14 @@ function softDot(){const c=document.createElement('canvas');c.width=c.height=64;
 // Visible air around the aircraft: wingtip vortices, engine exhaust, high-altitude contrails and
 // wind streaks that stream past at flight speed.
 export class Airflow{
- constructor(scene,plane){
-  this.plane=plane;this.quality=1;this.acc={vortex:0,exhaust:0,contrail:0,smoke:0};this.smokeT=99;this.smokePower=0;this.lastTouchdown=null;
+ constructor(scene,plane,options={}){
+  this.plane=plane;this.quality=1;this.tablet=!!options.tablet;this.reducedMotion=!!(options.reducedMotion??globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches);this.acc={vortex:0,exhaust:0,contrail:0,smoke:0};this.smokeT=99;this.smokePower=0;this.lastTouchdown=null;
   const dot=softDot();
-  this.vortex=new Pool(scene,{count:520,size:3.2,color:[.96,.98,1],map:dot});
-  this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot});
-  this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot});
+  this.vortex=new Pool(scene,{count:520,size:3.2,color:[.96,.98,1],map:dot,expand:true,start:.35,end:1.45,wind:.8,drag:.16,buoyancy:.08,fade:1.8});
+  this.exhaust=new Pool(scene,{count:260,size:7,color:[.75,.72,.68],map:dot,expand:true,start:.3,end:1.1,wind:.45,drag:.8,buoyancy:.8,fade:2});
+  this.contrail=new Pool(scene,{count:700,size:6,color:[1,1,1],map:dot,expand:true,start:.45,end:2.4,wind:.25,drag:.02,buoyancy:.03,fade:1.15});
   // Tyre smoke: an expanding puff left on the runway at main-gear contact, then a fading spin-up stream from the rolling wheels.
-  this.smoke=new Pool(scene,{count:1100,size:14,color:TYRE_SMOKE_RGB,map:dot,expand:true});
+  this.smoke=new Pool(scene,{count:1100,size:14,color:TYRE_SMOKE_RGB,map:dot,expand:true,start:.35,end:1.8,wind:.7,drag:.18,buoyancy:.18,fade:1.7,fadeIn:8});
   // Wind streaks: short fading line segments that fly past the camera.
   this.streakN=150;this.streakPos=new Float32Array(this.streakN*6);this.streakCol=new Float32Array(this.streakN*8);this.streakP=Array.from({length:this.streakN},()=>new T.Vector3());
   const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(this.streakPos,3));g.setAttribute('color',new T.BufferAttribute(this.streakCol,4));
@@ -77,21 +102,30 @@ export class Airflow{
   const sc=plane.native.scale;
   this.mainGear=[[-2.3,5.25],[-2.3,-5.25],[-5.7,1.64],[-5.7,-1.64]].map(([x,z])=>new T.Vector3(x*sc.x,-plane.contact,z*sc.z));
   this.tmp=new T.Vector3();this.dir=new T.Vector3();this.v=new T.Vector3();this.pp=new T.Vector3();
+  this.setQuality(!!options.low,this.tablet);
  }
- setQuality(low){this.quality=low?.35:1;}
- emitSmoke(gear,touchdown){
+ setQuality(low,tablet=this.tablet){
+  this.tablet=!!tablet;
+  this.profile=effectQualityProfile({low,tablet:this.tablet,reducedMotion:this.reducedMotion});this.quality=this.profile.emission;
+  this.vortex.setLimit(this.profile.vortex);this.exhaust.setLimit(this.profile.exhaust);this.contrail.setLimit(this.profile.contrail);
+  const reserve=this.profile.level==='low'?this.profile.touchdownPuffs*this.mainGear.length:0;
+  this.smoke.setLimit(this.profile.smoke,this.profile.smoke-reserve);
+  this.streakCount=this.profile.streaks;return this.profile;
+ }
+ setReducedMotion(reduced){this.reducedMotion=!!reduced;return this.setQuality(this.profile?.level==='low',this.tablet);}
+ emitSmoke(gear,touchdown,rain='off'){
   const heading=((touchdown.heading??90)-90)*D2R,c=Math.cos(heading),s=Math.sin(heading);
   // Heading rotates local +X toward world +Z. Keep the contact on the runway.
   const p=this.tmp.set(touchdown.x+gear.x*c-gear.z*s+(Math.random()-.5)*1.5,.4+Math.random()*.5,touchdown.z+gear.x*s+gear.z*c+(Math.random()-.5)*1.5);
   const drift=3+Math.random()*5;
-  const v=this.v.set(-c*drift+(Math.random()-.5)*2,.6+Math.random()*1.3,-s*drift+(Math.random()-.5)*2);
-  this.smoke.emit(p,v,2+Math.random()*.9,.75+Math.random()*.2);
+  const wet=rain!=='off',v=this.v.set(-c*drift+(Math.random()-.5)*(wet?2.8:2),wet?.45+Math.random()*1.8:.6+Math.random()*1.3,-s*drift+(Math.random()-.5)*(wet?2.8:2));
+  this.smoke.emit(p,v,wet?1.25+Math.random()*.65:2+Math.random()*.9,wet?.58+Math.random()*.18:.75+Math.random()*.2,true);
  }
- emitRollingSmoke(gear,dir,speed){
+ emitRollingSmoke(gear,dir,speed,rain='off'){
   const p=this.plane.root.localToWorld(this.tmp.copy(gear));p.y=Math.max(.3,Math.min(p.y,1.2));
   const v=this.v.copy(dir);v.y=0;v.normalize().multiplyScalar(speed*(.12+Math.random()*.14));
-  v.x+=(Math.random()-.5)*4;v.z+=(Math.random()-.5)*4;v.y=.8+Math.random()*2;
-  this.smoke.emit(p,v,1.8+Math.random()*1.1,.45+Math.random()*.3);
+  v.x+=(Math.random()-.5)*(rain==='off'?4:5.5);v.z+=(Math.random()-.5)*(rain==='off'?4:5.5);v.y=(rain==='off'?.8:.45)+Math.random()*2;
+  this.smoke.emit(p,v,rain==='off'?1.8+Math.random()*1.1:.9+Math.random()*.7,rain==='off'?.45+Math.random()*.3:.34+Math.random()*.24);
  }
  respawn(i,planePos,dir,spread){
   const p=this.streakP[i],a=Math.random()*Math.PI*2,r=8+Math.random()*spread;
@@ -99,25 +133,27 @@ export class Airflow{
   const side=this.tmp.set(-dir.z,0,dir.x).normalize(),up=this.v.crossVectors(dir,side);
   p.copy(planePos).addScaledVector(dir,-30+Math.random()*110).addScaledVector(side,Math.cos(a)*r).addScaledVector(up,Math.sin(a)*r);
  }
- update(sim,dt,mode,timeOfDay){
+ update(sim,dt,mode,timeOfDay,rain='off'){
   const plane=this.plane;plane.root.updateMatrixWorld();
   const planePos=this.pp.copy(plane.root.position);
   const heading=(90-sim.heading)*D2R,cg=Math.cos(sim.gamma),dir=this.dir.set(Math.cos(heading)*cg,Math.sin(sim.gamma),Math.sin(heading)*cg).normalize();
   const flying=!sim.onGround&&sim.mode!=='inspect',speed=sim.speed;
-  const q=this.quality;
+  const q=this.quality,windScale=Math.min(1,(sim.windSpeed||0)/20),windAngle=(sim.windDirection||0)*D2R;
+  const windX=-Math.sin(windAngle)*(sim.windSpeed||0),windZ=Math.cos(windAngle)*(sim.windSpeed||0);
+  const cosmetic=this.reducedMotion?.18:1,smokeQuality=this.reducedMotion?.82:1;
   if(!sim.paused&&dt>0){
    // Wingtip vortices: strongest at high lift (low speed, flaps out, hard turns).
    const lift=clamp((sim.cl-.45)/1.1,0,1)*(flying?1:0)*clamp((speed-45)/30,0,1);
-   this.acc.vortex+=dt*70*q*(lift>.05?1:0);
-   while(this.acc.vortex>=1){this.acc.vortex--;for(const tip of this.tips){const p=plane.root.localToWorld(this.tmp.copy(tip));this.vortex.emit(p,null,2.6,.1+.4*lift);}}
+   this.acc.vortex+=dt*70*q*cosmetic*lift;
+   while(this.acc.vortex>=1){this.acc.vortex--;for(let k=0;k<this.tips.length;k++){const p=plane.root.localToWorld(this.tmp.copy(this.tips[k]));this.v.copy(dir).multiplyScalar(-4);this.v.y-=1.1+lift*.6;this.v.x+=(k?1:-1)*windScale*.5;this.vortex.emit(p,this.v,2.6,.08+.32*lift);}}
    // Engine exhaust haze while the engines are working hard at low speed.
    const n1=clamp((sim.engineN1-.55)/.45,0,1),haze=n1*clamp(1-speed/90,0,1)*(sim.mode==='inspect'?0:1);
    this.acc.exhaust+=dt*26*q*haze;
-   while(this.acc.exhaust>=1){this.acc.exhaust--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-6,e.y,e.z));this.v.copy(dir).multiplyScalar(-(22+Math.random()*14));this.v.y+=1.5+Math.random();this.exhaust.emit(p,this.v,.9,.05+.07*n1);}}
+   while(this.acc.exhaust>=1){this.acc.exhaust--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-6,e.y,e.z));this.v.copy(dir).multiplyScalar(-(22+Math.random()*14));this.v.y+=1.5+Math.random();this.exhaust.emit(p,this.v,.9,.04+.09*n1);}}
    // Contrails above ~5 km where the air is cold enough.
    const cold=flying?clamp((sim.altitude-4500)/2500,0,1):0;
-   this.acc.contrail+=dt*40*q*cold;
-   while(this.acc.contrail>=1){this.acc.contrail--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-7,e.y,e.z));this.contrail.emit(p,null,9,.5*cold);}}
+   this.acc.contrail+=dt*40*q*cosmetic*cold;
+   while(this.acc.contrail>=1){this.acc.contrail--;for(const e of this.engines){const p=plane.root.localToWorld(this.tmp.set(e.x-7,e.y,e.z));this.v.copy(dir).multiplyScalar(-3);this.contrail.emit(p,this.v,9,.5*cold);}}
   }
   // The flight model replaces this record on each successful contact, including a bounce.
   if(!sim.touchdown)this.lastTouchdown=null;
@@ -125,7 +161,7 @@ export class Airflow{
    const td=this.lastTouchdown=sim.touchdown;
    if(td.valid!==false&&(sim.time??0)-(td.time??0)<3){
     this.smokeT=0;this.smokePower=clamp((td.speed??70)/80,.35,1)*clamp(.65+(td.rate??1)/2.5,.65,1.4);
-    for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(24*q));k++)this.emitSmoke(g,td);
+    for(const g of this.mainGear)for(let k=0;k<Math.max(1,Math.round(24*q*smokeQuality));k++)this.emitSmoke(g,td,rain);
    }
   }
   // Wheels spinning up keep smoking for ~1.8 s after contact; hard braking at speed leaves a thin wisp.
@@ -133,31 +169,33 @@ export class Airflow{
    let rate=0;
    if(this.smokeT<1.8)rate=110*Math.pow(1-this.smokeT/1.8,1.4)*this.smokePower;
    else if(speed>45&&(sim.brakePressure||0)>.6)rate=14*clamp(speed/80,0,1);
-   this.smokeT+=dt;this.acc.smoke+=dt*rate*q;
-   while(this.acc.smoke>=1){this.acc.smoke--;for(const g of this.mainGear)this.emitRollingSmoke(g,dir,speed);}
+   this.smokeT+=dt;this.acc.smoke+=dt*rate*q*smokeQuality;
+   while(this.acc.smoke>=1){this.acc.smoke--;for(const g of this.mainGear)this.emitRollingSmoke(g,dir,speed,rain);}
   }else if(!sim.onGround||sim.mode==='inspect'){this.acc.smoke=0;if(!sim.onGround)this.smokeT=99;}
   this.smoke.points.material.color.setScalar(timeOfDay==='night'?.32:timeOfDay==='dusk'?.82:1);
-  this.smoke.update(sim.paused?0:dt);
-  this.vortex.update(sim.paused?0:dt);this.exhaust.update(sim.paused?0:dt);this.contrail.update(sim.paused?0:dt);
+  const step=sim.paused?0:dt;
+  this.smoke.update(step,windX,windZ);
+  this.vortex.update(step,windX,windZ);this.exhaust.update(step,windX,windZ);this.contrail.update(step,windX,windZ);
 
   // Wind streaks.
-  const strength=(flying||speed>55?clamp((speed-40)/70,0,1):0)*(mode==='cockpit'?.5:1)*q;
+  const strength=this.reducedMotion?0:(flying||speed>55?clamp((speed-40)/70,0,1):0)*(mode==='cockpit'?.5:1)*q;
   if(strength<=.02){this.streaks.visible=false;this.streakSeeded=false;return;}
   const night=timeOfDay==='night',base=(night?.2:timeOfDay==='dusk'?.5:.6)*strength;
   const len=clamp(speed*.1,0,15);
-  if(!this.streakSeeded){for(let i=0;i<this.streakN;i++)this.respawn(i,planePos,dir,60);this.streakSeeded=true;}
+  if(!this.streakSeeded){for(let i=0;i<this.streakCount;i++)this.respawn(i,planePos,dir,60);this.streakSeeded=true;}
   const shade=night?.85:.9;
-  for(let i=0;i<this.streakN;i++){
+  for(let i=0;i<this.streakCount;i++){
    const p=this.streakP[i];
    const rel=this.tmp.copy(p).sub(planePos);
    if(rel.dot(dir)<-60||rel.lengthSq()>150*150)this.respawn(i,planePos,dir,60);
-   const k=i*6,c=i*8,on=i<this.streakN*q;
+   const k=i*6,c=i*8;
    this.streakPos[k]=p.x;this.streakPos[k+1]=p.y;this.streakPos[k+2]=p.z;
    this.streakPos[k+3]=p.x-dir.x*len;this.streakPos[k+4]=p.y-dir.y*len;this.streakPos[k+5]=p.z-dir.z*len;
-   const a=on?base:0;
+   const a=base;
    this.streakCol[c]=shade;this.streakCol[c+1]=shade;this.streakCol[c+2]=1;this.streakCol[c+3]=a;
    this.streakCol[c+4]=shade;this.streakCol[c+5]=shade;this.streakCol[c+6]=1;this.streakCol[c+7]=0;
   }
+  this.streaks.geometry.setDrawRange(0,this.streakCount*2);
   this.streaks.geometry.attributes.position.needsUpdate=true;this.streaks.geometry.attributes.color.needsUpdate=true;this.streaks.visible=strength>.02;
  }
 }

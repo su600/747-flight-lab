@@ -283,11 +283,14 @@ const norm=(v,def=0)=>Number.isFinite(v)?clamp(v,0,1):def;
 // wheel RPM, control-surface degrees, spoiler angles, slats, trim or gear
 // compression: the caller must provide them via state.fgProperties. Flap and
 // door correspondences are visual approximations, not the upstream FDM.
-export function b777PropertiesFromState(s={},variant='passenger',visualMappings=[]){
+export function b777PropertiesFromState(s={},variant='passenger',visualMappings=[],out={},motion=s){
  if(!Array.isArray(visualMappings))throw Error('B777 visualMappings must be an array');
  if(variant!=='passenger'&&variant!=='cargo')throw Error('Unknown B777 variant');
- const p={},gear=norm(s.gear,1),flap=norm((s.flaps??0)/30),reverse=norm(s.reverse),lowerDoor=norm(s.lowerCargoDoor??s.door),mainDoor=norm(s.mainCargoDoor??s.door);
- for(let i=0;i<3;i++)p[`gear/gear[${i}]/position-norm`]=gear;
+ for(const key in out)delete out[key];
+ const p=out,gear=norm(motion.gear,1),flap=norm((motion.flaps??0)/30),reverse=norm(motion.reverse),lowerDoor=norm(motion.lowerCargoDoor??motion.door),mainDoor=norm(motion.mainCargoDoor??motion.door);
+ p['gear/gear[0]/position-norm']=gear;
+ p['gear/gear[1]/position-norm']=gear;
+ p['gear/gear[2]/position-norm']=gear;
  p['surface-positions/flap-pos-norm']=flap;
  p['sim/multiplay/generic/float[6]']=reverse;
  p['sim/multiplay/generic/float[76]']=reverse;
@@ -297,7 +300,7 @@ export function b777PropertiesFromState(s={},variant='passenger',visualMappings=
  // Multiple mappings may read the same normalized input for left/right surfaces.
  for(const m of visualMappings){
   if(!m||typeof m.state!=='string'||!m.state||typeof m.property!=='string'||!m.property||![m.gain,m.min,m.max].every(Number.isFinite)||m.min>m.max||!Number.isFinite(m.offset??0))throw Error('Invalid B777 visual mapping');
-  const value=s[m.state];if(value===undefined)continue;
+  const value=motion[m.state];if(value===undefined)continue;
   if(!Number.isFinite(value))throw Error(`Non-finite visual input: ${m.state}`);
   p[m.property]=clamp(value,m.min,m.max)*m.gain+(m.offset??0);
  }
@@ -340,7 +343,7 @@ export class AccurateB777Research extends Aircraft{
   this.timeoutMs=timeoutMs;this.initialLivery=initialLivery;this.livery=null;
   this.visualMappings={passenger:visualMappings.passenger??[],cargo:visualMappings.cargo??[]};
   for(const variant of ['passenger','cargo'])b777PropertiesFromState({},variant,this.visualMappings[variant]);
-  this._current=null;this._pending=null;this._disposed=false;this._state={};this._night=false;this.releaseErrors=[];this.cargoMode=false;this.modelLabel='Boeing 777-200LR';this.liveryInfo=null;
+  this._current=null;this._pending=null;this._disposed=false;this._state={};this._night=false;this._visualProperties={};this.releaseErrors=[];this.cargoMode=false;this.modelLabel='Boeing 777-200LR';this.liveryInfo=null;
  }
  get animationCoverage(){
   const c=this._current;if(!c||!Array.isArray(c.bundle.animationIndices))return null;
@@ -365,7 +368,8 @@ export class AccurateB777Research extends Aircraft{
  setCabinTime(time){this.setCabinLights(time==='night');}
  update(state={},dt=0){
   this._state=state;
-  if(this._current)this._current.bundle.update(b777PropertiesFromState(state,this._current.variant,this.visualMappings[this._current.variant]),Number.isFinite(dt)?Math.max(0,dt):0);
+  this.updateVisualControls?.(state,Number.isFinite(dt)?Math.max(0,dt):0);
+  if(this._current)this._current.bundle.update(b777PropertiesFromState(state,this._current.variant,this.visualMappings[this._current.variant],this._visualProperties,this.visualControls),Number.isFinite(dt)?Math.max(0,dt):0);
  }
  async setLivery(id){
   if(this._disposed)throw Error('B777 disposed');

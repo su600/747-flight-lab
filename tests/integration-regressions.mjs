@@ -25,7 +25,7 @@ const main=await readFile(new URL('../src/main.js',import.meta.url),'utf8');
 const start=main.indexOf('async function selectAircraft(type){'),end=main.indexOf('// ---- UI',start);
 assert(start>=0&&end>start,'selector implementations must be present');
 // Execute the actual selection functions with controlled craft/network promises.
-const context=vm.createContext({console,Aircraft,sound:{engine:null},tailSamples:()=>[],makePitchLimit:()=>()=>40});
+const context=vm.createContext({console,Aircraft,sound:{engine:null},renderLow:false,applyAircraftMaterialQuality(){},tailSamples:()=>[],makePitchLimit:()=>()=>40});
 vm.runInContext(`
  let plane,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
  const AIRCRAFT_INFO={b747:{name:'747'},a330:{name:'330'}};
@@ -84,7 +84,7 @@ function chuteSwitchFixture(candidate){
  for(let i=0;i<30;i++)shuttle.updateDroppedChuteMotion(.05);
  shuttle.dropChute();const falling=shuttle.droppedChutes[1];shuttle.chuteDropped=shuttle.chuteDeployed=true;
  const unrelated=new T.Group();scene.add(unrelated);
- const context=vm.createContext({console,Aircraft,sound:{engine:null},scene,shuttle,candidate,tailSamples:()=>[],makePitchLimit:()=>()=>40});
+ const context=vm.createContext({console,Aircraft,sound:{engine:null},scene,shuttle,candidate,renderLow:false,applyAircraftMaterialQuality(){},tailSamples:()=>[],makePitchLimit:()=>()=>40});
  vm.runInContext(`
   let plane=shuttle,aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
   const AIRCRAFT_INFO={shuttle:{name:'Shuttle'},a330:{name:'330'}},LIVERIES=[],sim={mode:'inspect'},window={flightLab:{}};

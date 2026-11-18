@@ -87,7 +87,7 @@ export class TwinAircraft extends Aircraft {
  }
  update(s,dt){
   super.update(s,dt);
-  const gear=T.MathUtils.clamp(s.gear??1,0,1),retract=1-gear;
+  const visual=this.visualControls,gear=T.MathUtils.clamp(visual.gear,0,1),retract=1-gear;
   for(const g of this.parts.gear){
    const side=g.userData.side;
    g.rotation.z=side?0:retract*Math.PI/2;
@@ -95,14 +95,14 @@ export class TwinAircraft extends Aircraft {
    g.position.y=-2+(side?1.6:.65)*retract;
    if(side)g.position.z=side*(4.2-2*retract);
   }
-  if(s.onGround)for(const wheel of this.parts.wheels)wheel.rotation.z-=(s.speed||0)*dt/.68;
-  for(const f of this.parts.flaps)f.rotation.z=-(s.flaps||0)*Math.PI/180;
-  for(const [a,sign] of this.parts.ailerons)a.rotation.z=sign*(s.aileron||0)*.3;
-  for(const e of this.parts.elevators)e.quaternion.setFromAxisAngle(e.userData.axis,T.MathUtils.clamp(s.elevator||0,-1,1)*.35);
-  for(const p of this.parts.spoilers)p.rotation.z=-T.MathUtils.clamp(s.spoiler||0,0,1)*.8;
-  for(const sleeve of this.parts.reversers)sleeve.position.x=sleeve.userData.closedX-T.MathUtils.clamp(s.reverse||0,0,1)*.85;
-  for(const door of this.parts.doors)door.rotation.x=-T.MathUtils.clamp(s.door||0,0,1)*1.25;
-  for(const r of this.parts.rudders)r.rotation.y=(s.rudder||0)*.3;
-  for(const f of this.parts.fans)f.rotation.x+=(s.engine||0)*dt*18;
+  if(s.onGround)for(const wheel of this.parts.wheels)wheel.rotation.z-=(s.speed||0)*Math.max(0,dt)/.68;
+  for(const f of this.parts.flaps)f.rotation.z=-visual.flaps*Math.PI/180;
+  for(const [a,sign] of this.parts.ailerons)a.rotation.z=sign*visual.aileron*.3;
+  for(const e of this.parts.elevators)e.quaternion.setFromAxisAngle(e.userData.axis,visual.elevator*.35);
+  for(const p of this.parts.spoilers)p.rotation.z=-visual.spoiler*.8;
+  for(const sleeve of this.parts.reversers)sleeve.position.x=sleeve.userData.closedX-visual.reverse*.85;
+  for(const door of this.parts.doors)door.rotation.x=-visual.door*1.25;
+  for(const r of this.parts.rudders)r.rotation.y=visual.rudder*.3;
+  for(const f of this.parts.fans)f.rotation.x+=visual.engine*Math.max(0,dt)*18;
  }
 }

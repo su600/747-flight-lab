@@ -253,9 +253,10 @@ export class SpaceShuttle extends Aircraft{
   this.livery='NASA_SHUTTLE';return true;
  }
  update(s,dt=0){
-  const gear=Math.max(0,Math.min(1,s.gear??1));
-  const chute=Math.max(0,Math.min(1,s.chute??0));
-  const brake=Math.max(0,Math.min(1,s.spoiler??0));
+  this.updateVisualControls(s,dt);
+  const gear=this.visualControls.gear;
+  const chute=this.visualControls.chute;
+  const brake=this.visualControls.spoiler;
   // Landing gear swings up into the wheel wells about its trunnions.
   this.gearGroup.visible=gear>.02;
   const retract=1-gear;
@@ -277,7 +278,7 @@ export class SpaceShuttle extends Aircraft{
    this.chuteCanopy.scale.setScalar((CHUTE_DIAMETER/8.43)*(.3+.7*chute));
    this.chuteSway.rotation.set(0,Math.sin(t*1.1)*.04*chute,Math.sin(t*1.6)*.03*chute);
   }
-  this.lights.forEach((m,i)=>m.visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17));
+  for(let i=0;i<this.lights.length;i++)this.lights[i].visible=s.lights!==false&&(i<2||((s.time||0)%1.2)<.17);
   this.updateDroppedChuteMotion(dt);
  }
 }

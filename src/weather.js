@@ -1,10 +1,11 @@
 import * as T from 'three';
 import {CLOUDS,VISIBILITY,KNOT_MS} from './weather-math.js';
+import {effectQualityProfile} from './render-quality.js';
 
 // Owns the visual weather only; the flight model stores the wind in m/s.
 export class Weather{
  constructor(world,scene,sim){
-  this.world=world;this.sim=sim;this.cloud='clear';this.rain='off';this.visibility='good';this.low=false;
+  this.world=world;this.sim=sim;this.cloud='clear';this.rain='off';this.visibility='good';this.low=false;this.tablet=false;this.effects=effectQualityProfile();
   world.weather=this;
   this.ground=world.weatherGround.map(m=>({m,color:m.color.clone(),roughness:m.roughness}));
   this.extraClouds=[];
@@ -48,13 +49,22 @@ export class Weather{
   this.world.setTime(this.world.time);
  }
  updateCloudVisibility(){this.extraClouds.forEach((g,i)=>g.visible=this.cloud==='overcast'?(!this.low||i%2===0):this.cloud==='partly'&&i%3===0&&(!this.low||i%2===0));}
- setQuality(low){this.low=low;this.updateCloudVisibility();}
+ setQuality(low,tablet=false){this.low=!!low;this.tablet=!!tablet;this.effects=effectQualityProfile({low:this.low,tablet:this.tablet});this.windshield?.setQuality(this.low,this.tablet);this.updateCloudVisibility();return this.effects;}
  update(dt,camera,mode,sim){
-  const active=this.rain!=='off',count=active?Math.floor(this.rainCount*(this.rain==='light'?.4:1)*(this.low?.35:1)):0;
+  const budget=this.effects?.rainLines??this.rainCount,active=this.rain!=='off',count=active?Math.floor(Math.min(this.rainCount,budget)*(this.rain==='light'?.4:1)):0;
   this.rainLines.visible=active;this.rainLines.geometry.setDrawRange(0,count*2);
   if(active){
-   const a=this.rainPositions;
-   for(let i=0;i<count;i++){const j=i*6;a[j+1]-=dt*32;if(a[j+1]<-40)a[j+1]+=80;a[j+3]=a[j]-.15;a[j+4]=a[j+1]+2.1;a[j+5]=a[j+2];}
+   const a=this.rainPositions,windX=-Math.sin((sim.windDirection||0)*Math.PI/180)*(sim.windSpeed||0),windZ=Math.cos((sim.windDirection||0)*Math.PI/180)*(sim.windSpeed||0),fall=this.rain==='heavy'?40:31;
+   if(this.rainLines.material)this.rainLines.material.opacity=(this.world?.time==='night'?.36:.48)*(this.rain==='heavy'?1:.72);
+   for(let i=0;i<count;i++){
+    const j=i*6,driftX=windX*.55*dt,driftZ=windZ*.55*dt;
+    a[j]+=driftX;a[j+2]+=driftZ;a[j+1]-=dt*fall;
+    if(a[j+1]<-40)a[j+1]+=80;
+    if(a[j]>70)a[j]-=140;else if(a[j]<-70)a[j]+=140;
+    if(a[j+2]>70)a[j+2]-=140;else if(a[j+2]<-70)a[j+2]+=140;
+    const slant=(this.rain==='heavy'?2.5:2.1),side=windX*.035-.15;
+    a[j+3]=a[j]+side;a[j+4]=a[j+1]+slant;a[j+5]=a[j+2]-windZ*.035;
+   }
    this.rainLines.position.copy(camera.position);this.rainLines.geometry.attributes.position.needsUpdate=true;
   }
   this.windshield?.update(dt,this.rain,sim,mode==='cockpit');

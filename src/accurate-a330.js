@@ -192,21 +192,22 @@ const direct=(node,name)=>Array.from(node?.children||[]).filter(e=>e.tagName===n
 const text=(node,name,fallback='')=>direct(node,name)[0]?.textContent.trim()??fallback;
 const number=(node,name,fallback=0)=>{const s=text(node,name,'');return s===''?fallback:Number(s);};
 const fg=(x,y,z)=>new T.Vector3(x,z,-y);
+const _animationPivot=new T.Vector3();
 
-function stateValue(property,s){
- if(property.includes('position-norm')&&property.includes('gear/'))return T.MathUtils.clamp(s.gear??1,0,1);
+function stateValue(property,s,visual){
+ if(property.includes('position-norm')&&property.includes('gear/'))return T.MathUtils.clamp(visual.gear,0,1);
  if(property.includes('compression-norm'))return 0;
  if(property.includes('rollspeed-ms'))return s.onGround?(s.speed||0):0;
- if(property.includes('flap-pos-norm'))return T.MathUtils.clamp((s.flaps||0)/30,0,1);
- if(property.includes('spoiler-'))return T.MathUtils.clamp(s.spoiler||0,0,1)*45;
- if(property.includes('/n1'))return T.MathUtils.clamp(s.engine||0,0,1)*100;
+ if(property.includes('flap-pos-norm'))return T.MathUtils.clamp(visual.flaps/30,0,1);
+ if(property.includes('spoiler-'))return visual.spoiler*45;
+ if(property.includes('/n1'))return visual.engine*100;
  const index=property.match(/generic\/float\[(\d+)\]/)?.[1];
- if(index==='1')return T.MathUtils.clamp(s.rudder||0,-1,1);
- if(index==='2'||index==='3')return T.MathUtils.clamp(s.reverse||0,0,1);
- if(index==='4'||index==='5')return T.MathUtils.clamp(s.elevator||0,-1,1)*20;
- if(index==='6'||index==='7'||index==='13'||index==='14')return T.MathUtils.clamp(s.aileron||0,-1,1)*20;
- if(index==='8')return T.MathUtils.clamp(s.rudder||0,-1,1)*25;
- if(index==='11')return T.MathUtils.clamp((s.flaps||0)/30,0,1);
+ if(index==='1')return visual.rudder;
+ if(index==='2'||index==='3')return visual.reverse;
+ if(index==='4'||index==='5')return visual.elevator*20;
+ if(index==='6'||index==='7'||index==='13'||index==='14')return visual.aileron*20;
+ if(index==='8')return visual.rudder*25;
+ if(index==='11')return T.MathUtils.clamp(visual.flaps/30,0,1);
  // No stabilizer trim, gear bogie pitch or wing-flex input in this simulator.
  return 0;
 }
@@ -324,15 +325,15 @@ export class AccurateA330Research extends Aircraft{
  update(s,dt){
   super.update(s,dt);
   for(const a of this.a330Animations){
-   let v=interpolate(a.table,stateValue(a.property,s))*a.factor+a.offset;
+   let v=interpolate(a.table,stateValue(a.property,s,this.visualControls))*a.factor+a.offset;
    // FG spin is RPM; factor*input*6 is degrees/sec.
    if(a.type==='spin'){a.phase=(a.phase+v*Math.max(0,dt||0)*6)%360;v=a.phase;}
    for(const {wrapper,pivot,direction} of a.wrappers){
     if(a.type==='translate')wrapper.position.copy(direction).multiplyScalar(v);
-    else{wrapper.quaternion.setFromAxisAngle(direction,T.MathUtils.degToRad(v));wrapper.position.copy(pivot).sub(pivot.clone().applyQuaternion(wrapper.quaternion));}
+    else{wrapper.quaternion.setFromAxisAngle(direction,T.MathUtils.degToRad(v));wrapper.position.copy(pivot).sub(_animationPivot.copy(pivot).applyQuaternion(wrapper.quaternion));}
    }
   }
-  this.doorPosition=T.MathUtils.clamp(s.door||0,0,1);
+  this.doorPosition=this.visualControls.door;
   if(this.cargoDoor)this.cargoDoor.hinge.quaternion.setFromAxisAngle(this.cargoDoor.axis,this.doorPosition*100*Math.PI/180);
  }
  // Toggle only after a successful livery transaction; keep passenger geometry

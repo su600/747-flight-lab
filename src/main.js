@@ -3,7 +3,7 @@ import {Aircraft,LIVERIES} from './aircraft.js';
 import {realityFor} from './livery-reality.js';
 import {preloadAircraft,prefetchInOrder,isPreloaded,observeAircraftDownloads,installPreloadedFetch} from './preload.js';
 installPreloadedFetch();
-import {fixAircraftWingShading,addCabinLights,updateCabinLights} from './aircraft-lighting.js';
+import {fixAircraftWingShading,addCabinLights,updateCabinLights,applyAircraftMaterialQuality} from './aircraft-lighting.js';
 import {World} from './world.js';
 import {Weather} from './weather.js';
 import {KNOT_MS} from './weather-math.js';
@@ -13,6 +13,7 @@ import {Cockpit} from './cockpit.js';
 import {setCockpitAirframeVisibility,cameraModeForWiperToggle} from './cockpit-view.js';
 import {createCamera} from './camera.js';
 import {StableDisplay} from './display.js';
+import {RenderingPipeline} from './render-pipeline.js';
 import {Airflow} from './airflow.js';
 import {LandingLights} from './landing-lights.js';
 import {EngineSound} from './audio.js';
@@ -29,21 +30,41 @@ try{
  // Supply our own context: Three r170 otherwise requests an alpha-enabled drawing buffer.
  // preserveDrawingBuffer costs a full-buffer copy on many GPUs; StableDisplay
  // keeps its own throttled backup instead. Ask for the discrete GPU when present.
- const context=canvas.getContext('webgl2',{alpha:false,antialias:true,depth:true,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
+ const context=canvas.getContext('webgl2',{alpha:false,antialias:false,depth:true,stencil:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});
  if(!context)throw Error('WebGL2 unavailable');
  renderer=new T.WebGLRenderer({canvas,context,alpha:false,logarithmicDepthBuffer:true});
 }catch(e){$('#loadingText').textContent='浏览器暂时不能显示三维画面。请用 Chrome 或 Edge，并开启硬件加速后重试。';throw e;}
-renderer.setClearColor(0xa9c6da,1);renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.83;$('#viewport').appendChild(renderer.domElement);
-const display=new StableDisplay(renderer,$('#viewport'));display.beginFrame();
+// Some software WebGL drivers return null shader logs. Three r170 assumes
+// strings and can throw while diagnostics are enabled even for valid programs.
+const debugInfo=renderer.getContext().getExtension('WEBGL_debug_renderer_info');
+const webglRenderer=debugInfo?renderer.getContext().getParameter(debugInfo.UNMASKED_RENDERER_WEBGL):'';
+if(/swiftshader|llvmpipe|software/i.test(webglRenderer))renderer.debug.checkShaderErrors=false;
+renderer.setClearColor(0xa9c6da,1);renderer.outputColorSpace=T.SRGBColorSpace;renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=.83;$('#viewport').appendChild(renderer.domElement);
+let renderLow=$('#quality')?.value==='low';
+const display=new StableDisplay(renderer,$('#viewport'));display.setQuality(renderLow);display.beginFrame();
+let landingLights=null,airflow=null;
+const reducedMotionQuery=matchMedia('(prefers-reduced-motion: reduce)'),coarsePointerQuery=matchMedia('(pointer:coarse)');
+function syncMotionProfile(){
+ const motion=reducedMotionQuery.matches?'reduced':renderLow||display.tablet||coarsePointerQuery.matches?'simplified':'full';
+ document.body.dataset.motion=motion;
+ airflow?.setReducedMotion(reducedMotionQuery.matches);
+ landingLights?.setReducedMotion(reducedMotionQuery.matches);
+}
+syncMotionProfile();
+reducedMotionQuery.addEventListener?.('change',syncMotionProfile);coarsePointerQuery.addEventListener?.('change',syncMotionProfile);
 const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeight,.2,120000);
 const world=new World(scene,renderer),sim=new Flight(),weather=new Weather(world,scene,sim);
-const landingLights=new LandingLights(scene);
-let plane=new Aircraft(),cockpit=null,airflow=null;
+const rendering=new RenderingPipeline(renderer,scene,camera,{low:renderLow});
+display.onResize=({width,height})=>rendering.resize(width,height);rendering.resize(display.width,display.height);
+display.onRestore=()=>{world.restoreEnvironment();rendering.restore();};
+landingLights=new LandingLights(scene);
+let plane=new Aircraft(),cockpit=null;
 let badgeFor=null;
 const aircraftCache=new Map();const parkedAircraft=[];let aircraftRequest=0,liveryVersion=0,desiredLivery='BOE';
 import {REALITY_TAGS,AIRCRAFT_INFO} from './ui/aircraft-info.js';
 let originalAbout='',originalEmitters=null;
 let rate=1,panel=null,toastTimer,frameCount=0,elapsed=0,fps=0;
+let drawerHideTimer=0;
 let cancelCameraGestures=()=>{};
 const keys=new Set(),touch=new Set(),surface={roll:0,pitch:0,yaw:0};
 let manualTakeoffGuide=false;
@@ -56,8 +77,29 @@ const {setCam,beginCameraGesture,rotateCamera,panCamera,zoomCamera,focusPart,upd
 display.onSuspend=()=>{keys.clear();touch.clear();cancelCameraGestures();if(sound.engine)sound.engine.master.gain.setTargetAtTime(0,sound.ctx.currentTime,.05);};
 function initAudio(){if(sound.ctx)return;const ctx=new AudioContext();sound.ctx=ctx;sound.engine=new EngineSound(ctx);sound.engine.setAircraft(plane.type);}
 function updateAudio(){if(sound.engine)sound.engine.update(sim,sound.enabled,sim.paused);}
-function go(mode){manualTakeoffGuide=false;courseProgress=createCourseProgress();plane.clearDroppedChutes?.();sim.reset(mode);surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);rate=1;$('#rate').textContent='1×';$('#retryDialog').close();all('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===mode));if(mode==='inspect'){setCam('orbit');}else if(mode==='land'){setCam('chase');}else if(mode==='takeoff'){setCam('orbit');cameraControl.orbitAngle=2;cameraControl.orbitHeight=.24;}else setCam('chase');$('#drawer').hidden=true;panel=null;all('[data-panel]').forEach(b=>b.classList.remove('active'));syncThrottleUI();updateUI();}
-function openPanel(name){panel=panel===name?null:name;$('#drawer').hidden=!panel;all('[data-panel]').forEach(b=>b.classList.toggle('active',b.dataset.panel===panel));all('.drawer-content').forEach(s=>s.hidden=s.id!==panel+'Panel');$('#drawerTitle').textContent={aircraft:'选择飞机',parts:'可动部件',livery:'换一身新涂装',world:'天空，由你选择',about:'认识这架飞机'}[panel]||'';}
+function animateSelection(element){if(!element||document.body.dataset.motion==='reduced'||!element.animate)return;const simplified=document.body.dataset.motion==='simplified';element.animate([{opacity:.72,transform:`translate3d(0,${simplified?1:2}px,0) scale(${simplified?.995:.985})`},{opacity:1,transform:'translate3d(0,0,0) scale(1)'}],{duration:simplified?110:170,easing:'cubic-bezier(.2,.8,.2,1)'});}
+function closePanel(immediate=false){
+ panel=null;clearTimeout(drawerHideTimer);
+ const drawer=$('#drawer');drawer.classList.remove('is-open');drawer.dataset.panel='';
+ all('[data-panel]').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-expanded','false');});
+ if(immediate||document.body.dataset.motion==='reduced'){drawer.hidden=true;return;}
+ drawerHideTimer=setTimeout(()=>{if(!panel)drawer.hidden=true;},document.body.dataset.motion==='simplified'?120:200);
+}
+function openPanel(name){
+ if(panel===name){closePanel();return;}
+ const prior=panel;panel=name;clearTimeout(drawerHideTimer);
+ const drawer=$('#drawer'),section=$('#'+name+'Panel');
+ drawer.hidden=false;drawer.dataset.panel=name;
+ all('[data-panel]').forEach(b=>{const active=b.dataset.panel===name;b.classList.toggle('active',active);b.setAttribute('aria-expanded',String(active));});
+ all('.drawer-content').forEach(s=>s.hidden=s!==section);
+ $('#drawerTitle').textContent={aircraft:'选择飞机',parts:'可动部件',livery:'换一身新涂装',world:'天空，由你选择',about:'认识这架飞机'}[name]||'';
+ requestAnimationFrame(()=>{if(panel===name)drawer.classList.add('is-open');});
+ if(prior&&section&&document.body.dataset.motion!=='reduced'&&section.animate){
+  const distance=document.body.dataset.motion==='simplified'?4:10;
+  section.animate([{opacity:0,transform:`translate3d(${distance}px,0,0)`},{opacity:1,transform:'translate3d(0,0,0)'}],{duration:document.body.dataset.motion==='simplified'?110:190,easing:'cubic-bezier(.2,.8,.2,1)'});
+ }
+}
+function go(mode){manualTakeoffGuide=false;courseProgress=createCourseProgress();plane.clearDroppedChutes?.();sim.reset(mode);surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);rate=1;$('#rate').textContent='1×';$('#retryDialog').close();const active=all('[data-mode]').find(b=>b.dataset.mode===mode);all('[data-mode]').forEach(b=>b.classList.toggle('active',b===active));animateSelection(active);if(mode==='inspect'){setCam('orbit');}else if(mode==='land'){setCam('chase');}else if(mode==='takeoff'){setCam('orbit');cameraControl.orbitAngle=2;cameraControl.orbitHeight=.24;}else setCam('chase');closePanel(true);syncThrottleUI();updateUI();}
 function toggleGear(){notify(sim.control('gear',sim.gearTarget?0:1));}
 function flapStep(){const list=[0,5,10,20,25,30],i=list.indexOf(sim.flapTarget);notify(sim.control('flaps',list[(i+1)%list.length]));}
 function manualControl(){if(['takeoff','land'].includes(sim.mode)){sim.mode='manual';sim.complete=false;sim.phase='你已接管飞机';rate=1;$('#rate').textContent='1×';notify('现在由你驾驶！方向键控制机头与转弯');}}
@@ -113,7 +155,7 @@ function getAircraft(type,onProgress,livery=desiredLivery){
    await preloadAircraft(type,{livery,priority:'high',onProgress:isPreloaded(type,{livery})?undefined:onProgress});
    const craft=await modelFactory(type,livery);
    let loaded=false;
-   try{await craft.load();loaded=true;fixAircraftWingShading(craft);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
+   try{await craft.load();loaded=true;fixAircraftWingShading(craft);applyAircraftMaterialQuality(craft,renderLow);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
    // Both externally loaded aircraft already clean up a failed load; only
    // dispose here if a later coordinator step failed after successful loading.
    catch(error){if(loaded)craft.dispose?.();throw error;}
@@ -131,6 +173,7 @@ function showLivery(){
  // activation, listeners and the persistent selected ID survive a model switch.
  all('[data-livery]').forEach(x=>{
   const supported=!!Aircraft.liveryForModel(x.dataset.livery,plane.type);x.hidden=!supported;x.disabled=!supported;
+  x.classList.remove?.('pending');x.removeAttribute?.('aria-busy');
   const active=supported&&x.dataset.livery===plane.livery;x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active));x.querySelector('.check').textContent=active?'✓':'';
   if(x.dataset.livery==='BOE'&&Aircraft.liveryForModel('BOE',plane.type)){
    const house=Aircraft.liveryForModel('BOE',plane.type);
@@ -181,12 +224,15 @@ function setEmitters(craft){
 async function selectAircraft(type){
  if(!AIRCRAFT_INFO[type])return false;
  const request=++aircraftRequest;
- if(type===plane.type){$('#loadBar').hidden=true;$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;return true;}
+ const pickerButtons=typeof all==='function'?all('[data-aircraft]'):[];
+ pickerButtons.forEach(b=>{const pending=b.dataset.aircraft===type;b.classList.toggle('pending',pending);pending?b.setAttribute?.('aria-busy','true'):b.removeAttribute?.('aria-busy');});
+ if(type===plane.type){$('#loadBar').hidden=true;$('#aircraftStatus').textContent='';$('#aircraftSelect').value=type;pickerButtons.forEach(b=>{b.classList.remove?.('pending');b.removeAttribute?.('aria-busy');});return true;}
  const initialLivery=Aircraft.liveryForModel(desiredLivery,type)?desiredLivery:(type==='shuttle'?'NASA_SHUTTLE':'BOE');
  $('#aircraftSelect').value=type;
  const load=beginLoad(type,initialLivery);
  try{
   const next=await getAircraft(type,progress=>{if(request===aircraftRequest)load.update(progress);},initialLivery);if(request!==aircraftRequest)return false;
+  applyAircraftMaterialQuality(next,renderLow);
   // Reconcile changes made to the livery while the model was loading.
   let selected,applied,retries=0;do{
    const requestedLivery=desiredLivery;
@@ -212,14 +258,17 @@ async function selectAircraft(type){
   else if(sim.mode==='land'&&sim.unpowered!==wasUnpowered)go('land');
   else if(plane.type==='shuttle'&&(cameraControl.mode==='cockpit'||cameraControl.mode==='wing'))setCam('orbit');
   if(window.flightLab)window.flightLab.plane=plane;
-  $('#aircraftStatus').textContent='已切换 · 飞行状态保持不变';showAircraft();showLivery();return true;
+  $('#aircraftStatus').textContent='已切换 · 飞行状态保持不变';showAircraft();showLivery();if(typeof animateSelection==='function')animateSelection(document.querySelector(`[data-aircraft="${type}"]`));return true;
  }catch(error){if(request===aircraftRequest){$('#aircraftStatus').textContent='载入失败，请重试';$('#aircraftSelect').value=plane.type;notify(error.message||'机型载入失败');}return false;}
- finally{load.done();}
+ finally{load.done();if(request===aircraftRequest)pickerButtons.forEach(b=>{b.classList.remove?.('pending');b.removeAttribute?.('aria-busy');});}
 }
 async function selectLivery(id){
  if(!LIVERIES.some(l=>l.id===id))return false;
  if(!Aircraft.liveryForModel(id,plane.type)){notify('当前机型不支持这款涂装');return false;}
  const version=++liveryVersion;desiredLivery=id;
+ const pickerButtons=typeof all==='function'?all('[data-livery]'):[];
+ const settlePending=()=>{if(version===liveryVersion)pickerButtons.forEach(b=>{b.classList.remove?.('pending');b.removeAttribute?.('aria-busy');});};
+ pickerButtons.forEach(b=>{const pending=b.dataset.livery===id;b.classList.toggle('pending',pending);pending?b.setAttribute?.('aria-busy','true'):b.removeAttribute?.('aria-busy');});
  while(version===liveryVersion){
   const target=plane,selection=aircraftRequest;
   try{
@@ -228,23 +277,24 @@ async function selectLivery(id){
    const applied=await target.setLivery(id);
    if(version!==liveryVersion)return false;
    if(target!==plane||selection!==aircraftRequest)continue;
-   if(!applied)return false;
-   syncCabinTime(target);showAircraft();showLivery();return true;
+   if(!applied){settlePending();return false;}
+   syncCabinTime(target);showAircraft();showLivery();if(typeof animateSelection==='function')animateSelection(document.querySelector(`[data-livery="${id}"]`));return true;
   }catch(error){
    if(version!==liveryVersion)return false;
    // A failure belongs to the craft that attempted the load. It must not undo
    // an independently successful application on a subsequently selected craft.
    if(target!==plane||selection!==aircraftRequest)continue;
-   desiredLivery=target.livery;syncCabinTime(target);showAircraft();showLivery();notify(error.message);return false;
+   desiredLivery=target.livery;syncCabinTime(target);showAircraft();showLivery();notify(error.message);settlePending();return false;
   }
  }
+ settlePending();
  return false;
 }
 // ---- UI -------------------------------------------------------------------
 function bindUI(){
  all('[data-mode]').forEach(b=>b.onclick=()=>go(b.dataset.mode));all('[data-retry]').forEach(b=>b.onclick=()=>go(b.dataset.retry));
  all('[data-panel]').forEach(b=>b.onclick=()=>openPanel(b.dataset.panel));$('#closeDrawer').onclick=()=>openPanel(panel);
- all('[data-camera]').forEach(b=>b.onclick=()=>setCam(b.dataset.camera));all('[data-focus]').forEach(b=>b.onclick=()=>focusPart(b.dataset.focus));
+ all('[data-camera]').forEach(b=>b.onclick=()=>{setCam(b.dataset.camera);animateSelection(b);});all('[data-focus]').forEach(b=>b.onclick=()=>focusPart(b.dataset.focus));
  $('#resetCamera').onclick=()=>setCam('orbit');$('#quickGear').onclick=$('#gear').onclick=toggleGear;
  $('#quickFlaps').onclick=flapStep;
  $('#flaps').oninput=e=>notify(sim.control('flaps',Number(e.target.value)));
@@ -259,12 +309,12 @@ function bindUI(){
  $('#rate').onclick=()=>{rate=rate===1?2:rate===2?4:1;$('#rate').textContent=rate+'×';};
  $('#takeControl').onclick=manualControl;const startTakeoffCourse=()=>{go('manual');manualTakeoffGuide=true;sim.flapTarget=20;sim.park=true;setCam('chase');syncThrottleUI();updateUI();notify('手动起飞练习已开始，请按左侧步骤提示操作');};$('#runwayStart').onclick=startTakeoffCourse;$('#courseStart').onclick=startTakeoffCourse;
  $('#assist').onclick=()=>{sim.assist=!sim.assist;$('#assist').classList.toggle('active',sim.assist);};
- all('[data-time]').forEach(b=>b.onclick=()=>{world.setTime(b.dataset.time);syncCabinTime(plane);document.body.dataset.time=b.dataset.time;all('[data-time]').forEach(x=>x.classList.toggle('active',x===b));});
+ all('[data-time]').forEach(b=>b.onclick=()=>{world.setTime(b.dataset.time);rendering.setTime(b.dataset.time);syncCabinTime(plane);document.body.dataset.time=b.dataset.time;all('[data-time]').forEach(x=>x.classList.toggle('active',x===b));});
  const syncRainChoice=()=>{const rain=$('#weatherRain'),clear=$('#weatherCloud').value==='clear';if(clear)rain.value='off';rain.disabled=clear;rain.title=clear?'晴空没有降雨，先选择局部多云或阴天':'';};
  const updateWeather=()=>{syncRainChoice();const knots=Number($('#windSpeed').value);weather.set({cloud:$('#weatherCloud').value,rain:$('#weatherRain').value,visibility:$('#weatherVisibility').value,windDirection:$('#windDirection').value,windKnots:knots});$('#windSpeedValue').textContent=`${knots} kt / ${(knots*KNOT_MS).toFixed(1)} m/s`;};
  for(const id of ['weatherCloud','weatherRain','weatherVisibility','windDirection','windSpeed'])$('#'+id).addEventListener('input',updateWeather);syncRainChoice();
  all('[data-aircraft]').forEach(b=>{b.onclick=()=>selectAircraft(b.dataset.aircraft);const warm=()=>{if(b.dataset.aircraft!=='b747')preloadAircraft(b.dataset.aircraft,{livery:desiredLivery,priority:'high'});};b.addEventListener('pointerenter',warm);b.addEventListener('focus',warm);b.addEventListener('touchstart',warm,{passive:true});});$('#aircraftSelect').onchange=e=>selectAircraft(e.target.value);
- $('#quality').onchange=e=>{const low=e.target.value==='low';display.setQuality(low);world.setQuality(low);renderer.shadowMap.enabled=!low;airflow?.setQuality(low);world.airportLights.setQuality(low);weather.setQuality(low);for(const p of parkedAircraft)p.visible=!low;};
+ $('#quality').onchange=e=>{const low=e.target.value==='low';renderLow=low;syncMotionProfile();display.setQuality(low);world.setQuality(low,display.tablet);rendering.setQuality(low);renderer.shadowMap.enabled=!low;airflow?.setQuality(low,display.tablet);world.airportLights.setQuality(low);weather.setQuality(low,display.tablet);applyAircraftMaterialQuality(plane,low);for(const p of parkedAircraft){p.visible=!low;applyAircraftMaterialQuality(p,low);}};
  $('#sound').onclick=()=>{initAudio();sound.enabled=!sound.enabled;sound.ctx.resume();$('#sound').classList.toggle('on',sound.enabled);$('#sound').ariaLabel=sound.enabled?'关闭声音':'开启声音';notify(sound.enabled?'发动机声音已开启':'声音已关闭');};
  $('#help').onclick=()=>$('#helpDialog').showModal();all('[data-close]').forEach(b=>b.onclick=()=>$('#'+b.dataset.close).close());
  $('#fullscreen').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen();}catch{notify('请使用浏览器的全屏按钮');}};
@@ -278,12 +328,12 @@ let running=true;
 async function start(){
  try{const line=document.querySelector('.loading-line i');line.classList.add('progress');
  await preloadAircraft('b747',{priority:'high',onProgress:progress=>{line.style.width=Math.floor(progress.fraction*100)+'%';$('#loadingText').textContent=progressText(progress)+(progress.fraction>=1?' · 正在构建模型…':'');}});
- await plane.load();fixAircraftWingShading(plane);sim.chuteAvailable=!!plane.hasDragChute;sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane);originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
+ await plane.load();fixAircraftWingShading(plane);applyAircraftMaterialQuality(plane,renderLow);sim.chuteAvailable=!!plane.hasDragChute;sim.unpowered=!!plane.unpowered;sim.landingGlide=plane.landingGlide??3;sim.landingSpeed=plane.landingSpeed??77;sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);aircraftCache.set('b747',Promise.resolve(plane));scene.add(plane.root);airflow=new Airflow(scene,plane,{low:renderLow,tablet:display.tablet});originalEmitters={engines:airflow.engines,tips:airflow.tips,mainGear:airflow.mainGear};originalAbout=$('#aboutDetails').innerHTML;
  // Parked aircraft share geometry and textures, with animations fixed at their current neutral state.
  // Parked 747s sit nose-in on their stands, nose wheel on the stop bar near the boarding bridge.
- for(const [x,z] of [[-1200,-406],[-510,-406],[180,-406],[640,-406]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=Math.PI/2;world.softShadow(x,z-4,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=$('#quality')?.value!=='low';parkedAircraft.push(p);}
+ for(const [x,z] of [[-1200,-406],[-510,-406],[180,-406],[640,-406]]){const p=plane.root.clone(true),materials=new Map();p.position.set(x,plane.contact,z);p.rotation.y=Math.PI/2;world.softShadow(x,z-4,66,76);p.traverse(o=>{if(o.isMesh){o.castShadow=false;const copy=m=>{if(!materials.has(m))materials.set(m,m.clone());return materials.get(m);};o.material=Array.isArray(o.material)?o.material.map(copy):copy(o.material);}});applyAircraftMaterialQuality(p,renderLow);scene.add(p);p.updateMatrixWorld(true);p.traverse(o=>{o.matrixAutoUpdate=false;o.matrixWorldAutoUpdate=false;});p.visible=!renderLow;parkedAircraft.push(p);}
  addCabinLights(plane);syncCabinTime(plane);
- bindUI();world.setQuality($('#quality').value==='low');showLivery();resize();setCam('orbit');$('#loading').remove();
+ bindUI();world.setQuality(renderLow,display.tablet);weather.setQuality(renderLow,display.tablet);renderer.shadowMap.enabled=!renderLow;showLivery();resize();setCam('orbit');$('#loading').remove();document.body.dataset.uiStage='scene';
  // Background download of every other aircraft, in picker order, right after the first scene is shown.
  if(!/[?&]prefetch=0/.test(location.search)){
   const order=all('[data-aircraft]').map(b=>b.dataset.aircraft).filter(t=>t!=='b747');
@@ -299,16 +349,17 @@ async function start(){
   });
   setTimeout(()=>prefetchInOrder(order,{livery:()=>desiredLivery,onStatus:(type,p)=>p.done?badge(type,'已下载','ready'):p.failed?badge(type,'下载未完成，选择机型可重试','failed'):p.retrying?badge(type,`下载中断，${Math.round(p.delay/1000)} 秒后重试`,'failed'):p.fraction>=1?badge(type,'校验中…','loading'):badge(type,`后台下载 ${Math.round((p.fraction||0)*100)}%`,'loading')}),600);
  }
- window.flightLab={sim,landingLights,plane,cockpit:()=>cockpit,world,weather,airflow,camera,renderer,display,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit,cameraView,advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics()};}};
+ window.flightLab={sim,landingLights,plane,cockpit:()=>cockpit,world,weather,airflow,camera,renderer,display,rendering,go,soundEngine:()=>sound.engine,setCam,focusPart,setThrottle,selectAircraft,selectLivery,preloadAircraft,setOrbit,cameraView,advance(seconds){for(let i=0;i<seconds*120;i++)sim.step(1/120,{});},snapshot(){return{mode:sim.mode,phase:sim.phase,x:sim.x,z:sim.z,altitude:sim.altitude,speed:sim.speed,mach:sim.mach,alpha:sim.alpha,stallSpeed:sim.stallSpeed,loadFactor:sim.loadFactor,throttle:sim.throttle,engineN1:sim.engineN1,gear:sim.gear,flaps:sim.flaps,park:sim.park,onGround:sim.onGround,failed:sim.failed,complete:sim.complete,stalled:sim.stalled,warnings:warningList(),aircraft:plane.type,livery:plane.livery,dimensions:plane.dimensions.toArray(),contact:plane.contact,engines:AIRCRAFT_INFO[plane.type].engines,animations:plane.a330Animations?.length??plane.bindings?.length??(plane.type==='b777'?(plane._current?.bundle?.animationIndices?.length||0):plane.type==='b747'?plane.animations.length:Object.values(plane.parts||{}).reduce((n,items)=>n+items.length,0)),paint:plane.type==='a330'?'a330-atlas':plane.type==='b777'?'b777-atlas':plane.paintLivery?'airline-markings':'747-atlas',model:plane.liveryInfo?.model||plane.modelLabel||AIRCRAFT_INFO[plane.type].name,liveryInfo:plane.liveryInfo?{...plane.liveryInfo}:null,cargoMode:['a330','b777'].includes(plane.type)?plane.cargoMode:null,cabinTime:world.time,cabinLit:plane.type==='b777'?world.time==='night'&&!plane.cargoMode:(plane.cabinWindowLights?.visible??null),fps,drawCalls:renderer.info.render.calls,triangles:renderer.info.render.triangles,display:display.diagnostics(),render:rendering.diagnostics()};}};
  let last=performance.now(),uiTime=0;display.onResume=()=>{last=performance.now();};
  function frame(now){if(!running)return;requestAnimationFrame(frame);if(!display.beginFrame()){last=now;return;}let realDt=Math.min((now-last)/1000,.05);last=now;const input=readInput(realDt);const dt=realDt*rate;const n=Math.max(1,Math.ceil(dt*120));for(let i=0;i<n;i++)sim.step(dt/n,input);
- plane.root.position.set(sim.x,plane.contact+sim.altitude+groundLift(sim.pitch,sim.altitude),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));setCockpitAirframeVisibility(plane,cameraControl.mode);plane.update(sim,sim.paused?0:dt);plane.root.position.y-=plane.groundSettle||0;if(cockpit){const inside=cameraControl.mode==='cockpit';cockpit.root.visible=inside||plane.type==='b747';cockpit.native.visible=inside;cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);if(inside)cockpit.draw(sim);}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,cameraControl.mode,world.time);landingLights?.update(sim,world.time,plane,dt);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera();world.airportLights.setView(renderer.domElement.height,camera.fov,world.scene.fog?.density??0);world.airportLights.update(now/1000,camera.position);weather.update(sim.paused?0:dt,camera,cameraControl.mode,sim);renderer.render(scene,camera);display.captureAfterRender();display.presented(now);updateAudio();
+ plane.root.position.set(sim.x,plane.contact+sim.altitude+groundLift(sim.pitch,sim.altitude),sim.z);plane.root.quaternion.setFromEuler(_euler.set(radians(sim.bank),radians(90-sim.heading),radians(sim.pitch)));setCockpitAirframeVisibility(plane,cameraControl.mode);plane.update(sim,sim.paused?0:dt);plane.root.position.y-=plane.groundSettle||0;if(cockpit){const inside=cameraControl.mode==='cockpit';cockpit.root.visible=inside||plane.type==='b747';cockpit.native.visible=inside;cockpit.root.position.copy(plane.root.position);cockpit.root.quaternion.copy(plane.root.quaternion);cockpit.update(sim,sim.paused?0:dt);if(inside)cockpit.draw(sim);}world.update(sim.paused?0:dt,plane.root.position);airflow?.update(sim,dt,cameraControl.mode,world.time,weather.rain);landingLights?.update(sim,world.time,plane,dt,weather.rain);compassStrip.style.transform=`translateX(${-sim.heading*COMPASS_PX}px)`;updateCamera(realDt);world.airportLights.setView(renderer.domElement.height,camera.fov,world.scene.fog?.density??0);world.airportLights.update(now/1000,camera.position);weather.update(sim.paused?0:dt,camera,cameraControl.mode,sim);if(rendering.render()){display.captureAfterRender();display.presented(now);}else display.showBackup();updateAudio();
  uiTime+=realDt;if(uiTime>.09){updateUI();uiTime=0;}if(sim.failed&&!$('#retryDialog').open){$('#retryReason').textContent=sim.message;$('#retryDialog').showModal();}
  elapsed+=realDt;frameCount++;if(elapsed>1){fps=Math.round(frameCount/elapsed);elapsed=0;frameCount=0;}
  }requestAnimationFrame(frame);
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{if(document.body.dataset.uiStage==='scene')document.body.dataset.uiStage='hud';}));
  // The cockpit is only needed for the cockpit camera; build it after the first frame instead of holding up start-up.
  const cockpitScale=plane.native.scale.clone();
- const loadCockpit=()=>new Cockpit().loadInterior(cockpitScale,$('#attitude')).then(c=>{cockpit=c;weather.windshield=c.windshield;scene.add(c.root);if(cameraControl.mode==='cockpit')$('#cockpitOverlay').hidden=true;}).catch(e=>{console.warn('驾驶舱使用简化视角',e);cockpit=null;});
+ const loadCockpit=()=>new Cockpit().loadInterior(cockpitScale,$('#attitude')).then(c=>{cockpit=c;weather.windshield=c.windshield;weather.windshield?.setQuality(renderLow,display.tablet);scene.add(c.root);if(cameraControl.mode==='cockpit')$('#cockpitOverlay').hidden=true;}).catch(e=>{console.warn('驾驶舱使用简化视角',e);cockpit=null;});
  if(window.requestIdleCallback)requestIdleCallback(loadCockpit,{timeout:1500});else setTimeout(loadCockpit,300);
  }catch(e){console.error(e);$('#loadingText').textContent='载入遇到了问题：'+e.message+'。请刷新重试。';}
 }

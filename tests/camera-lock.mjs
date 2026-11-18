@@ -55,15 +55,14 @@ for(const mode of ['wing','cockpit']){
  const eye=(mode==='wing'?new T.Vector3(3,1.3,3.5):new T.Vector3(24.05,3.8,-.55)).applyQuaternion(planeQuaternion).add(planePosition);
  near(camera.position,eye,`${mode} follows current attitude`);
 }
-// Shake affects the current camera and target, but does not accumulate or shake the tower.
+// Legacy buffet calls without a motion state are inert; tower and paused views remain steady.
 options.mode='cockpit';apply();
 const cleanPosition=position.clone(),cleanTarget=target.clone();
-applyCameraBuffet('cockpit',true,false,position,target,()=>1);
-near(position,cleanPosition.clone().add(new T.Vector3(.14,.14,0)),'buffet position');
-near(target,cleanTarget.clone().add(new T.Vector3(.14,.14,0)),'buffet target');
-apply();near(position,cleanPosition,'buffet does not accumulate');near(target,cleanTarget,'buffet target does not accumulate');
+applyCameraBuffet('cockpit',true,false,position,target);
+near(position,cleanPosition,'standalone buffet is inert without state');
+near(target,cleanTarget,'standalone buffet target is inert without state');
 for(const [mode,buffet,paused] of [['cockpit',true,true],['wing',false,false],['tower',true,false]]){
- applyCameraBuffet(mode,buffet,paused,position,target,()=>1);
+ applyCameraBuffet(mode,buffet,paused,position,target);
  near(position,cleanPosition,`${mode} steady position`);near(target,cleanTarget,`${mode} steady target`);
 }
 {
@@ -72,4 +71,4 @@ for(const [mode,buffet,paused] of [['cockpit',true,true],['wing',false,false],['
  pose({mode:'orbit',planePosition:new T.Vector3(0,0,0),planeQuaternion:new T.Quaternion(),heading:90,orbitAngle:.9,orbitHeight:-1,orbitDistance:80,focus:new T.Vector3(0,2,0)},P,Q);
  assert(P.y>=minY,'orbit view never goes below the ground when dragged downward');
 }
-console.log('Camera lock passed: all views, airframes, translations, attitude, buffet, and 1x/2x/4x playback.');
+console.log('Camera lock passed: all views, airframes, translations, attitude, inactive legacy buffet, and 1x/2x/4x playback.');

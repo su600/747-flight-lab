@@ -1,6 +1,7 @@
 // Animation-channel parsing, evaluation and rig binding for the adapted FlightGear 777
 // models. Pure Three.js + data; no DOM or loader state.
 import * as T from 'three';
+const rigPivot=new T.Vector3();
 // FlightGear XML (x forward/aft, y lateral, z up) -> AC/Three native frame.
 // The AC is nose -X; Aircraft.native rotates it 180 degrees for the app.
 export const fgToNative = (x,y,z) => new T.Vector3(x,z,-y);
@@ -110,7 +111,7 @@ export function createB777AnimationRig({scene,animations,bindings}){
    if(!c||!d||![...c.toArray(),...d.toArray()].every(Number.isFinite)||d.lengthSq()<1e-20)throw Error('B777 rig pivot/axis invalid');
    used.add(wrapper);return {wrapper,pivot:c,axis:d.normalize()};
   });
-  return {a,targets,phase:0};
+  return {a,targets,phase:0,value:null};
  });
  let disposed=false;
  return {
@@ -119,15 +120,15 @@ export function createB777AnimationRig({scene,animations,bindings}){
    if(disposed)throw Error('B777 rig disposed');
    if(!Number.isFinite(dt)||dt<0)throw Error('Invalid B777 rig dt');
    // Validate all property inputs before changing any wrapper.
-   const values=entries.map(e=>evaluateB777Animation(e.a,properties));
-   entries.forEach((e,i)=>{
-    let v=values[i];if(v===null)return;
+   for(const e of entries)e.value=evaluateB777Animation(e.a,properties);
+   for(const e of entries){
+    let v=e.value;if(v===null)continue;
     if(e.a.type==='spin'){e.phase=advanceB777Spin(e.phase,v,dt);v=e.phase;}
     for(const {wrapper,pivot,axis} of e.targets){
      if(e.a.type==='translate')wrapper.position.copy(axis).multiplyScalar(v);
-     else{wrapper.quaternion.setFromAxisAngle(axis,T.MathUtils.degToRad(v));wrapper.position.copy(pivot).sub(pivot.clone().applyQuaternion(wrapper.quaternion));}
+     else{wrapper.quaternion.setFromAxisAngle(axis,T.MathUtils.degToRad(v));wrapper.position.copy(pivot).sub(rigPivot.copy(pivot).applyQuaternion(wrapper.quaternion));}
     }
-   });
+   }
   },
   dispose(){if(disposed)return;disposed=true;for(const e of entries)for(const {wrapper} of e.targets){wrapper.position.set(0,0,0);wrapper.quaternion.identity();}entries.length=0;},
  };

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import * as T from 'three';
-import {LandingLights,landingLightLevel,landingLightsWanted,LANDING_LIGHT_CEILING} from '../src/landing-lights.js';
+import {LandingLights,landingLightLevel,landingLightsWanted,LANDING_LIGHT_CEILING,touchdownLightPulse} from '../src/landing-lights.js';
 const approach={mode:'land',onGround:false,altitude:200,gear:1,speed:75,time:10,landingLights:false};
 // Switch → output.
 assert.equal(landingLightLevel({...approach,landingLights:true},'day'),0,'no beam by day');
@@ -27,4 +27,10 @@ assert(lights.target.position.x>lights.light.position.x+200&&lights.target.posit
 sim.landingLights=false;for(let i=0;i<60;i++){sim.time+=.05;lights.update(sim,'night',plane,.05);}
 assert.equal(sim.landingLights,false,'pilot can switch them off during the same approach');assert(!lights.light.visible);
 sim.time=0;lights.update(sim,'night',plane,.05);assert.equal(sim.landingLights,true,'a restarted landing re-arms the automatic switch');
+const dry=lights.light.intensity;lights.update(sim,'night',plane,.05,'heavy');assert(lights.light.intensity>dry&&lights.light.angle>Math.PI/13,'rain makes the wet runway pool brighter and slightly broader');
+assert(touchdownLightPulse(.1,.8)>touchdownLightPulse(1,.8));assert.equal(touchdownLightPulse(-1,1),0);
+lights.setReducedMotion(true);lights.lastTouchdown=null;sim.touchdown={valid:true,rate:3,time:sim.time};lights.update(sim,'night',plane,.02,'off');assert.equal(lights.light.visible,true,'actual landing-light switch remains active with reduced motion');
+sim.landingLights=false;lights.setReducedMotion(false);lights.level=0;lights.lastTouchdown=sim.touchdown;sim.touchdown=null;
+lights.update(sim,'night',plane,.02,'off');assert.equal(lights.touchdownStrength,0,'clearing touchdown state must cancel the pulse');
+assert.equal(lights.light.visible,false,'resetting a completed landing must not flash the runway light');
 console.log('Landing lights: menu switch, automatic on for dusk/night approaches, pilot override, beam aimed at the runway.');

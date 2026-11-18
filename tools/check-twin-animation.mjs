@@ -26,14 +26,14 @@ for(const type of ['a330','b777']){
  assert.equal(sim.control('gear',0),'');
  const nose=plane.parts.gear[0],main=plane.parts.gear[2];
  const down=world(plane,plane.parts.wheels[0]);
- for(let i=0;i<35;i++)sim.step(.1,{});
- plane.update(sim,.1);
+ for(let i=0;i<35;i++){sim.step(.1,{});plane.update(sim,.1);}
  near(sim.gear,.5,1e-6);
- near(nose.rotation.z,Math.PI/4);near(main.rotation.x,35*Math.PI/180);
+ const retract=1-plane.visualControls.gear;
+ near(nose.rotation.z,retract*Math.PI/2);near(main.rotation.x,retract*70*Math.PI/180);
+ assert(Math.abs(plane.visualControls.gear-sim.gear)<.16,'runtime gear pose lags only by the visual damper');
  assert.ok(plane.parts.gear.every(g=>g.visible));
  assert.ok(world(plane,plane.parts.wheels[0]).distanceTo(down)>1);
- for(let i=0;i<35;i++)sim.step(.1,{});
- plane.update(sim,.1);
+ for(let i=0;i<35;i++){sim.step(.1,{});plane.update(sim,.1);}
  assert.ok(sim.gear<1e-6);
  // Continuous folding right down to stow, not a threshold disappearance.
  sim.gear=.001;plane.update(sim,0);assert.ok(plane.parts.gear.every(g=>g.visible));

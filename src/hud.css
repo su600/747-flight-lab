@@ -2,7 +2,7 @@
    Concept: a glass-cockpit overlay. Deep-navy glass, hairline borders, avionics numerals,
    cyan for information, amber for action, red only for warnings. */
 :root{
- --ink:#04101a;--glass-a:rgba(14,30,43,.66);--glass-b:rgba(6,15,23,.74);--line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.2);
+ --ink:#04101a;--glass-a:rgba(9,23,34,.86);--glass-b:rgba(4,14,22,.92);--line:rgba(214,239,250,.1);--line-2:rgba(214,239,250,.19);
  --t1:#eaf6fa;--t2:#a3bcc7;--t3:#7d97a4;
  --cyan:#55d9ff;--cyan-d:#1f93b8;--amber:#ffb23e;--amber-d:#e8871b;--green:#7ef0b0;--red:#ff5d4d;
  --ui:"HarmonyOS Sans SC","MiSans","PingFang SC","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
@@ -15,7 +15,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%}
-body{overflow:hidden;background:#0a1620;overscroll-behavior:none;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+body{overflow:hidden;overflow-x:clip;background:#0a1620;overscroll-behavior:none;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
 [hidden]{display:none!important}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation;transition:transform .18s var(--ease),background-color .2s,border-color .2s,color .2s,box-shadow .25s,opacity .2s}
 button:focus-visible,[role=slider]:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
@@ -38,10 +38,10 @@ body.cockpit-mode .scrim{opacity:.55}
 body.cockpit-mode .craft-chip{display:none}
 
 /* ---------- Glass ---------- */
-.glass{position:fixed;background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);border-radius:20px;
- -webkit-backdrop-filter:blur(22px) saturate(1.35);backdrop-filter:blur(22px) saturate(1.35);
- box-shadow:0 18px 48px rgba(0,8,16,.38),inset 0 1px 0 rgba(255,255,255,.09)}
-.glass::before{content:"";position:absolute;left:22px;right:22px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(85,217,255,.7),transparent);opacity:.8;pointer-events:none}
+.glass{position:fixed;background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);border-radius:8px;
+ -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+ box-shadow:0 12px 32px rgba(0,5,10,.3),inset 0 1px 0 rgba(255,255,255,.055)}
+.glass::before{content:"";position:absolute;left:10px;right:10px;top:-1px;height:1px;background:linear-gradient(90deg,transparent,rgba(85,217,255,.48),transparent);opacity:.72;pointer-events:none}
 .panel-label{display:flex;align-items:center;gap:8px;font:600 10px/1 var(--mono);letter-spacing:.22em;color:var(--cyan);text-transform:uppercase}
 .live-dot,.status i,.airport .dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(126,240,176,.6);animation:ping 2.2s infinite;flex:none}
 @keyframes ping{0%{box-shadow:0 0 0 0 rgba(126,240,176,.55)}70%,100%{box-shadow:0 0 0 8px rgba(126,240,176,0)}}
@@ -56,17 +56,17 @@ body.cockpit-mode .craft-chip{display:none}
 .brand-text{display:flex;flex-direction:column;gap:5px;padding-left:12px;border-left:1px solid var(--line-2)}
 .brand-text b{font-size:14px;font-weight:650;letter-spacing:.04em;text-shadow:0 1px 8px rgba(0,0,0,.5)}
 .brand-text i{font:500 9px/1 var(--mono);letter-spacing:.34em;color:var(--cyan);font-style:normal}
-.airport{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:999px;background:rgba(6,15,23,.5);border:1px solid var(--line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);font-size:12px;color:var(--t2)}
+.airport{display:flex;align-items:center;gap:9px;padding:8px 14px;border-radius:4px;background:rgba(6,15,23,.8);border:1px solid var(--line);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);font-size:12px;color:var(--t2)}
 .airport b{font:700 12px/1 var(--mono);letter-spacing:.16em;color:var(--t1)}
 .header-actions{margin-left:auto;display:flex;gap:10px}
-.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:rgba(6,15,23,.5);border:1px solid var(--line);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);color:var(--t1);box-shadow:0 8px 20px rgba(0,8,16,.22),inset 0 1px 0 rgba(255,255,255,.07)}
+.icon-btn{width:44px;height:44px;border-radius:8px;display:grid;place-items:center;font-size:20px;background:rgba(6,15,23,.78);border:1px solid var(--line);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);color:var(--t1);box-shadow:0 8px 18px rgba(0,8,16,.22),inset 0 1px 0 rgba(255,255,255,.06)}
 .icon-btn:hover{border-color:var(--cyan);color:var(--cyan);transform:translateY(-1px)}
 .icon-btn:active{transform:scale(.93)}
 
 /* ---------- Compass ---------- */
 .compass{position:fixed;z-index:5;top:max(14px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(440px,38vw);height:48px;pointer-events:none;
- background:linear-gradient(180deg,rgba(6,15,23,.6),rgba(6,15,23,.42));border:1px solid var(--line);border-radius:14px;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
- box-shadow:0 12px 30px rgba(0,8,16,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+ background:linear-gradient(180deg,rgba(6,15,23,.84),rgba(6,15,23,.72));border:1px solid var(--line);border-radius:6px;-webkit-backdrop-filter:blur(7px);backdrop-filter:blur(7px);
+ box-shadow:0 10px 26px rgba(0,8,16,.3),inset 0 1px 0 rgba(255,255,255,.07)}
 .compass-tape{position:absolute;inset:0;overflow:hidden;border-radius:13px;-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(90deg,transparent,#000 22%,#000 78%,transparent)}
 .compass-strip{position:absolute;left:50%;top:0;height:100%;will-change:transform}
 .tick{position:absolute;bottom:20px;width:1px;height:7px;background:rgba(255,255,255,.35)}
@@ -84,7 +84,7 @@ body.cockpit-mode .craft-chip{display:none}
 .craft-chip span{color:var(--t2)}
 
 /* ---------- Missions ---------- */
-.modes{z-index:4;left:var(--pad);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:292px;padding:12px 14px;animation:rise .7s var(--ease) both .1s}
+.modes{z-index:4;left:var(--pad);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:292px;padding:12px 14px}
 .modes:not([open]){width:220px;max-width:calc(100vw - 2 * var(--pad))}
 .modes-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:0 6px;list-style:none;cursor:pointer;touch-action:manipulation;border-radius:10px}
 .modes-summary::-webkit-details-marker{display:none}
@@ -95,10 +95,10 @@ body.cockpit-mode .craft-chip{display:none}
 .modes:not([open]) .modes-expand,.modes[open] .modes-collapse{display:inline}
 .modes[open] .modes-action [aria-hidden]{transform:rotate(180deg)}
 .modes-content{display:flex;flex-direction:column;gap:6px;max-height:max(100px,calc(100dvh - max(84px,calc(env(safe-area-inset-top) + 68px)) - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 80px));overflow-y:auto;overscroll-behavior:contain}
-.mode{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;padding:8px 10px;border-radius:14px;text-align:left;border:1px solid transparent;position:relative}
+.mode{display:grid;grid-template-columns:42px minmax(0,1fr) auto;align-items:center;gap:11px;width:100%;padding:8px 10px;border-radius:6px;text-align:left;border:1px solid transparent;position:relative}
 .mode:hover{background:rgba(255,255,255,.06)}
 .mode:active{transform:scale(.985)}
-.mode-ico{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t1);transition:inherit}
+.mode-ico{width:42px;height:42px;border-radius:7px;display:grid;place-items:center;font-size:21px;background:rgba(255,255,255,.055);border:1px solid var(--line);color:var(--t1);transition:inherit}
 .mode-txt{display:flex;flex-direction:column;gap:4px;min-width:0}
 .mode-txt b{font-size:15px;font-weight:650;letter-spacing:.02em}
 .mode-txt small{font-size:11.5px;color:var(--t2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -117,9 +117,9 @@ body.cockpit-mode .craft-chip{display:none}
 .chip-btn:hover{border-color:var(--cyan);color:var(--cyan)}
 
 /* ---------- Tool rail ---------- */
-.rail{position:fixed;z-index:4;right:max(24px,env(safe-area-inset-right));top:max(84px,calc(env(safe-area-inset-top) + 68px));display:flex;flex-direction:column;gap:8px;animation:rise .7s var(--ease) both .2s}
-.rail button{width:60px;height:60px;border-radius:17px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:22px;color:var(--t1);
- background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);box-shadow:0 10px 24px rgba(0,8,16,.3),inset 0 1px 0 rgba(255,255,255,.08)}
+.rail{position:fixed;z-index:4;right:max(24px,env(safe-area-inset-right));top:max(84px,calc(env(safe-area-inset-top) + 68px));display:flex;flex-direction:column;gap:8px}
+.rail button{width:60px;height:60px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:22px;color:var(--t1);
+ background:linear-gradient(180deg,var(--glass-a),var(--glass-b));border:1px solid var(--line);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);box-shadow:0 8px 18px rgba(0,8,16,.25),inset 0 1px 0 rgba(255,255,255,.06)}
 .rail em{font-size:10.5px;letter-spacing:.06em;color:var(--t2)}
 .rail button:hover{border-color:rgba(85,217,255,.5);transform:translateX(-2px)}
 .rail button:active{transform:scale(.95)}
@@ -127,8 +127,8 @@ body.cockpit-mode .craft-chip{display:none}
 .rail button.active em{color:#06303f;font-weight:700}
 
 /* ---------- Drawer ---------- */
-#drawer{z-index:7;right:calc(max(24px,env(safe-area-inset-right)) + 60px + 14px);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:360px;max-height:calc(100dvh - 84px - var(--deck-h) - var(--deck-b) - 30px);display:flex;flex-direction:column;overflow:hidden}
-#drawer:not([hidden]){animation:slideIn .32s var(--ease)}
+#drawer{z-index:7;right:calc(max(24px,env(safe-area-inset-right)) + 60px + 14px);top:max(84px,calc(env(safe-area-inset-top) + 68px));width:360px;max-width:calc(100vw - 32px);max-height:calc(100dvh - 84px - var(--deck-h) - var(--deck-b) - 30px);display:flex;flex-direction:column;overflow:hidden;opacity:0;translate:14px 0;transition:opacity .2s var(--ease),translate .2s var(--ease)}
+#drawer.is-open{opacity:1;translate:0 0}
 .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 13px;border-bottom:1px solid var(--line)}
 .drawer-head h2{font-size:21px;font-weight:700;margin-top:9px;letter-spacing:.02em}
 #closeDrawer{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:22px;line-height:1;background:rgba(255,255,255,.07);border:1px solid var(--line);color:var(--t2)}
@@ -212,7 +212,7 @@ select option{background:#0b1b27;color:var(--t1)}
 .cam-dock #resetCamera{width:40px;height:40px;padding:0;display:grid;place-items:center;font-size:17px;margin-left:2px}
 
 /* ---------- Instrument deck ---------- */
-.deck{z-index:5;left:var(--pad);right:max(24px,env(safe-area-inset-right));bottom:calc(var(--deck-b) + env(safe-area-inset-bottom));height:var(--deck-h);display:flex;align-items:stretch;border-radius:20px;overflow:hidden;animation:rise .7s var(--ease) both .25s}
+.deck{z-index:5;left:var(--pad);right:max(24px,env(safe-area-inset-right));bottom:calc(var(--deck-b) + env(safe-area-inset-bottom));height:var(--deck-h);display:flex;align-items:stretch;border-radius:8px;overflow:hidden}
 .cell{padding:10px 16px;display:flex;flex-direction:column;justify-content:center;min-width:0;position:relative}
 .cell+.cell::before{content:"";position:absolute;left:0;top:18px;bottom:18px;width:1px;background:var(--line)}
 .cell-att{width:146px;align-items:center;gap:6px;padding:9px 12px}
@@ -337,8 +337,8 @@ dialog .primary-btn{margin-top:14px}
 /* Touch devices and compact mobile layouts: bigger targets, lighter glass */
 @media(pointer:coarse),(any-pointer:coarse),(max-width:760px),(max-width:950px) and (orientation:landscape) and (max-height:500px){
  :root{--deck-h:124px}
- .glass,.compass,.airport,.icon-btn,.rail button,.status{-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
- .glass{background:linear-gradient(180deg,rgba(14,30,43,.84),rgba(6,15,23,.9))}
+ .glass,.compass,.airport,.icon-btn,.rail button,.status{-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
+ .glass{background:linear-gradient(180deg,rgba(9,23,34,.94),rgba(4,14,22,.97))}
  .icon-btn{width:52px;height:52px;font-size:22px}
  .mode{padding-top:11px;padding-bottom:11px}
  .rail button{width:74px;height:74px}
@@ -397,7 +397,7 @@ dialog .primary-btn{margin-top:14px}
  .modes-content,.cam-dock{scrollbar-width:none}.modes-content::-webkit-scrollbar,.cam-dock::-webkit-scrollbar{display:none}
  .copilot,.mode-no,.mode-txt small{display:none}
  .modes-foot{flex:none;gap:8px;margin:0;padding:0 6px;border-top:0;border-left:1px solid var(--line);white-space:nowrap}
- .mode{grid-template-columns:36px auto;width:auto;flex:none;padding:3px 8px 3px 3px;gap:8px}.mode-ico{width:36px;height:36px;font-size:18px}.mode-txt b{font-size:13px;white-space:nowrap}
+ .mode{grid-template-columns:36px auto;width:auto;min-height:44px;flex:none;padding:3px 8px 3px 3px;gap:8px}.mode-ico{width:36px;height:36px;font-size:18px}.mode-txt b{font-size:13px;white-space:nowrap}
  .mode-inspect{margin-top:0}.mode-inspect::before{display:none}
  .rail{left:max(10px,env(safe-area-inset-left));right:auto;top:calc(max(10px,env(safe-area-inset-top)) + 112px);flex-direction:row;gap:6px}.rail button{width:44px;height:44px;border-radius:14px;font-size:20px}.rail em{display:none}
  #drawer{right:max(10px,env(safe-area-inset-right));left:max(10px,env(safe-area-inset-left));width:auto;top:calc(max(10px,env(safe-area-inset-top)) + 112px);max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - 112px - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 10px)}
@@ -439,7 +439,7 @@ dialog .primary-btn{margin-top:14px}
  .cell-thrust{grid-column:auto;padding:6px 8px;border-top:0}.thrust-body{height:56px}
  .cell-actions{grid-column:auto;padding:8px;grid-template-columns:repeat(4,1fr);border-top:0}
 }
-@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){.flight-lab,.flight-lab *,.flight-lab *::before,.flight-lab *::after{animation:none!important;transition:none!important}}
 
 /* ---------- Aircraft download bar ---------- */
 #loadBar{position:fixed;z-index:60;top:env(safe-area-inset-top);left:env(safe-area-inset-left);right:env(safe-area-inset-right);height:3px;background:rgba(255,255,255,.08);pointer-events:none}
@@ -469,7 +469,7 @@ dialog .primary-btn{margin-top:14px}
  .cam-dock button{min-width:40px;padding:0 2px;font-size:12px}
  .cam-dock #resetCamera{width:40px;height:44px;margin:0}
  .rail{top:calc(max(10px,env(safe-area-inset-top)) + 180px);gap:3px}
- .rail button{width:40px;height:40px;gap:1px;font-size:17px;border-radius:12px}
+ .rail button{width:44px;height:44px;gap:1px;font-size:17px;border-radius:12px}
  .rail em{display:block;font-size:10px;line-height:1;letter-spacing:0}
  #drawer{top:calc(max(10px,env(safe-area-inset-top)) + 180px);max-height:calc(100dvh - max(10px,env(safe-area-inset-top)) - 180px - var(--deck-h) - var(--deck-b) - env(safe-area-inset-bottom) - 114px)}
  .drawer-head{padding:12px 14px 10px}.drawer-head h2{font-size:18px;margin-top:6px}
@@ -483,7 +483,7 @@ dialog .primary-btn{margin-top:14px}
  .cell-metric em{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .cell-thrust,.cell-actions{grid-column:1/-1}
  .cell-actions{padding:4px 8px}
- .act{min-height:40px;padding:2px;gap:1px}
+ .act{min-height:44px;padding:2px;gap:1px}
  .status{max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)) - 160px);max-height:150px;overflow:auto;gap:6px}
  #takeControl{min-height:40px}
  #windHud{top:calc(max(10px,env(safe-area-inset-top)) + 180px);left:max(10px,env(safe-area-inset-left));transform:none;max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - max(10px,env(safe-area-inset-right)) - 50px);white-space:normal}
@@ -513,8 +513,8 @@ dialog .primary-btn{margin-top:14px}
  #loadProgress{left:calc(max(10px,env(safe-area-inset-left)) + min(380px,calc(100vw - 200px)) + 10px);transform:none;max-width:calc(100vw - max(10px,env(safe-area-inset-left)) - min(380px,calc(100vw - 200px)) - 10px - max(10px,env(safe-area-inset-right)) - 154px)}
 }
 /* Controls in scrollable drawers keep a generous hit area, including the range track. */
-.drawer-content button,.weather-settings select,.weather-settings input[type=number]{min-height:40px}
-.drawer-content input[type=range]{height:40px;margin:0;background:linear-gradient(transparent 17px,rgba(255,255,255,.14) 17px,rgba(255,255,255,.14) 23px,transparent 23px)}
+.drawer-content button,.weather-settings select,.weather-settings input[type=number]{min-height:44px}
+.drawer-content input[type=range]{height:44px;margin:0;background:linear-gradient(transparent 19px,rgba(255,255,255,.14) 19px,rgba(255,255,255,.14) 25px,transparent 25px)}
 
 /* Space Shuttle: landing and ground observation only. Hide controls with no orbiter counterpart. */
 body.shuttle-mode #courseStart,body.shuttle-mode [data-mode="takeoff"],body.shuttle-mode [data-mode="free"],body.shuttle-mode #runwayStart,
@@ -523,3 +523,41 @@ body.shuttle-mode #door,body.shuttle-mode #wipers,body.shuttle-mode #neutral,bod
 /* The drag chute exists only on the orbiter. */
 #chute{display:none}
 body.shuttle-mode #chute{display:block}
+
+/* ---------- HUD motion language ---------- */
+.flight-lab main{overflow:clip;max-width:100vw}
+.flight-lab .instrument-digits,
+.flight-lab #speedDigits,.flight-lab #altDigits,.flight-lab #headingDigits,.flight-lab #throttleValue{display:inline-block;contain:layout;font-variant-numeric:tabular-nums}
+.flight-lab .aircraft-choices button.pending,.flight-lab .livery-card.pending{border-color:rgba(255,178,62,.7);box-shadow:inset 3px 0 0 var(--amber)}
+.flight-lab .aircraft-choices button.pending::after,.flight-lab .livery-card.pending::after{content:"载入";margin-left:auto;align-self:center;font:600 10px/1 var(--mono);letter-spacing:.08em;color:var(--amber)}
+.flight-lab[data-ui-stage="loading"] :is(.topbar,.compass,.craft-chip,.modes,.rail,.stage-ui,.deck,#touchControls,#windHud),
+.flight-lab[data-ui-stage="scene"] :is(.topbar,.compass,.craft-chip,.modes,.rail,.stage-ui,.deck,#touchControls,#windHud){opacity:0}
+.flight-lab[data-ui-stage="loading"] #viewport canvas{opacity:0}
+.flight-lab[data-ui-stage="scene"] #viewport canvas{animation:hud-scene-reveal .44s var(--ease) both}
+.flight-lab[data-ui-stage="hud"] :is(.topbar,.compass,.craft-chip,.modes,.rail,.stage-ui,.deck){animation:hud-region-enter .4s var(--ease) both}
+.flight-lab[data-ui-stage="hud"] .craft-chip{animation-delay:.05s}
+.flight-lab[data-ui-stage="hud"] :is(.modes,.rail){animation-delay:.1s}
+.flight-lab[data-ui-stage="hud"] :is(.stage-ui,.deck){animation-delay:.17s}
+.flight-lab[data-ui-stage="hud"] :is(.header-actions button,.mode,.rail button,.cam-dock button,.cell-actions button,.cell-thrust){
+ animation:hud-control-enter .32s var(--ease) both;animation-delay:.28s
+}
+.flight-lab[data-ui-stage="hud"] :is(.rail button,.mode):nth-child(2){animation-delay:.31s}
+.flight-lab[data-ui-stage="hud"] :is(.rail button,.mode):nth-child(3){animation-delay:.34s}
+.flight-lab[data-ui-stage="hud"] :is(.rail button,.mode):nth-child(4){animation-delay:.37s}
+.flight-lab[data-ui-stage="hud"] :is(.rail button,.mode):nth-child(5){animation-delay:.4s}
+@keyframes hud-scene-reveal{from{opacity:0}to{opacity:1}}
+@keyframes hud-region-enter{from{opacity:0;translate:0 8px}to{opacity:1;translate:0 0}}
+@keyframes hud-control-enter{from{opacity:0;translate:0 5px;scale:.995}to{opacity:1;translate:0 0;scale:1}}
+
+/* A low-quality/touch profile keeps compositor motion and blur deliberately modest. */
+.flight-lab[data-motion="simplified"] :is(.glass,.compass,.airport,.icon-btn,.rail button,.status){
+ -webkit-backdrop-filter:none;backdrop-filter:none
+}
+.flight-lab[data-motion="simplified"] :is(.glass,.compass,.airport,.icon-btn,.rail button,.status){background-color:rgba(6,18,27,.94)}
+.flight-lab[data-motion="simplified"] :is(.glass,.rail button,.icon-btn){box-shadow:0 5px 14px rgba(0,5,10,.26),inset 0 1px 0 rgba(255,255,255,.045)}
+.flight-lab[data-motion="simplified"] #drawer{transition-duration:.12s}
+.flight-lab[data-motion="simplified"][data-ui-stage="hud"] :is(.header-actions button,.mode,.rail button,.cam-dock button,.cell-actions button,.cell-thrust){animation-duration:.18s;animation-delay:.16s}
+.flight-lab[data-motion="simplified"][data-ui-stage="hud"] :is(.topbar,.compass,.craft-chip,.modes,.rail,.stage-ui,.deck){animation-duration:.24s;animation-delay:.05s}
+.flight-lab[data-motion="reduced"] .livery-card,.flight-lab[data-motion="reduced"] #drawer{transform:none;translate:0 0;transition:none}
+.flight-lab[data-motion="reduced"][data-ui-stage="loading"] #viewport canvas,
+.flight-lab[data-motion="reduced"][data-ui-stage="scene"] #viewport canvas{opacity:1}

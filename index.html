@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#06111a"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="747 Flight Lab"><title>747 Flight Lab · 小机长飞行实验室</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2306111a'/%3E%3Cpath d='M10 44 54 20' stroke='%234fd8ff' stroke-width='5' stroke-linecap='round'/%3E%3Ctext x='8' y='56' font-size='16' fill='white' font-family='sans-serif' font-weight='bold'%3E747%3C/text%3E%3C/svg%3E"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" type="image/svg+xml" href="/assets/pwa/plane.svg"><link rel="apple-touch-icon" sizes="180x180" href="/assets/pwa/icon-180.png"><link rel="stylesheet" href="/src/hud.css"><script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script><link rel="modulepreload" href="/node_modules/three/build/three.module.js"><link rel="modulepreload" href="/src/main.js"><link rel="modulepreload" href="/src/preload.js"><link rel="modulepreload" href="/src/aircraft.js"><link rel="modulepreload" href="/src/world.js"><link rel="modulepreload" href="/src/flight.js"><link rel="modulepreload" href="/src/cockpit.js"><link rel="modulepreload" href="/src/display.js"><link rel="modulepreload" href="/src/airflow.js"><link rel="modulepreload" href="/src/camera-gestures.js"><link rel="modulepreload" href="/src/aircraft-lighting.js"><link rel="modulepreload" href="/src/cargo-liveries.js"><link rel="modulepreload" href="/src/livery-for-model.js"><link rel="modulepreload" href="/src/livery-reality.js"><link rel="modulepreload" href="/src/reality-b747.js"><link rel="modulepreload" href="/src/reality-a380.js"><link rel="modulepreload" href="/src/reality-a330.js"><link rel="modulepreload" href="/src/reality-b777.js"><link rel="modulepreload" href="/node_modules/three/examples/jsm/objects/Sky.js"><link rel="modulepreload" href="/node_modules/three/examples/jsm/utils/BufferGeometryUtils.js"></head>
-<body>
+<body class="flight-lab" data-ui-stage="loading">
 <div id="viewport" aria-label="三维飞机场景：左键或单指旋转，右键平移，滚轮或双指缩放"></div>
 <div class="scrim" aria-hidden="true"></div>
 
@@ -18,7 +18,7 @@
  <div class="compass" aria-label="航向">
   <div class="compass-tape" id="compass"></div>
   <div class="compass-needle"></div>
-  <div class="compass-box"><span>HDG</span><strong id="headingValue">090<small> °</small></strong></div>
+  <div class="compass-box"><span>HDG</span><strong id="headingValue"><span id="headingDigits">090</span><small> °</small></strong></div>
  </div>
  <div id="windHud" hidden aria-label="风向与风速"><i aria-hidden="true">↑</i><span></span></div>
  <div class="craft-chip"><b id="aircraftName">BOEING 747–400</b><i></i><span id="liveryName">波音经典涂装</span></div>
@@ -41,14 +41,14 @@
  </nav>
 
  <nav class="rail" aria-label="探索工具">
-  <button data-panel="aircraft" title="切换机型"><svg viewBox="0 0 24 24"><path d="M12 2v20M12 4l-3 7-6 3v2l6-1 1 4-2 2h8l-2-2 1-4 6 1v-2l-6-3z"/></svg><em>机型</em></button>
-  <button data-panel="parts" title="可动部件"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><em>部件</em></button>
-  <button data-panel="livery" title="切换涂装"><svg viewBox="0 0 24 24"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg><em>涂装</em></button>
-  <button data-panel="world" title="环境与设置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><em>环境</em></button>
-  <button data-panel="about" title="了解这架飞机"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><em>百科</em></button>
+  <button data-panel="aircraft" aria-controls="drawer" aria-expanded="false" title="切换机型"><svg viewBox="0 0 24 24"><path d="M12 2v20M12 4l-3 7-6 3v2l6-1 1 4-2 2h8l-2-2 1-4 6 1v-2l-6-3z"/></svg><em>机型</em></button>
+  <button data-panel="parts" aria-controls="drawer" aria-expanded="false" title="可动部件"><svg viewBox="0 0 24 24"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg><em>部件</em></button>
+  <button data-panel="livery" aria-controls="drawer" aria-expanded="false" title="切换涂装"><svg viewBox="0 0 24 24"><path d="M12 3s6 6.2 6 10.5A6 6 0 0 1 6 13.5C6 9.2 12 3 12 3z"/></svg><em>涂装</em></button>
+  <button data-panel="world" aria-controls="drawer" aria-expanded="false" title="环境与设置"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M18.7 5.3l-1.6 1.6M6.9 17.1l-1.6 1.6"/></svg><em>环境</em></button>
+  <button data-panel="about" aria-controls="drawer" aria-expanded="false" title="了解这架飞机"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><path d="M12 7.6v.1"/></svg><em>百科</em></button>
  </nav>
 
- <aside id="drawer" class="glass" hidden>
+ <aside id="drawer" class="glass" aria-labelledby="drawerTitle" hidden>
   <div class="drawer-head"><div><span class="panel-label">EXPLORE · 探索</span><h2 id="drawerTitle">可动部件</h2></div><button id="closeDrawer" aria-label="关闭面板">×</button></div>
   <section id="aircraftPanel" class="drawer-content" hidden>
    <p class="hint">保留当前飞行状态与涂装。打开页面后会按列表顺序在后台依次下载其余机型（显示进度），点选时立即优先下载；载入过一次后即可快速切换。驾驶舱与飞行模型为共用 747 简化示意。</p>
@@ -90,7 +90,7 @@
    <h3>驾驶辅助</h3>
    <button class="setting active" id="assist"><span>小机长辅助<small>松开方向键自动放平机翼，并防止失速</small></span><i></i></button>
    <h3>画面质量</h3>
-   <select id="quality" aria-label="画面质量"><option value="high">精细 · 阴影与抗锯齿</option><option value="low">流畅 · 适合较慢的电脑</option></select>
+   <select id="quality" aria-label="画面质量"><option value="high">精细 · 动态阴影、柔光与抗锯齿</option><option value="low">流畅 · 适合较慢的设备</option></select>
    <p class="hint">这是适合探索的简化飞行体验。机场为虚构场景，飞行性能不用于真实驾驶训练。</p>
    <button class="wide-btn primary" id="runwayStart">从跑道开始手动起飞</button>
   </section>
@@ -113,8 +113,8 @@
 
  <section class="deck glass" aria-label="飞行仪表与推力杆">
   <div class="cell cell-att"><canvas id="attitude" width="200" height="150" aria-label="姿态仪"></canvas><span class="cell-cap" id="flightState">地面 · α 0° · 1.0 G</span></div>
-  <div class="cell cell-metric"><span class="cap">速度 <small>AIRSPEED</small></span><strong id="speedValue">0<small> km/h</small></strong><em id="speedKts">0 KTS · M 0.00</em></div>
-  <div class="cell cell-metric"><span class="cap">高度 <small>ALTITUDE</small></span><strong id="altValue">0<small> m</small></strong><em id="verticalValue">垂直速度 0 m/s</em></div>
+  <div class="cell cell-metric"><span class="cap">速度 <small>AIRSPEED</small></span><strong id="speedValue"><span id="speedDigits">0</span><small> km/h</small></strong><em id="speedKts">0 KTS · M 0.00</em></div>
+  <div class="cell cell-metric"><span class="cap">高度 <small>ALTITUDE</small></span><strong id="altValue"><span id="altDigits">0</span><small> m</small></strong><em id="verticalValue">垂直速度 0 m/s</em></div>
   <div class="cell cell-thrust" aria-label="发动机推力控制台">
    <div class="thrust-head"><span class="cap">推力 <small>THRUST</small></span><output id="throttleValue">慢车</output></div>
    <div class="thrust-body">
