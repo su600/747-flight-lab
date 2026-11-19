@@ -97,7 +97,7 @@ export const cumulusTexture=()=>cumulusTextures(1)[0];
 // Weathered pavement: broad stains, tyre-polished lanes, expansion joints and fine cracks.
 export function pavementTexture(base,scale=1,{joints=0,stains=18}={}){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,S,S);
  for(let i=0;i<stains;i++){const px=rnd()*S,py=rnd()*S,r=70+rnd()*220,g=x.createRadialGradient(px,py,0,px,py,r),d=rnd()<.5?'0,0,0':'255,255,255';g.addColorStop(0,`rgba(${d},.09)`);g.addColorStop(1,`rgba(${d},0)`);x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}
- speckle(x,S,120000,.07,2,2);
+ speckle(x,S,40000,.04,2,2);
  x.strokeStyle='rgba(10,12,12,.28)';x.lineWidth=1;for(let i=0;i<26;i++){let px=rnd()*S,py=rnd()*S;x.beginPath();x.moveTo(px,py);for(let k=0;k<8;k++){px+=(rnd()-.5)*46;py+=(rnd()-.35)*34;x.lineTo(px,py);}x.stroke();}
  if(joints){x.strokeStyle='rgba(20,22,22,.34)';x.lineWidth=2;for(let k=0;k<=joints;k++){const q=k*S/joints;x.beginPath();x.moveTo(q,0);x.lineTo(q,S);x.stroke();x.beginPath();x.moveTo(0,q);x.lineTo(S,q);x.stroke();}}
  const t=canvasTex(c);t.wrapS=t.wrapT=T.RepeatWrapping;t.repeat.set(scale,scale);t.anisotropy=8;return t;}

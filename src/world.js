@@ -43,7 +43,7 @@ export class World{
   this.sky=createSky();scene.add(this.sky);
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
-  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;this.fill=new T.DirectionalLight(LIGHTING.day.fillColor,LIGHTING.day.fill);this.fill.position.set(-420,260,360);this.fill.castShadow=false;scene.add(this.sun,this.sun.target,this.fill,this.fill.target);
+  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;this.sun.shadow.intensity=.6;this.fill=new T.DirectionalLight(LIGHTING.day.fillColor,LIGHTING.day.fill);this.fill.position.set(-420,260,360);this.fill.castShadow=false;scene.add(this.sun,this.sun.target,this.fill,this.fill.target);
   this.buildContactShadow();
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
   // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
