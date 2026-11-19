@@ -10,7 +10,33 @@ export const WINDOW_ROWS=[
  [338,[1644,1661,1678,1695,1712,1729,1746,1763,1780,1797,1814,1883,1900,1917,1934,1951,1968,1985,2002]],
  [430,[521,574,591,609,626,643,659,676,693,710,727,744,761,778,795,813,829,847,863,880,898,915,931,949,965,983,1008,1066,1083,1100,1118,1135,1152,1168,1185,1203,1220,1236,1254,1270,1288,1331,1396,1412,1447,1480,1515,1531,1548,1565,1583,1599,1617,1634,1651,1667,1684,1702,1729,1985,2002,2032,2086,2104,2120,2137,2155,2171,2188,2205,2223,2240,2256,2273,2291]]
 ];
-const cabins=new WeakMap(),wingFixes=new WeakMap();
+const cabins=new WeakMap(),wingFixes=new WeakMap(),finishes=new WeakMap();
+
+// Reflection finish for every aircraft loader. Paint, metal and glass pick up more of the sky probe so the airframe
+// shows soft highlights and a sky reflection instead of reading as flat plastic. The authored values are remembered
+// per material, so low quality restores them exactly and repeated calls (livery changes) cost nothing.
+export function applyAircraftFinish(aircraft,enhanced=true){
+ const root=aircraft?.root||aircraft;if(!root?.traverse)return false;
+ root.traverse(mesh=>{
+  if(!mesh.isMesh)return;
+  for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material]){
+   if(!material||!material.isMeshStandardMaterial)continue;
+   let state=finishes.get(material);
+   if(!state){state={env:material.envMapIntensity,roughness:material.roughness,enhanced:null};finishes.set(material,state);}
+   if(state.enhanced===enhanced)continue;
+   state.enhanced=enhanced;
+   if(!enhanced){material.envMapIntensity=state.env;material.roughness=state.roughness;continue;}
+   // Surfaces that were authored to ignore the environment (cabin interiors) stay dark.
+   if(state.env<=0)continue;
+   const glass=/glass|window|canopy|windshield/i.test(material.name||'')||(material.transparent&&material.opacity<.9);
+   const metal=material.metalness>=.65,painted=!!material.map&&!metal&&!glass;
+   if(glass){material.envMapIntensity=Math.max(state.env,1.9);material.roughness=Math.min(state.roughness,.1);}
+   else if(metal){material.envMapIntensity=Math.max(state.env,1.5);material.roughness=Math.min(state.roughness,.4);}
+   else if(painted){material.envMapIntensity=Math.max(state.env,1.15);material.roughness=Math.min(state.roughness,.46);}
+  }
+ });
+ return true;
+}
 const modelRoot=aircraft=>aircraft?.root;
 
 // Invert one triangle's UV mapping. Positions returned are in mesh-local

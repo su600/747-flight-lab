@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import {addCabinLights,updateCabinLights,removeCabinLights} from '../src/aircraft-lighting.js';
 import {addModelPaint} from '../src/model-paint.js';
 import {World} from '../src/world.js';
+import {createSky} from '../src/world/sky.js';
 
 const ROOT=fileURLToPath(new URL('../',import.meta.url));
 const close=(actual,expected,label)=>assert(Math.abs(actual-expected)<1e-9,`${label}: expected ${expected}, got ${actual}`);
@@ -208,12 +209,12 @@ function verifyDayNightLighting(){
  Object.assign(world,{
   scene:{environment:null,environmentIntensity:0,background:null,fog:{color:color(),density:0}},
   renderer:{toneMappingExposure:0},
-  sun:{intensity:0,color:color()},
+  sun:{intensity:0,color:color()},fill:{intensity:0,color:color()},
   hemi:{intensity:0,color:color(),groundColor:color()},
-  sky:{visible:true,material:{uniforms:{sunPosition:{value:vector},turbidity:{value:0},rayleigh:{value:0},mieCoefficient:{value:0}}}},
+  sky:createSky(),
   stars:{visible:false},envs:{},
   envFor(mode){return {mode};},
-  cloudMat:{color:color(),opacity:0},cityMat:{emissiveIntensity:0},
+  cloudMat:{color:color(),opacity:0},cloudVariants:[],cityMat:{emissiveIntensity:0},
   glass:{emissive:color(),emissiveIntensity:0},
   glow:{material:{opacity:0},visible:false},
   scaleLamps(scale){lampScales.push(scale);}

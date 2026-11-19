@@ -27,7 +27,8 @@ export class Weather{
    // Blend the daytime blue multiplier towards neutral; retain dusk's warm sky.
    if(!night&&!dusk)u.skyTint.value.lerp(new T.Vector3(.85,.88,.92),amount);
    else if(dusk)u.skyTint.value.lerp(new T.Vector3(.88,.9,.95),amount*.5);
-   w.scene.fog.color.lerp(new T.Color(night?0x273342:dusk?0xa89890:0xa2adb4),amount);
+   if(w.blendHorizon)w.blendHorizon(night?0x273342:dusk?0xa89890:0xa2adb4,amount);
+   else w.scene.fog.color.lerp(new T.Color(night?0x273342:dusk?0xa89890:0xa2adb4),amount);
    if(night)w.scene.background.lerp(new T.Color(0x26303b),amount*.35);
   }
   if(VISIBILITY[this.visibility])w.scene.fog.density=VISIBILITY[this.visibility];

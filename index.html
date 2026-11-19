@@ -135,6 +135,13 @@
  <div id="touchControls"><button data-hold="left" aria-label="左转">←</button><button data-hold="up" aria-label="低头">↑</button><button data-hold="down" aria-label="抬头">↓</button><button data-hold="right" aria-label="右转">→</button></div>
  <div id="toast" role="status" hidden></div>
 </main>
+ <div id="eyeRest" class="eye-rest" role="status" aria-live="polite" hidden>
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+  <span class="eye-rest-text"><b>休息眼睛</b><span data-eye-text></span></span>
+  <output class="eye-rest-count" data-eye-count>10</output>
+  <button type="button" data-eye-close>我休息好了</button>
+ </div>
+
 
 <dialog id="helpDialog"><button class="dialog-close" data-close="helpDialog" aria-label="关闭">×</button><span class="panel-label">HELLO, CAPTAIN</span><h2>你的第一本飞行手册</h2><p>先点“看飞机起飞”，观察一次完整起飞。想自己试试，点“我来开飞机”就能从空中出发；也可以在“环境”里选择从跑道开始。</p>
 <div class="help-grid"><div><kbd>↑ ↓</kbd><span>↑低头，↓抬头</span></div><div><kbd>← →</kbd><span>倾斜机翼，左右转弯</span></div><div><kbd>Q E</kbd><span>方向舵 / 地面转弯</span></div><div><kbd>Shift / Ctrl</kbd><span>推 / 收推力杆，也可以直接拖动推力杆</span></div><div><kbd>B</kbd><span>按住脚刹，慢慢减速</span></div><div><kbd>P</kbd><span>拉上 / 松开停留刹车</span></div><div><kbd>G / F</kbd><span>收放起落架 / 调节襟翼</span></div><div><kbd>1 — 5</kbd><span>切换观察视角</span></div><div><kbd>I J K L</kbd><span>旋转或环视镜头</span></div><div><kbd>[ ] / R</kbd><span>缩放 / 重置观察视角</span></div><div><kbd>空格</kbd><span>暂停，仔细看看</span></div></div>
