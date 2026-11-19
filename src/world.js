@@ -6,7 +6,7 @@ import {Scenery,inSceneryZone} from './world/scenery.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
-import {AirportMarkings} from './world/airport-markings.js';
+import {AirportMarkings,configureMarkingAntialias} from './world/airport-markings.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTextures,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
@@ -91,9 +91,11 @@ export class World{
   // Weather darkens and wets the materials the ground meshes actually draw with: the flat clones, except the instanced turf.
   this.weatherGround=[grass,airportTurf,asphalt,runway,concrete,taxi,standPad,lane].map((m,i)=>i===1?m:flatGround(m));
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
-  this.ground(0,-130,3760,.3,yellow,.065);
   // ICAO runway, taxiway and apron paint (threshold keys, aiming point, touchdown zone, lead-on lines, signs).
-  this.markings=new AirportMarkings(scene,this.renderer);this.weatherGround.push(...this.markings.materials);
+  this.markings=new AirportMarkings(scene,this.renderer);
+  // The straight taxiway/hold lines are separate instanced meshes, but need the same pixel coverage filter.
+  const taxiPaint=yellow.clone();configureMarkingAntialias(taxiPaint,this.markings.markUniforms);
+  this.markings.materials.push(taxiPaint);this.weatherGround.push(...this.markings.materials);
   for(const end of [-1,1]){
    const number=this.label(end<0?'09':'27',end*1838,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
    if(end>0)for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
@@ -103,17 +105,18 @@ export class World{
    for(let i=0;i<rects.length;i++){const [x,z,w,d]=rects[i];transform.rotation.set(-Math.PI/2,0,0);transform.position.set(x,y,z);transform.scale.set(w,d,1);transform.updateMatrix();mesh.setMatrixAt(i,transform.matrix);}
    mesh.instanceMatrix.needsUpdate=true;mesh.renderOrder=order;mesh.castShadow=false;mesh.receiveShadow=false;scene.add(mesh);return mesh;
   };
+  this.markings.meshes.push(groundRects([[0,-130,3760,.3]],taxiPaint,.065,65));
   const taxiEdges=[];
   for(const [start,end] of [[-1890,-1768],[-1732,-868],[-832,182],[218,1532],[1568,1900]]){
    taxiEdges.push([(start+end)/2,-143.5,end-start,.5],[(start+end)/2,-116.5,end-start,.5]);
   }
-  groundRects(taxiEdges,yellow,.078,82);
+  this.markings.meshes.push(groundRects(taxiEdges,taxiPaint,.078,82));
   const holdSolid=[],holdDashed=[];
   for(const x of [-1750,-850,200,1550]){
    holdSolid.push([x,-57,34,.5],[x,-59,34,.5]);
    for(let i=0;i<7;i++){const dx=-15.6+i*5.2;holdDashed.push([x+dx,-52,3.2,.5],[x+dx,-50,3.2,.5]);}
   }
-  groundRects([...holdSolid,...holdDashed],yellow,.081,84);
+  this.markings.meshes.push(groundRects([...holdSolid,...holdDashed],taxiPaint,.081,84));
   // Rubber deposits in the touchdown zones.
   for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),GROUND_Y.rubber);}
   for(let x=-1890;x<1900;x+=60)if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);

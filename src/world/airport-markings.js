@@ -113,22 +113,56 @@ function signTexture(text,fg,bg,border){
 const paint=(color,roughness=.62)=>new T.MeshStandardMaterial({color,roughness,metalness:0,envMapIntensity:.35,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
 const PLANE=new T.PlaneGeometry(1,1);
 
-function stabilizeThinMarkWidth(material,uniforms){
+// Pre-filter each paint rectangle in screen space. A subpixel feature is widened only for rasterization and
+// its opacity is reduced in proportion to its original area; unlike opaque widening this preserves coverage.
+// Both local axes matter: some layout rectangles encode their narrow dimension in X, others in Y.
+export function configureMarkingAntialias(material,uniforms){
+ // Custom blending preserves fractional coverage without moving paint to Three.js's transparent queue.
+ // Ground layers, signs and foreground glass/rain depend on the original opaque-before-transparent order.
+ material.transparent=false;material.depthWrite=false;material.blending=T.CustomBlending;
+ material.blendEquation=T.AddEquation;material.blendSrc=T.SrcAlphaFactor;material.blendDst=T.OneMinusSrcAlphaFactor;
+ material.blendEquationAlpha=T.AddEquation;material.blendSrcAlpha=T.OneFactor;material.blendDstAlpha=T.OneMinusSrcAlphaFactor;
  material.onBeforeCompile=shader=>{
   shader.uniforms.uMarkResolution=uniforms.resolution;
   shader.uniforms.uMarkMinPixels=uniforms.minPixels;
-  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform vec2 uMarkResolution;\nuniform float uMarkMinPixels;');
+  const varyings='varying vec2 vMarkCoord;\nvarying vec2 vMarkHalfBounds;\nvarying float vMarkEnergy;';
+  shader.vertexShader=shader.vertexShader.replace('#include <common>',`#include <common>\nuniform vec2 uMarkResolution;\nuniform float uMarkMinPixels;\n${varyings}`);
   shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+ vMarkCoord=position.xy;
+ vMarkHalfBounds=vec2(0.5);
+ vMarkEnergy=1.0;
 #ifdef USE_INSTANCING
- vec3 markWidthView=(modelViewMatrix*instanceMatrix*vec4(0.0,1.0,0.0,0.0)).xyz;
- vec4 markWidthClip=projectionMatrix*vec4(mvPosition.xyz+markWidthView,1.0);
- vec2 markWidthNdc=markWidthClip.xy/markWidthClip.w-gl_Position.xy/gl_Position.w;
- float markWidthPixels=length(markWidthNdc*uMarkResolution*0.5);
- float markExpand=max(0.0,uMarkMinPixels-markWidthPixels)*0.5;
- if(markWidthPixels>0.0001&&markExpand>0.0)gl_Position.xy+=normalize(markWidthNdc)*sign(position.y)*markExpand*2.0/uMarkResolution*gl_Position.w;
+ // Differentiate the perspective divide at this vertex, instead of projecting a distant segment endpoint.
+ // This keeps long runway lines stable even when their other end is behind the camera.
+ if(gl_Position.w>0.001){
+  vec4 markX=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(1.0,0.0,0.0,0.0);
+  vec4 markY=projectionMatrix*modelViewMatrix*instanceMatrix*vec4(0.0,1.0,0.0,0.0);
+  float invW2=1.0/(gl_Position.w*gl_Position.w);
+  vec2 px=(markX.xy*gl_Position.w-gl_Position.xy*markX.w)*invW2*uMarkResolution*0.5;
+  vec2 py=(markY.xy*gl_Position.w-gl_Position.xy*markY.w)*invW2*uMarkResolution*0.5;
+  float lx=length(px),ly=length(py);
+  if(lx>0.0001&&ly>0.0001){
+   vec2 nx=vec2(-py.y,py.x)/ly,ny=vec2(-px.y,px.x)/lx;
+   nx*=dot(nx,px)<0.0?-1.0:1.0;ny*=dot(ny,py)<0.0?-1.0:1.0;
+   vec2 width=abs(vec2(dot(px,nx),dot(py,ny)));
+   vec2 target=max(width,vec2(uMarkMinPixels));
+   const float feather=0.75;
+   vec2 expand=0.5*(target-width)+feather;
+   gl_Position.xy+=(nx*sign(position.x)*expand.x+ny*sign(position.y)*expand.y)*2.0/uMarkResolution*gl_Position.w;
+   vMarkHalfBounds=0.5*target/(target+2.0*feather);
+   vMarkEnergy=clamp(width.x/target.x,0.0,1.0)*clamp(width.y/target.y,0.0,1.0);
+  }
+ }
 #endif`);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <common>',`#include <common>\n${varyings}`);
+  shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+ // fwidth integrates the rectangle edge across approximately one screen pixel, including short dash ends.
+ vec2 markDerivative=max(fwidth(vMarkCoord),vec2(0.00001));
+ vec2 markCoverage=clamp((vMarkHalfBounds-abs(vMarkCoord))/markDerivative+0.5,0.0,1.0);
+ diffuseColor.a*=markCoverage.x*markCoverage.y*vMarkEnergy;`);
  };
- material.customProgramCacheKey=()=> 'airport-markings-min-screen-width-v1';
+ material.customProgramCacheKey=()=> 'airport-markings-analytic-coverage-v2';
+ material.needsUpdate=true;
 }
 function instanced(scene,rects,material,y,order){
  const mesh=new T.InstancedMesh(PLANE,material,Math.max(1,rects.length)),o=new T.Object3D();
@@ -138,12 +172,13 @@ function instanced(scene,rects,material,y,order){
 
 export class AirportMarkings{
  constructor(scene,renderer){
-  this.renderer=renderer;this.markUniforms={resolution:{value:renderer.getDrawingBufferSize(new T.Vector2())},minPixels:{value:1.45}};
+  this.renderer=renderer;this.markUniforms={resolution:{value:renderer.getDrawingBufferSize(new T.Vector2())},minPixels:{value:1}};
   this.white=paint('#ecede6');this.yellow=paint('#e2b23a');this.red=paint('#b33a2e');this.black=paint('#1b1d1e',.8);
-  this.materials=[this.white,this.yellow,this.red,this.black];this.materials.forEach(m=>stabilizeThinMarkWidth(m,this.markUniforms));
+  this.materials=[this.white,this.yellow,this.red,this.black];this.materials.forEach(m=>configureMarkingAntialias(m,this.markUniforms));
   const rw=runwayMarkingLayout(),tw=taxiwayMarkingLayout(),ap=apronMarkingLayout();
   this.meshes=[
-   instanced(scene,rw.white,this.white,.074,90),instanced(scene,rw.yellow,this.yellow,.074,90),
+   // With depth writes disabled, draw runway paint after rubber and before higher taxiway paint.
+   instanced(scene,rw.white,this.white,.074,81.5),instanced(scene,rw.yellow,this.yellow,.074,81.5),
    instanced(scene,tw.yellow,this.yellow,.08,86),
    instanced(scene,ap.white,this.white,.06,80),instanced(scene,ap.black,this.black,.061,80.5),instanced(scene,ap.yellow,this.yellow,.062,81),instanced(scene,ap.red,this.red,.064,82),
   ];
