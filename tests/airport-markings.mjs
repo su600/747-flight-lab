@@ -3,9 +3,15 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as T from 'three';
 import {RUNWAY} from '../src/flight.js';
+import {rubberMarkRects} from '../src/world.js';
 import {AirportMarkings,configureMarkingAntialias,runwayMarkingLayout,taxiwayMarkingLayout,apronMarkingLayout,STANDS,STOP_Z,TAXILANE_Z,yawOf} from '../src/world/airport-markings.js';
 const near=(a,b,e=1e-6)=>assert(Math.abs(a-b)<e,`${a} != ${b}`);
 near(yawOf(1,0),0);near(Math.cos(yawOf(0,1)),0);
+// The 220 static tyre scuffs retain their original bounds and random-call order when instanced.
+let randomCalls=0;const sequence=[.25,.5,.75,.2,.4],rubber=rubberMarkRects(()=>sequence[randomCalls++%sequence.length]);
+assert.equal(rubber.length,220);assert.equal(randomCalls,1100,'five original random draws per scuff');
+near(rubber[0][0],-1350);near(rubber[0][1],4);near(rubber[0][2],15.6);near(rubber[0][3],.28);
+assert(rubber.every(([x,z,l,w])=>Math.abs(x)>=1100&&Math.abs(x)<=1600&&Math.abs(z)<=8&&l>=8&&l<=46&&w>=.12&&w<=.52));
 const rw=runwayMarkingLayout();
 for(const end of [-1,1]){
  const keys=rw.white.filter(([x,,l,w])=>l===30&&w===1.8&&end*x>RUNWAY.end-40);assert.equal(keys.length,16,'16 threshold stripes per end');
@@ -57,6 +63,8 @@ try{
 const world=readFileSync(new URL('../src/world.js',import.meta.url),'utf8'),main=readFileSync(new URL('../src/main.js',import.meta.url),'utf8');
 assert.match(world,/function groundPlane\(w,d\)/,'large ground quads are tessellated');
 assert.match(world,/new T\.Mesh\(groundPlane\(w,d\),flatGround\(m\)\)/);
+assert.match(world,/rubberRects=rubberMarkRects\(\),rubberMaterial=flatGround\(mat\('#394144'\)\)/,'scuffs share the original flat material');
+assert.match(world,/for\(const end of \[-1,1\]\)\{\s*const rubber=groundRects\(rubberRects\.filter\(\(\[x\]\)=>Math\.sign\(x\)===end\),rubberMaterial,GROUND_Y\.rubber,Math\.round\(GROUND_Y\.rubber\*1000\)\);\s*rubber\.name=`runway-rubber-\$\{end\}`;rubber\.receiveShadow=true/,'each runway end is culled independently and scuffs keep their layer and shadows');
 assert.match(world,/configureMarkingAntialias\(taxiPaint,this\.markings\.markUniforms\)/,'filter independent taxiway paint too');
 assert.match(world,/markings\.meshes\.push\(groundRects\(\[\[0,-130,3760,\.3\]\],taxiPaint,\.065,65\)\)/,'taxiway centreline uses analytic coverage');
 assert.match(world,/groundRects\(taxiEdges,taxiPaint,\.078,82\)/,'taxiway edges use analytic coverage');

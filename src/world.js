@@ -29,6 +29,11 @@ export function flatGround(m){
 // kilometres interpolate depth poorly at grazing angles and the grass beneath showed through the apron.
 const groundPlanes=new Map();
 function groundPlane(w,d){const sx=Math.min(160,Math.max(1,Math.round(w/250))),sz=Math.min(160,Math.max(1,Math.round(d/250)));if(sx===1&&sz===1)return UNIT_PLANE;const key=sx+'x'+sz;let g=groundPlanes.get(key);if(!g){g=new T.PlaneGeometry(1,1,sx,sz);groundPlanes.set(key,g);}return g;}
+export function rubberMarkRects(random=rnd){
+ const rects=[];
+ for(let i=0;i<220;i++){const x=(random()<.5?-1:1)*(1100+random()*500),z=(random()-.5)*16;rects.push([x,z,8+random()*38,.12+random()*.4]);}
+ return rects;
+}
 export class World{
  constructor(scene,renderer){this.scene=scene;this.renderer=renderer;this.lamps=[];this.lampData=[];this.lampMesh=null;this.time='day';this.clouds=[];this.t=0;this.build();}
  box(x,y,z,w,h,d,m,shadow=false){const o=new T.Mesh(boxGeo(w,h,d),m);o.position.set(x,y,z);o.receiveShadow=true;o.castShadow=shadow;this.scene.add(o);return o;}
@@ -117,8 +122,13 @@ export class World{
    for(let i=0;i<7;i++){const dx=-15.6+i*5.2;holdDashed.push([x+dx,-52,3.2,.5],[x+dx,-50,3.2,.5]);}
   }
   this.markings.meshes.push(groundRects([...holdSolid,...holdDashed],taxiPaint,.081,84));
-  // Rubber deposits in the touchdown zones.
-  for(let i=0;i<220;i++){const x=(rnd()<.5?-1:1)*(1100+rnd()*500),z=(rnd()-.5)*16;this.ground(x,z,8+rnd()*38,.12+rnd()*.4,mat('#394144'),GROUND_Y.rubber);}
+  // Rubber deposits share one plane/material. Keep separate batches at the two runway ends so the
+  // renderer can still cull a distant end; retain the random draws, layer, depth and shadow reception.
+  const rubberRects=rubberMarkRects(),rubberMaterial=flatGround(mat('#394144'));
+  for(const end of [-1,1]){
+   const rubber=groundRects(rubberRects.filter(([x])=>Math.sign(x)===end),rubberMaterial,GROUND_Y.rubber,Math.round(GROUND_Y.rubber*1000));
+   rubber.name=`runway-rubber-${end}`;rubber.receiveShadow=true;
+  }
   for(let x=-1890;x<1900;x+=60)if(x%120===-90)this.lamp(x,.2,-145,0x3299ff);
   for(let x=-1800;x<=1800;x+=60)this.lamp(x,.16,-130,0x36c982);
   for(let x=-1890;x<1900;x+=180){this.box(x,.55,-46,5,1.1,.22,mat('#272f25'));this.label('A  →',x,.7,-45.83,4,1,false,'#f2cf6a');}
