@@ -46,11 +46,53 @@ export function facadeBoxGeometry(){const g=new T.BoxGeometry(1,1,1),uv=g.attrib
  for(const grp of g.groups.slice(2,4))for(let i=grp.start;i<grp.start+grp.count;i++){const v=g.index.getX(i);uv.setXY(v,.5,FACADE_ROOF_V);}
  uv.needsUpdate=true;return g;}
 export function glowTexture(){const c=document.createElement('canvas');c.width=c.height=64;const x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.25,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return canvasTex(c);}
-// A puffy cumulus: white crowns, soft blue-grey undersides.
-export function cumulusTexture(){const W=256,H=160,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
- for(let i=0;i<22;i++){const px=36+rnd()*(W-72),py=H*.5+(rnd()-.5)*H*.3-Math.abs(px-W/2)*.12,r=22+rnd()*30,g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,.95)');g.addColorStop(.55,'rgba(255,255,255,.6)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);}
- x.globalCompositeOperation='source-atop';const sh=x.createLinearGradient(0,H*.28,0,H*.78);sh.addColorStop(0,'rgba(255,255,255,0)');sh.addColorStop(1,'rgba(176,194,220,.42)');x.fillStyle=sh;x.fillRect(0,0,W,H);
- return canvasTex(c);}
+// A canvas stores transparent pixels as black. GPU mip-mapping averages straight RGBA, so that black bleeds into the
+// cloud as it shrinks and distant clouds turn grey. Rebuild the texture with the cloud's own colour in every
+// transparent texel (alpha untouched) so every mip level stays white.
+function bleedTexture(canvas){
+ const W=canvas.width,H=canvas.height,src=canvas.getContext('2d').getImageData(0,0,W,H).data,out=new Uint8Array(W*H*4);
+ const bleed=[236,242,252];
+ for(let y=0;y<H;y++)for(let x=0;x<W;x++){
+  const i=(y*W+x)*4,o=((H-1-y)*W+x)*4,a=src[i+3],k=Math.min(1,a/64);
+  for(let c=0;c<3;c++)out[o+c]=Math.round(bleed[c]*(1-k)+src[i+c]*k);
+  out[o+3]=a;
+ }
+ const t=new T.DataTexture(out,W,H,T.RGBAFormat);t.colorSpace=T.SRGBColorSpace;t.generateMipmaps=true;t.minFilter=T.LinearMipmapLinearFilter;t.magFilter=T.LinearFilter;t.anisotropy=4;t.needsUpdate=true;return t;
+}
+// Puffy cumulus sprites: a domed crown of overlapping puffs, a flat soft-edged base, sunlit tops and blue-grey
+// undersides. Several shapes are painted so a sky of them does not repeat; the lighting is baked in, and the
+// sprite's colour tints it for dusk and night.
+export function cumulusTextures(count=4){
+ const W=512,H=256,list=[];
+ for(let n=0;n<count;n++){
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d'),baseY=H*.68,puffs=[];
+  const total=34+Math.floor(rnd()*12);
+  for(let i=0;i<total;i++){
+   const px=64+rnd()*(W-128),dome=Math.max(0,1-Math.pow(Math.abs(px-W/2)/(W/2-56),1.5)),r=22+rnd()*34*(.45+dome);
+   puffs.push({px,py:baseY-r*.5-rnd()*dome*H*.34,r});
+  }
+  puffs.sort((a,b)=>b.py-a.py);
+  for(const {px,py,r} of puffs){
+   const g=x.createRadialGradient(px,py,0,px,py,r);g.addColorStop(0,'rgba(255,255,255,.96)');g.addColorStop(.55,'rgba(255,255,255,.78)');g.addColorStop(1,'rgba(255,255,255,0)');
+   x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);
+  }
+  x.globalCompositeOperation='source-atop';
+  // Shade: soft blue-grey towards the base, then a warm highlight on the sun-facing shoulder of each puff.
+  const shade=x.createLinearGradient(0,H*.22,0,baseY+6);shade.addColorStop(0,'rgba(180,198,224,0)');shade.addColorStop(.55,'rgba(170,190,220,.22)');shade.addColorStop(1,'rgba(142,164,200,.62)');
+  x.fillStyle=shade;x.fillRect(0,0,W,H);
+  for(const {px,py,r} of puffs){
+   const g=x.createRadialGradient(px-r*.28,py-r*.34,0,px-r*.28,py-r*.34,r*.8);g.addColorStop(0,'rgba(255,255,255,.5)');g.addColorStop(1,'rgba(255,255,255,0)');
+   x.fillStyle=g;x.fillRect(px-r,py-r,r*2,r*2);
+  }
+  // Flatten the base: erase everything below the cloud floor with a soft edge.
+  x.globalCompositeOperation='destination-out';
+  const floor=x.createLinearGradient(0,baseY-14,0,baseY+30);floor.addColorStop(0,'rgba(0,0,0,0)');floor.addColorStop(1,'rgba(0,0,0,1)');
+  x.fillStyle=floor;x.fillRect(0,baseY-14,W,H-baseY+14);
+  list.push(bleedTexture(c));
+ }
+ return list;
+}
+export const cumulusTexture=()=>cumulusTextures(1)[0];
 
 // Weathered pavement: broad stains, tyre-polished lanes, expansion joints and fine cracks.
 export function pavementTexture(base,scale=1,{joints=0,stains=18}={}){const S=1024,c=document.createElement('canvas');c.width=c.height=S;const x=c.getContext('2d');x.fillStyle=base;x.fillRect(0,0,S,S);

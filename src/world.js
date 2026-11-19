@@ -1,11 +1,13 @@
 import * as T from 'three';
-import {Sky} from 'three/addons/objects/Sky.js';
+import {createSky,applySkyPreset} from './world/sky.js';
+import {LIGHTING,lightingFor,inverseAces} from './world/lighting.js';
+import {shadowExtent,shadowSizeFor} from './render-profile.js';
 import {Scenery,inSceneryZone} from './world/scenery.js';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
 import {AirportMarkings} from './world/airport-markings.js';
-import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTexture,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
+import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTextures,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
 // Heights of the far-field ground layers (metres). Layers that can overlap are at least 4 cm apart; the coast stack 15 cm.
@@ -36,11 +38,13 @@ export class World{
  line(points,color,width=1){const m=new T.LineBasicMaterial({color,linewidth:width});const g=new T.BufferGeometry().setFromPoints(points.map(p=>new T.Vector3(...p)));const o=new T.Line(g,m);this.scene.add(o);return o;}
  label(text,x,y,z,w,h,ground=false,fg='#f5f3dc',bg=null){const c=document.createElement('canvas');c.width=1024;c.height=256;const ctx=c.getContext('2d');if(bg){ctx.fillStyle=bg;ctx.fillRect(0,0,1024,256);}ctx.fillStyle=fg;ctx.textAlign='center';ctx.textBaseline='middle';let fontSize=175;ctx.font=`bold ${fontSize}px Arial`;while(fontSize>54&&ctx.measureText(text).width>930){fontSize-=8;ctx.font=`bold ${fontSize}px Arial`;}ctx.fillText(text,512,132,960);const t=new T.CanvasTexture(c);t.colorSpace=T.SRGBColorSpace;const m=new T.MeshBasicMaterial({map:t,transparent:true,depthWrite:false,side:T.DoubleSide});const o=new T.Mesh(new T.PlaneGeometry(w,h),m);o.position.set(x,y,z);if(ground)o.rotation.x=-Math.PI/2;this.scene.add(o);return o;}
  build(){
-  const scene=this.scene;scene.fog=new T.FogExp2(0x6aa8e6,.000055);
-  this.sky=new Sky();this.sky.scale.setScalar(200000);this.sky.renderOrder=-1000;scene.add(this.sky);const u=this.sky.material.uniforms;u.skyTint={value:new T.Vector3(.3,.6,2.3)};this.sky.material.fragmentShader=this.sky.material.fragmentShader.replace('varying vec3 vWorldPosition;','uniform vec3 skyTint;\nvarying vec3 vWorldPosition;').replace('gl_FragColor = vec4( retColor, 1.0 );','gl_FragColor = vec4( retColor * skyTint, 1.0 );');this.sky.material.customProgramCacheKey=()=> 'sky-day-blue-tint-v1';this.sky.material.needsUpdate=true;u.turbidity.value=1.5;u.rayleigh.value=1.2;u.mieCoefficient.value=.005;u.mieDirectionalG.value=.8;
+  const scene=this.scene;scene.fog=new T.FogExp2(LIGHTING.day.horizon,.000055);
+  this.post=false;this.horizonHex=LIGHTING.day.horizon;
+  this.sky=createSky();scene.add(this.sky);
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
-  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;scene.add(this.sun,this.sun.target);
+  this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;this.fill=new T.DirectionalLight(LIGHTING.day.fillColor,LIGHTING.day.fill);this.fill.position.set(-420,260,360);this.fill.castShadow=false;scene.add(this.sun,this.sun.target,this.fill,this.fill.target);
+  this.buildContactShadow();
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
   // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
   // in green streaks at long range where the depth buffer cannot separate the layers.
@@ -187,8 +191,11 @@ export class World{
   for(let i=0;i<18;i++){const mh=700+rnd()*1900,mountain=new T.Mesh(mountainGeometry(1400+rnd()*2100,mh,mh>1700),new T.MeshStandardMaterial({vertexColors:true,roughness:.95,flatShading:true}));mountain.position.set(-24000+i*2800,mh/2-40,-16000-rnd()*3000);mountain.rotation.y=rnd()*6;scene.add(mountain);}
   this.scenery=new Scenery(scene,this.cityMat);
   this.buildWindsock();this.buildStars();
-  this.cloudMat=new T.SpriteMaterial({map:cumulusTexture(),transparent:true,opacity:.85,depthWrite:false,color:0xffffff});
-  const mkCloud=(n,alt,spread,w,hh)=>{const g=new T.Group();for(let j=0;j<n;j++){const s=new T.Sprite(this.cloudMat);s.position.set((rnd()-.5)*spread,rnd()*70,(rnd()-.5)*spread*.4);s.scale.set(w*(.6+rnd()*.8),hh*(.6+rnd()*.8),1);g.add(s);}g.position.set((rnd()-.5)*28000,alt,(rnd()-.5)*28000);g.userData.drift=.8+rnd()*1.2;scene.add(g);this.clouds.push(g);};
+  // Several cloud shapes share one look: cloudMat is the public handle (colour, opacity and fog are set on it) and
+  // the variants are kept in step with it by syncCloudVariants().
+  this.cloudVariants=cumulusTextures(4).map(map=>new T.SpriteMaterial({map,transparent:true,opacity:.85,depthWrite:false,color:0xffffff}));
+  this.cloudMat=this.cloudVariants[0];
+  const mkCloud=(n,alt,spread,w,hh)=>{const g=new T.Group();for(let j=0;j<n;j++){const s=new T.Sprite(this.cloudVariants[Math.floor(rnd()*this.cloudVariants.length)]);s.position.set((rnd()-.5)*spread,rnd()*70,(rnd()-.5)*spread*.4);const grow=.6+rnd()*.8;s.scale.set(w*grow,hh*grow*(.9+rnd()*.2),1);g.add(s);}g.position.set((rnd()-.5)*28000,alt,(rnd()-.5)*28000);g.userData.drift=.8+rnd()*1.2;scene.add(g);this.clouds.push(g);};
   for(let i=0;i<26;i++)mkCloud(6,1900+rnd()*1400,700,700,380);
   for(let i=0;i<14;i++)mkCloud(4,1000+rnd()*600,420,420,230);
   this.glowTex=glowTexture();
@@ -396,11 +403,78 @@ export class World{
  // so paint, glass and water reflect an outdoor scene instead of an indoor room.
  envFor(mode){
   if(this.envs[mode])return this.envs[mode];
-  const night=mode==='night',dusk=mode==='dusk',s=new T.Scene(),sky=new Sky();sky.scale.setScalar(10000);const u=sky.material.uniforms;
-  u.turbidity.value=dusk?8:night?2.2:2.5;u.rayleigh.value=dusk?2.4:night?2.3:.7;u.mieCoefficient.value=dusk?.02:night?.003:.005;u.mieDirectionalG.value=(night||dusk)?.82:.8;
-  u.sunPosition.value.set(300,night?-160:dusk?90:360,-250).normalize();s.add(sky);
+  const night=mode==='night',dusk=mode==='dusk',preset=lightingFor(mode),s=new T.Scene(),sky=createSky();sky.scale.setScalar(10000);
+  // The probe sees the same gradient and haze as the backdrop (with a gentler tint and sun, so reflections stay
+  // neutral). At night the sun is below the horizon: only the dark sky and the stars' glow are reflected.
+  applySkyPreset(sky,preset,inverseAces(preset.horizon,preset.exposure),new T.Vector3(300,night?-160:preset.sunHeight,-250).normalize(),{discScale:.12,tintMix:.1});s.add(sky);
   const floor=new T.Mesh(new T.CircleGeometry(95,32),new T.MeshBasicMaterial({color:night?0x070b12:dusk?0x6a5a50:0x7d9266}));floor.rotation.x=-Math.PI/2;floor.position.y=-1.5;s.add(floor);
   const pmrem=new T.PMREMGenerator(this.renderer),tex=pmrem.fromScene(s,.02).texture;pmrem.dispose();this.envs[mode]=tex;return tex;
+ }
+ // The colour the horizon haze and the distance fog should show on screen. The sky shader gets the pre-tone-mapping
+ // equivalent; the fog colour depends on whether the frame is tone-mapped after fog is applied (see lighting.js).
+ setHorizon(hex){
+  this.horizonHex=hex;
+  const raw=inverseAces(hex,this.renderer.toneMappingExposure);
+  this.sky.material.uniforms.horizonColor.value.set(...raw);
+  if(this.post)this.scene.fog.color.setRGB(...raw);else this.scene.fog.color.set(hex);
+ }
+ // Weather pulls the horizon towards a grey; both the sky and the fog follow so no band appears at the horizon.
+ blendHorizon(hex,amount){
+  const a=lightingFor(this.time).horizon,mix=(x,y)=>Math.round(x+(y-x)*amount);
+  this.setHorizon((mix(a>>16&255,hex>>16&255)<<16)|(mix(a>>8&255,hex>>8&255)<<8)|mix(a&255,hex&255));
+ }
+ // A colour that shows as `hex` on screen whichever render path is active.
+ displayColor(hex){
+  const c=new T.Color();
+  if(this.post)c.setRGB(...inverseAces(hex,this.renderer.toneMappingExposure));else c.set(hex);
+  return c;
+ }
+ // True when the frame is tone-mapped after fog is applied (post-processing on).
+ setPostprocessed(flag){
+  flag=!!flag;if(this.post===flag)return;
+  this.post=flag;this.setTime(this.time);
+ }
+ syncCloudVariants(){
+  const base=this.cloudMat;
+  for(const v of this.cloudVariants){
+   if(v===base)continue;
+   v.color.copy(base.color);v.opacity=base.opacity;
+   if(v.fog!==base.fog){v.fog=base.fog;v.needsUpdate=true;}
+  }
+ }
+ // After a lost WebGL context the reflection probes are gone; rebuild them from the current time of day.
+ restoreEnvironment(){
+  for(const texture of Object.values(this.envs))texture.dispose();
+  this.envs={};this.scene.environment=null;this.setTime(this.time);
+ }
+ // The sun's shadow box is sized to the aircraft instead of a fixed 300 m, so the same shadow map resolves
+ // far finer detail. Larger boxes are not needed: nothing outside the aircraft's footprint casts onto it.
+ fitShadow(dimensions){
+  const extent=shadowExtent(dimensions),camera=this.sun.shadow.camera;
+  if(camera.right===extent)return;
+  camera.left=-extent;camera.right=extent;camera.top=extent;camera.bottom=-extent;camera.updateProjectionMatrix();
+  this.updateShadowBias();
+ }
+ updateShadowBias(){
+  const shadow=this.sun.shadow,texel=(shadow.camera.right-shadow.camera.left)/shadow.mapSize.x;
+  shadow.normalBias=Math.min(.09,Math.max(.025,texel*.9));
+ }
+ // Ambient-occlusion blob under the aircraft: darkens the pavement where the fuselage blocks the sky, so wheels and
+ // belly settle onto the ground. It fades out over the first 40 m of climb.
+ buildContactShadow(){
+  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,0,64,64,64);
+  r.addColorStop(0,'rgba(0,0,0,.9)');r.addColorStop(.3,'rgba(0,0,0,.55)');r.addColorStop(.65,'rgba(0,0,0,.14)');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,128,128);
+  const mesh=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:canvasTex(c),transparent:true,depthWrite:false,opacity:0,fog:false}));
+  mesh.rotation.order='YXZ';mesh.rotation.x=-Math.PI/2;mesh.renderOrder=201;mesh.visible=false;mesh.frustumCulled=false;
+  this.scene.add(mesh);this.contactShadow=mesh;
+ }
+ updateContactShadow(position,dimensions,altitude,heading){
+  const mesh=this.contactShadow;if(!mesh)return;
+  const fade=1-Math.min(1,Math.max(0,(altitude-2)/38));
+  if(fade<=.01||!dimensions){mesh.visible=false;return;}
+  mesh.visible=true;mesh.material.opacity=(this.time==='night'?.22:.38)*fade;
+  mesh.position.set(position.x,.088,position.z);mesh.rotation.y=(90-heading)*Math.PI/180;
+  mesh.scale.set(dimensions.x*1.1,dimensions.z*.75,1);
  }
  // A soft contact shadow so aircraft that cast no real shadow still sit on the apron.
  softShadow(x,z,w,d,rotY=0,opacity=.42){
@@ -423,22 +497,24 @@ export class World{
   this.scene.add(this.stars);
  }
  setTime(mode){
-  this.time=mode;const night=mode==='night',dusk=mode==='dusk',u=this.sky.material.uniforms;
-  this.sun.intensity=night?.35:dusk?2.6:3.2;this.sun.color.set(night?0x9db4ff:dusk?0xffa868:0xfff2d8);
-  this.hemi.intensity=night?.45:dusk?.75:1.15;this.scene.environment=this.envFor(mode);this.scene.environmentIntensity=night?.55:dusk?.8:1;this.hemi.color.set(night?0x6b86bf:dusk?0xffcfa8:0xbddcff);this.hemi.groundColor.set(night?0x1e2a3a:dusk?0x6a5a56:0x72835f);
+  const night=mode==='night',dusk=mode==='dusk',preset=lightingFor(mode);this.time=mode;
+  this.sun.intensity=preset.sun;this.sun.color.set(preset.sunColor);
+  this.fill.intensity=preset.fill;this.fill.color.set(preset.fillColor);
+  this.hemi.intensity=preset.hemi;this.scene.environment=this.envFor(mode);this.scene.environmentIntensity=preset.env;this.hemi.color.set(preset.hemiSky);this.hemi.groundColor.set(preset.hemiGround);
   // Daylight: a slightly lower sun models the airframe with longer shadows, and a cleaner,
   // bluer sky/haze keeps the white fuselage from merging into a washed-out horizon.
-  this.sunOffset=new T.Vector3(300,night?160:dusk?90:360,-250);
-  if(u.skyTint)u.skyTint.value.set(night||dusk?1:.3,night||dusk?1:.6,night||dusk?1:2.3);u.sunPosition.value.copy(this.sunOffset).normalize();u.turbidity.value=dusk?8:1.5;u.rayleigh.value=dusk?2.4:1.2;u.mieCoefficient.value=dusk?.02:.005;
-  this.sky.visible=!night;this.stars.visible=night;this.scene.background=night?new T.Color('#081426'):null;
-  this.scene.fog.color.set(night?0x142339:dusk?0xe0b79c:0x6aa8e6);this.scene.fog.density=night?.00008:dusk?.0001:.00009;
-  this.renderer.toneMappingExposure=night?1:dusk?.95:.7;
-  this.cloudMat.color.set(night?0x2c3a58:dusk?0xffb890:0xffffff);this.cloudMat.opacity=night?.7:dusk?.8:.96;this.cloudMat.fog=night||dusk;this.cloudMat.needsUpdate=true;
+  this.sunOffset=new T.Vector3(300,preset.sunHeight,-250);
+  this.renderer.toneMappingExposure=preset.exposure;
+  applySkyPreset(this.sky,preset,inverseAces(preset.horizon,preset.exposure),this.sunOffset.clone().normalize());
+  this.sky.visible=!night;this.stars.visible=night;this.scene.background=night?this.displayColor(0x081426):null;
+  this.setHorizon(preset.horizon);this.scene.fog.density=preset.fogDensity;
+  const cloud=preset.cloud;this.cloudMat.color.set(new T.Color(cloud.color).multiplyScalar(cloud.gain));this.cloudMat.opacity=cloud.opacity;this.cloudMat.fog=cloud.fog;this.cloudMat.needsUpdate=true;
   this.cityMat.emissiveIntensity=night?.9:dusk?.3:0;this.scenery?.setTime(mode);
   this.glass.emissive.set(0xffc880);this.glass.emissiveIntensity=night?.1:dusk?.04:0;
   const glow=night?1:dusk?.6:0;this.glow.material.opacity=glow;this.glow.visible=glow>0;
   this.scaleLamps(night?2:dusk?1.5:1);this.airportLights?.setTime(mode);
   this.weather?.applyWorld();
+  this.syncCloudVariants();
  }
  updateServiceVehicles(dt){
   for(const vehicle of this.vehicles){
@@ -459,7 +535,14 @@ export class World{
    for(const wheel of vehicle.wheels)wheel.rotation.y+=moved/wheel.userData.radius;
   }
  }
- setQuality(low){this.scenery?.setQuality(low);}
+ setQuality(low,touch=false){
+  this.scenery?.setQuality(low);
+  const shadow=this.sun?.shadow;if(!shadow)return;
+  if(low){shadow.map?.dispose();shadow.map=null;return;}
+  const size=shadowSizeFor(false,touch);
+  if(shadow.mapSize.x!==size){shadow.map?.dispose();shadow.map=null;shadow.mapSize.set(size,size);}
+  this.updateShadowBias();
+ }
  update(dt,pos){
   this.scenery?.update(dt);
   this.t+=dt;if(this.waterNormal){this.waterNormal.offset.x=(this.t*.0021)%1;this.waterNormal.offset.y=(this.t*.0013)%1;}
