@@ -258,6 +258,9 @@ try {
   assert.equal(actual.diagnostics().edgeAA,true,'high quality enables display-space edge AA');
   assert.equal(actual.passes.filter(pass=>pass.needsSwap).length,2,'edge AA preserves the two-swap composer invariant');
   assert.match(actual.grade.material.fragmentShader,/filterEdge\(c\)/,'edge AA is fused into grade');
+  assert.match(actual.grade.material.fragmentShader,/float e=silhouette\(\);if\(e>0\.0\)c=mix\(c,filterEdge\(c\),e\)/,'edge AA is limited to depth silhouettes so livery detail stays sharp');
+  assert(actual.composer.renderTarget2.depthTexture?.isDepthTexture,'scene target resolves depth into a texture');
+  assert.equal(actual.grade.uniforms.tDepth.value,actual.composer.renderTarget2.depthTexture,'grade reads the scene depth');
   actual.resize(256,128);
   assertVector(actual.grade.uniforms.inverseResolution.value,new Vector2(1/256,1/128),'FXAA uses drawing-buffer pixels after resize');
   actual.setEdgeAntialias(false);assert.equal(actual.grade.uniforms.edgeAA.value,0);assert.equal(actual.diagnostics().edgeAA,false);

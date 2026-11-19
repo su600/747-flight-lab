@@ -10,9 +10,9 @@ import {renderProfile,bloomFor,gradeFor,isTouchDevice} from './render-profile.js
 // pass, so aircraft silhouettes get smoother without another full-screen pass or another composer buffer swap.
 export const GradeShader={
  name:'FlightGrade',
- uniforms:{tDiffuse:{value:null},saturation:{value:1},contrast:{value:1},vignette:{value:0},tint:{value:new T.Vector3(1,1,1)},inverseResolution:{value:new T.Vector2(1,1)},edgeAA:{value:1}},
+ uniforms:{tDiffuse:{value:null},tDepth:{value:null},saturation:{value:1},contrast:{value:1},vignette:{value:0},tint:{value:new T.Vector3(1,1,1)},inverseResolution:{value:new T.Vector2(1,1)},edgeAA:{value:1},depthEdge:{value:new T.Vector2(.0012,.004)}},
  vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
- fragmentShader:`uniform sampler2D tDiffuse;uniform float saturation,contrast,vignette,edgeAA;uniform vec3 tint;uniform vec2 inverseResolution;varying vec2 vUv;
+ fragmentShader:`uniform sampler2D tDiffuse;uniform sampler2D tDepth;uniform float saturation,contrast,vignette,edgeAA;uniform vec3 tint;uniform vec2 inverseResolution,depthEdge;varying vec2 vUv;
  float edgeLuma(vec3 c){return dot(c,vec3(.299,.587,.114));}
  vec3 edgeSample(vec2 uv){return texture2D(tDiffuse,clamp(uv,vec2(0.0),vec2(1.0))).rgb;}
  vec3 filterEdge(vec3 middle){
@@ -31,9 +31,19 @@ export const GradeShader={
   float test=edgeLuma(second);
   return test<lo||test>hi?first:second;
  }
+ // Only geometric silhouettes (a depth discontinuity) are filtered; livery lettering and stripes on one
+ // surface keep their full texture detail at a distance.
+ float silhouette(){
+  float d=texture2D(tDepth,vUv).x,j=0.0;
+  j=max(j,abs(d-texture2D(tDepth,clamp(vUv+inverseResolution*vec2(-1.,1.),0.,1.)).x));
+  j=max(j,abs(d-texture2D(tDepth,clamp(vUv+inverseResolution*vec2(1.,1.),0.,1.)).x));
+  j=max(j,abs(d-texture2D(tDepth,clamp(vUv+inverseResolution*vec2(-1.,-1.),0.,1.)).x));
+  j=max(j,abs(d-texture2D(tDepth,clamp(vUv+inverseResolution*vec2(1.,-1.),0.,1.)).x));
+  return smoothstep(depthEdge.x,depthEdge.y,j);
+ }
  void main(){
   vec4 texel=texture2D(tDiffuse,vUv);vec3 c=texel.rgb;
-  if(edgeAA>0.5)c=filterEdge(c);
+  if(edgeAA>0.5){float e=silhouette();if(e>0.0)c=mix(c,filterEdge(c),e);}
   float luma=dot(c,vec3(.2126,.7152,.0722));
   c=mix(vec3(luma),c,saturation);
   c=(c-.5)*contrast+.5;
@@ -169,12 +179,17 @@ export class RenderingPipeline{
    const [w,h]=this.targetSize();
    const target=new T.WebGLRenderTarget(w,h,{type:T.HalfFloatType,depthBuffer:true,stencilBuffer:false});
    this.composer=new EffectComposer(this.renderer,target);
+   // Only the scene target gets a depth texture. A cloned DepthTexture would share its GPU source with the
+   // other composer target, whose output pass would then overwrite the depth the grade pass reads.
+   this.composer.renderTarget2.depthTexture=new T.DepthTexture(w,h);
    this.composer.renderTarget2.samples=this.profile.samples;
    const add=pass=>{this.composer.addPass(pass);this.passes.push(pass);return pass;};
    add(new RenderPass(this.scene,this.camera));
    if(this.profile.bloom)this.bloom=add(new ScaledBloomPass(this.profile.bloomScale,new T.Vector2(w,h),.1,.55,1.2));
    add(new BloomOutputPass(this.bloom));
    this.grade=add(new ShaderPass(GradeShader));
+   // The scene always lands in renderTarget2 (two swaps per frame); its resolved depth marks silhouettes.
+   this.grade.uniforms.tDepth.value=this.composer.renderTarget2.depthTexture;
    this.grade.uniforms.edgeAA.value=this.edgeAntialias?1:0;
    this.fallback=false;
    this.setTime(this.time);this.resize(this.width,this.height);

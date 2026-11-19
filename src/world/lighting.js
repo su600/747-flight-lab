@@ -41,9 +41,9 @@ export function inverseAces(hex,exposure=1){
 export const LIGHTING=Object.freeze({
  day:Object.freeze({
   sun:3.2,sunColor:0xfff2d8,hemi:1.15,hemiSky:0xbddcff,hemiGround:0x72835f,env:1,exposure:.72,
-  fill:.22,fillColor:0xf0eae0,fogDensity:.00013,sunHeight:360,
+  fill:.22,fillColor:0xf0eae0,fogDensity:.00006,sunHeight:360,
   horizon:0xa0c4e6,
-  sky:{tint:[.44,.76,2.4],turbidity:1.5,rayleigh:1.2,mie:.005,mieG:.8,haze:.7,hazePower:3.4,glow:0xfff0d2,glowWide:.1,glowTight:.9,disc:0xfff6e4,discPower:110},
+  sky:{tint:[.44,.76,2.4],turbidity:1.5,rayleigh:1.2,mie:.005,mieG:.8,haze:.7,hazePower:4.6,glow:0xfff0d2,glowWide:.1,glowTight:.9,disc:0xfff6e4,discPower:110},
   cloud:{color:0xffffff,gain:3.2,opacity:.96,fog:false},
   bloom:{strength:.09,threshold:2.6,radius:.55},
   grade:{saturation:1.14,contrast:1.1,vignette:.2,tint:[1.045,1.015,.955]}
