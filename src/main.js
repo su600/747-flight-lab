@@ -42,7 +42,7 @@ const scene=new T.Scene(),camera=new T.PerspectiveCamera(43,innerWidth/innerHeig
 const world=new World(scene,renderer),sim=new Flight(),weather=new Weather(world,scene,sim);
 // Bloom, multisampling and grading run in a post-processing chain; low quality (and any GPU that cannot do it) draws directly.
 const rendering=new RenderingPipeline(renderer,scene,camera,{low:renderLow});
-display.onResize=({width,height})=>rendering.resize(width,height);rendering.resize(display.width,display.height);
+display.onResize=({width,height})=>{rendering.resize(width,height);world.markings.setResolution();};rendering.resize(display.width,display.height);world.markings.setResolution();
 display.onRestore=()=>{world.restoreEnvironment();rendering.restore();};
 world.setPostprocessed(rendering.active);rendering.setTime(world.time);
 const landingLights=new LandingLights(scene);

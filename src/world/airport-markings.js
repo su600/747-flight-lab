@@ -113,6 +113,23 @@ function signTexture(text,fg,bg,border){
 const paint=(color,roughness=.62)=>new T.MeshStandardMaterial({color,roughness,metalness:0,envMapIntensity:.35,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
 const PLANE=new T.PlaneGeometry(1,1);
 
+function stabilizeThinMarkWidth(material,uniforms){
+ material.onBeforeCompile=shader=>{
+  shader.uniforms.uMarkResolution=uniforms.resolution;
+  shader.uniforms.uMarkMinPixels=uniforms.minPixels;
+  shader.vertexShader=shader.vertexShader.replace('#include <common>','#include <common>\nuniform vec2 uMarkResolution;\nuniform float uMarkMinPixels;');
+  shader.vertexShader=shader.vertexShader.replace('#include <project_vertex>',`#include <project_vertex>
+#ifdef USE_INSTANCING
+ vec3 markWidthView=(modelViewMatrix*instanceMatrix*vec4(0.0,1.0,0.0,0.0)).xyz;
+ vec4 markWidthClip=projectionMatrix*vec4(mvPosition.xyz+markWidthView,1.0);
+ vec2 markWidthNdc=markWidthClip.xy/markWidthClip.w-gl_Position.xy/gl_Position.w;
+ float markWidthPixels=length(markWidthNdc*uMarkResolution*0.5);
+ float markExpand=max(0.0,uMarkMinPixels-markWidthPixels)*0.5;
+ if(markWidthPixels>0.0001&&markExpand>0.0)gl_Position.xy+=normalize(markWidthNdc)*sign(position.y)*markExpand*2.0/uMarkResolution*gl_Position.w;
+#endif`);
+ };
+ material.customProgramCacheKey=()=> 'airport-markings-min-screen-width-v1';
+}
 function instanced(scene,rects,material,y,order){
  const mesh=new T.InstancedMesh(PLANE,material,Math.max(1,rects.length)),o=new T.Object3D();
  rects.forEach(([x,z,l,w,yaw=0],i)=>{o.position.set(x,y,z);o.rotation.set(-Math.PI/2,0,yaw);o.scale.set(l,w,1);o.updateMatrix();mesh.setMatrixAt(i,o.matrix);});
@@ -120,9 +137,10 @@ function instanced(scene,rects,material,y,order){
 }
 
 export class AirportMarkings{
- constructor(scene){
+ constructor(scene,renderer){
+  this.renderer=renderer;this.markUniforms={resolution:{value:renderer.getDrawingBufferSize(new T.Vector2())},minPixels:{value:1.45}};
   this.white=paint('#ecede6');this.yellow=paint('#e2b23a');this.red=paint('#b33a2e');this.black=paint('#1b1d1e',.8);
-  this.materials=[this.white,this.yellow,this.red,this.black];
+  this.materials=[this.white,this.yellow,this.red,this.black];this.materials.forEach(m=>stabilizeThinMarkWidth(m,this.markUniforms));
   const rw=runwayMarkingLayout(),tw=taxiwayMarkingLayout(),ap=apronMarkingLayout();
   this.meshes=[
    instanced(scene,rw.white,this.white,.074,90),instanced(scene,rw.yellow,this.yellow,.074,90),
@@ -137,4 +155,5 @@ export class AirportMarkings{
   for(const cx of CONNECTORS){for(const s of [-1,1])holdRects.push([cx+s*7.5,HOLD_Z-8,9,4.5,Math.PI]);locRects.push([cx-6,TAXI_Z+8,4.2,4.2,Math.PI]);}
   this.meshes.push(instanced(scene,holdRects,hold,.082,87),instanced(scene,locRects,loc,.083,88));
  }
+ setResolution(){this.markUniforms.resolution.value.copy(this.renderer.getDrawingBufferSize(new T.Vector2()));}
 }

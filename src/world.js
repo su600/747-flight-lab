@@ -93,7 +93,7 @@ export class World{
   const white=mat('#e9ebe4'),yellow=mat('#d3ae45'),red=mat('#a75b4c');
   this.ground(0,-130,3760,.3,yellow,.065);
   // ICAO runway, taxiway and apron paint (threshold keys, aiming point, touchdown zone, lead-on lines, signs).
-  this.markings=new AirportMarkings(scene);this.weatherGround.push(...this.markings.materials);
+  this.markings=new AirportMarkings(scene,this.renderer);this.weatherGround.push(...this.markings.materials);
   for(const end of [-1,1]){
    const number=this.label(end<0?'09':'27',end*1838,.09,0,19,22,true);number.rotation.z=end<0?-Math.PI/2:Math.PI/2;
    if(end>0)for(let i=1;i<17;i++){const x=end*(1900+i*30);for(const z of i%4===0?[-12,-6,0,6,12]:[-2,0,2])this.lamp(x,.6,z,0xf9ebca);}
