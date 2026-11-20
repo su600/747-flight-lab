@@ -133,6 +133,25 @@ export const ART={
   s.text('AIRBUS A380-800',-15.8,-6.38,{cap:.22,font:'Arial',fill:'#ffffff',width:2.6});
   s.text('B-6136',-29,-4.55,{cap:.4,font:'Arial',fill:NAVY,width:2.8});
  }},
+  // ------------------------------------- ANA Flying Honu (JA383A orange, JA382A green)
+  // Body artwork is projected from the real side photographs in refs/ (see lib.mjs photo()). Wing, engines and fin
+  // are masked out of those photos, so the lower fuselage under the wing keeps the plain base colour.
+  ANA_ORANGE:{real:true,draw(s){
+   const ORANGE='#f0802e',NAVY='#1c3f94',WHITE='#f4f5f6';
+   fillBase(s,WHITE);
+   s.poly([[37,-1.06],[-37,-1.06],[-37,-5.6],[37,-5.6]],ORANGE);
+   s.photo('orange-visible.png',{pix:[[1098,425],[800,337],[525,345],[1010,460]],air:[[36.5,-5.3],[0,-1.06],[-33.6,-2.2],[24.5,-9.3]],size:[1198,581]});
+   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,WHITE));
+   s.text('ANA',-27.2,5.2,{cap:2.6,font:'Arial',fill:NAVY,width:9.5});
+  }},
+  ANA_GREEN:{real:true,draw(s){
+   const TEAL='#2bb5b0',NAVY='#1c3f94',WHITE='#f4f5f6';
+   fillBase(s,WHITE);
+   s.poly([[37,-1.06],[-37,-1.06],[-37,-6.0],[37,-6.0]],TEAL);
+   s.photo('green-visible.png',{pix:[[1128,412],[800,326],[520,338],[1000,445]],air:[[36.5,-5.3],[0,-1.06],[-33.6,-2.2],[24.5,-9.3]],size:[1156,585]});
+   s.clip(finShape(),c=>c.rect(-40,-2,-15,13,WHITE));
+   s.text('ANA',-27.2,5.2,{cap:2.6,font:'Arial',fill:NAVY,width:9.5});
+  }},
  // --------------------------------------------- Airbus house colours (F-WWOW style)
  BOE:{real:true,draw(s){
   const NAVY='#13347f',LIGHT='#4a9be0';

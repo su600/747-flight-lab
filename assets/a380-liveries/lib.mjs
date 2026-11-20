@@ -97,6 +97,34 @@ export function logoData(name){
  return logoCache.get(name);
 }
 
+// Real-aircraft photographs used as side projections. Each file lives in refs/ and is masked so
+// wing, engines and fin never appear on the fuselage; `fit` maps photo pixels to aircraft metres.
+const photoCache=new Map();
+export function photoData(name){
+ if(!photoCache.has(name))photoCache.set(name,'data:image/png;base64,'+fs.readFileSync(path.join(here,'refs',name)).toString('base64'));
+ return photoCache.get(name);
+}
+/** Least-squares affine fit: aircraft = A·[u,v,1] for each of x and y, from matched pixel/aircraft points. */
+export function fitAffine(pix,air){
+ const n=pix.length,M=pix.map(([u,v])=>[u,v,1]);
+ const solve=b=>{
+  const AtA=[[0,0,0],[0,0,0],[0,0,0]],Atb=[0,0,0];
+  for(let i=0;i<n;i++)for(let r=0;r<3;r++){Atb[r]+=M[i][r]*b[i];for(let c=0;c<3;c++)AtA[r][c]+=M[i][r]*M[i][c];}
+  // Gaussian elimination on the 3x3 normal equations.
+  const a=AtA.map((row,r)=>[...row,Atb[r]]);
+  for(let k=0;k<3;k++){for(let r=k+1;r<3;r++){const f=a[r][k]/a[k][k];for(let c=k;c<4;c++)a[r][c]-=f*a[k][c];}}
+  const x=[0,0,0];for(let r=2;r>=0;r--){let s=a[r][3];for(let c=r+1;c<3;c++)s-=a[r][c]*x[c];x[r]=s/a[r][r];}
+  return x;
+ };
+ return {x:solve(air.map(p=>p[0])),y:solve(air.map(p=>p[1]))};
+}
+/** Fuselage side silhouette in aircraft metres (nose to tail along the top, then the keel back to the nose). */
+export function fuselageOutline(){
+ const top=[[FUSE.nose,-5.3],[35,-3.2],[32,-1.6],[28,-1.1],[0,FUSE.top],[-28,-1.1],[-33,-2.2],[FUSE.tail,-5.3]];
+ const bottom=[];for(let i=0;i<=80;i++){const x=FUSE.tail+(FUSE.nose-FUSE.tail)*i/80;bottom.push([x,keel(x)]);}
+ return [...top,...bottom];
+}
+
 /** One side of the livery atlas. Shapes are given in aircraft metres; the
  * starboard view is the natural (nose-left) view of the same aircraft-frame art,
  * so shapes mirror while text and raster logos stay readable. */
@@ -156,6 +184,14 @@ export class Side{
   const cx=this.mx(x),cy=this.my(y),pw=w*ATLAS.scale,ph=h*ATLAS.scale;
   const mirror=(this.side==='starboard')!==flip?-1:1;
   return this.add(`<image href="${logoData(name)}" x="${(-pw/2).toFixed(1)}" y="${(-ph/2).toFixed(1)}" width="${pw.toFixed(1)}" height="${ph.toFixed(1)}" transform="translate(${cx.toFixed(1)},${cy.toFixed(1)}) rotate(${this.side==='port'?-rotate:rotate}) scale(${mirror},1)" preserveAspectRatio="xMidYMid meet"/>`);
+ }
+ /** Real-aircraft photo projected onto this side. `pix`/`air` are matched points (photo pixels and aircraft metres);
+  * the photo is clipped to the fuselage silhouette. Starboard mirrors the same aircraft-frame projection. */
+ photo(file,{pix,air,size,clip=fuselageOutline()}){
+  const {x:Ax,y:Ay}=fitAffine(pix,air),k=ATLAS.scale;
+  const sx=this.side==='port'?k:-k,ox=this.side==='port'?-ATLAS.x0*k:ATLAS.x1*k,sy=-k,oy=ATLAS.y1*k;
+  const m=[sx*Ax[0],sy*Ay[0],sx*Ax[1],sy*Ay[1],sx*Ax[2]+ox,sy*Ay[2]+oy].map(v=>v.toFixed(5)).join(' ');
+  return this.clip(clip,c=>c.add(`<image href="${photoData(file)}" width="${size[0]}" height="${size[1]}" transform="matrix(${m})" preserveAspectRatio="none"/>`));
  }
  svg(){
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${ATLAS.width}" height="${ATLAS.height}" viewBox="0 0 ${ATLAS.width} ${ATLAS.height}"><defs>${this.defs.join('')}</defs>${this.parts.join('')}</svg>`;

@@ -28,7 +28,7 @@ function dimensions(data){
  throw Error('WebP image frame missing');
 }
 let total=0,count=0;
-for(const {id} of LIVERIES.filter(x=>!x.embedded)){
+for(const {id} of LIVERIES.filter(x=>!x.embedded&&!x.a380Only)){
  const variant=b777LiveryVariant(id),request={id,variant};
  const manifest=variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request);
  assert.equal(manifest.id,id);assert.equal(manifest.variant,variant);assert.equal(manifest.maps.length,5);
@@ -40,4 +40,4 @@ for(const {id} of LIVERIES.filter(x=>!x.embedded)){
   total+=data.length;count++;
  }
 }
-assert.equal(count,LIVERIES.filter(x=>!x.embedded).length*5);console.log(`777 atlas checks passed: ${LIVERIES.filter(x=>!x.embedded).length} liveries, ${count} WebP files, ${(total/1048576).toFixed(2)} MiB.`);
+const b777Liveries=LIVERIES.filter(x=>!x.embedded&&!x.a380Only);assert.equal(count,b777Liveries.length*5);console.log(`777 atlas checks passed: ${b777Liveries.length} liveries, ${count} WebP files, ${(total/1048576).toFixed(2)} MiB.`);

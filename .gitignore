@@ -29,3 +29,6 @@ tools/*
 .DS_Store
 Thumbs.db
 npm-debug.log*
+
+# Third-party reference photos for livery projection: kept local, never published.
+assets/a380-liveries/refs/

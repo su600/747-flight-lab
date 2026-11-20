@@ -77,6 +77,8 @@ export const LIVERIES=[
  {id:'DLH100',name:'汉莎航空 · 100周年',en:'LUFTHANSA · 100 YEARS',color:'#102958',symbol:'100',logo:'lufthansa.png'},
  {id:'AF1_CLASSIC',name:'空军一号 · 经典涂装',en:'AIR FORCE ONE · CLASSIC',color:'#377fa3',symbol:'AF1',logo:'us-flag.png'},
  {id:'AF1_2026',name:'空军一号 · 2026新版',en:'AIR FORCE ONE · 2026',color:'#142a50',symbol:'AF1',logo:'us-flag.png'},
+ {id:'ANA_ORANGE',name:'全日空 · 橙色海龟',en:'ANA · ORANGE HONU',color:'#f0802e',symbol:'ANA',logo:'ana-tail.png',a380Only:true},
+ {id:'ANA_GREEN',name:'全日空 · 绿色海龟',en:'ANA · GREEN HONU',color:'#2bb5b0',symbol:'ANA',logo:'ana-tail.png',a380Only:true},
  {id:'NASA_SHUTTLE',name:'NASA 航天飞机涂装',en:'NASA SPACE SHUTTLE',color:'#f2f3f4',symbol:'NASA',logo:'us-flag.png',embedded:true},
  ...CARGO_LIVERIES,
 ];

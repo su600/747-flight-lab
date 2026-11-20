@@ -19,6 +19,8 @@ export function liveryForModel(livery,type){
  if(type==='shuttle')return SHUTTLE_ONLY.has(livery.id)?livery:null;
  if(SHUTTLE_ONLY.has(livery.id))return null;
  if(AF1_747_ONLY.has(livery.id)&&type!=='b747')return null;
+ // Entries flagged a380Only (ANA's Flying Honu, flown on the A380 alone) are offered on that model only.
+ if(livery.a380Only&&type!=='a380')return null;
  if(livery.id!=='BOE'||(type!=='a380'&&type!=='a330'))return livery;
  return {...livery,...AIRBUS_HOUSE,modelPaint:{...livery.modelPaint,
   ...(type==='a380'?{a380:{...livery.modelPaint?.a380,...A380_HOUSE_PAINT}}:{}),

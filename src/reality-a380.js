@@ -12,6 +12,8 @@ export const A380_REALITY={
  DLH100:{status:'real',note:'汉莎 A380 D-AIMH 百年特别涂装：深蓝机身、长约 47 米的鹤标、“100”及“1926 | 2026”。'},
  AF1_CLASSIC:{status:'none',note:'空军一号只有波音 747（VC-25），真机无 A380 版本；此处是兼容适配。'},
  AF1_2026:{status:'none',note:'空军一号只有波音 747（VC-25），真机无 A380 版本；此处是兼容适配。'},
+ ANA_ORANGE:{status:'real',note:'全日空 A380 橙色海龟（JA383A）：照片投影绘制，机翼遮挡处为底色。'},
+ ANA_GREEN:{status:'real',note:'全日空 A380 绿色海龟（JA382A）：照片投影绘制，机翼遮挡处为底色。'},
  fedex:{status:'none',note:'联邦快递取消了 A380F 订单，真机无此涂装；此处是货机风格的假想适配（窗户封闭）。'},
  sf:{status:'none',note:'顺丰航空没有 A380 货机，真机无此涂装；此处是顺丰货机风格的假想适配（窗户封闭）。'},
 };

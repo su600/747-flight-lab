@@ -28,6 +28,8 @@ export const A380_STYLE={
  DLH100:style(),
  AF1_CLASSIC:style({nacelle:'#6aaed6'}),
  AF1_2026:style({nacelle:'#0b1f44',winglet:'#0b1f44'}),
+ ANA_ORANGE:style(),
+ ANA_GREEN:style(),
  fedex:style({freight:true,stabilizer:'#4d148c'}),
  sf:style({freight:true,stabilizer:'#1c1d1f',nacelle:'#1c1d1f',winglet:'#1c1d1f'}),
 };

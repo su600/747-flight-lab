@@ -24,8 +24,8 @@ for(const l of LIVERIES.filter(x=>!x.embedded)){
  assert(['real','family','none'].includes(A380_REALITY[l.id].status));assert(A380_REALITY[l.id].note.length<=70,`${l.id} note length`);
  for(const side of ['port','starboard'])await access(new URL(`../assets/a380-liveries/${l.id}-${side}.webp`,import.meta.url));
 }
-assert.deepEqual(Object.keys(A380_REALITY).sort().join(),['AF1_2026','AF1_CLASSIC','BAW','BOE','CCA','CEA','CHH','CSN','DLH','DLH100','KLM','UAE','fedex','sf'].sort().join());
-assert.deepEqual(Object.entries(A380_REALITY).filter(([,v])=>v.status==='real').map(([k])=>k).sort(),['BAW','BOE','CSN','DLH','DLH100','UAE'],'only operators with a real A380 are marked real');
+assert.deepEqual(Object.keys(A380_REALITY).sort().join(),['AF1_2026','AF1_CLASSIC','ANA_GREEN','ANA_ORANGE','BAW','BOE','CCA','CEA','CHH','CSN','DLH','DLH100','KLM','UAE','fedex','sf'].sort().join());
+assert.deepEqual(Object.entries(A380_REALITY).filter(([,v])=>v.status==='real').map(([k])=>k).sort(),['ANA_GREEN','ANA_ORANGE','BAW','BOE','CSN','DLH','DLH100','UAE'],'only operators with a real A380 are marked real');
 assert.match(A380_REALITY.DLH100.note,/D-AIMH.*47 米.*鹤标.*“100”及“1926 \| 2026”/);
 assert.equal(A380_STYLE.DLH100.nacelle,'#f4f5f6','D-AIMH anniversary engines remain white');
 assert.equal(A380_STYLE.DLH100.stabilizer,'#f4f5f6','D-AIMH anniversary horizontal stabilizers remain white');
