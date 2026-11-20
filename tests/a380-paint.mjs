@@ -30,6 +30,13 @@ assert.match(A380_REALITY.DLH100.note,/D-AIMH.*47 米.*鹤标.*“100”及“19
 assert.equal(A380_STYLE.DLH100.nacelle,'#f4f5f6','D-AIMH anniversary engines remain white');
 assert.equal(A380_STYLE.DLH100.stabilizer,'#f4f5f6','D-AIMH anniversary horizontal stabilizers remain white');
 assert.equal(A380_STYLE.KLM.nacelle,'#00a1de','KLM engines match the blue 747 livery');
+for(const id of ['ANA_ORANGE','ANA_GREEN']){
+ assert(LIVERIES.some(l=>l.id===id&&l.a380Only),`${id} is explicitly A380-only`);
+ assert.equal(Aircraft.liveryForModel(id,'a380').id,id,`${id} is available on A380`);
+ for(const type of ['b747','a330','b777'])assert.equal(Aircraft.liveryForModel(id,type),null,`${id} must not appear on ${type}`);
+}
+const anaMark=await readFile(new URL('../assets/livery-logos/ana-tail-mark.png',import.meta.url));
+assert.equal(anaMark.subarray(0,8).toString('hex'),'89504e470d0a1a0a','tail ANA mark remains a real-image PNG');
 assert.equal(A380_STYLE.CHH.stabilizer,'#ed1c24','Hainan stabilizers match the red fin');
 assert.equal(A380_STYLE.CHH.winglet,'#ed1c24','Hainan winglets match the 747 livery');
 

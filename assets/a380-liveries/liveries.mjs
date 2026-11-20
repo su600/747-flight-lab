@@ -142,7 +142,7 @@ export const ART={
    s.poly([[37,-1.06],[-37,-1.06],[-37,-5.6],[37,-5.6]],ORANGE);
    s.photo('orange-visible.png',{pix:[[1098,425],[800,337],[525,345],[1010,460]],air:[[36.5,-5.3],[0,-1.06],[-33.6,-2.2],[24.5,-9.3]],size:[1198,581]});
    s.clip(finShape(),c=>c.rect(-40,-2,-15,13,WHITE));
-   s.text('ANA',-27.2,5.2,{cap:2.6,font:'Arial',fill:NAVY,width:9.5});
+   s.image('ana-tail-mark.png',-28.2,5.4,5.6,10.4);
   }},
   ANA_GREEN:{real:true,draw(s){
    const TEAL='#2bb5b0',NAVY='#1c3f94',WHITE='#f4f5f6';
@@ -150,7 +150,7 @@ export const ART={
    s.poly([[37,-1.06],[-37,-1.06],[-37,-6.0],[37,-6.0]],TEAL);
    s.photo('green-visible.png',{pix:[[1128,412],[800,326],[520,338],[1000,445]],air:[[36.5,-5.3],[0,-1.06],[-33.6,-2.2],[24.5,-9.3]],size:[1156,585]});
    s.clip(finShape(),c=>c.rect(-40,-2,-15,13,WHITE));
-   s.text('ANA',-27.2,5.2,{cap:2.6,font:'Arial',fill:NAVY,width:9.5});
+   s.image('ana-tail-mark.png',-28.2,5.4,5.6,10.4);
   }},
  // --------------------------------------------- Airbus house colours (F-WWOW style)
  BOE:{real:true,draw(s){
