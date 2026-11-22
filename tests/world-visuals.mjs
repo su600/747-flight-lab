@@ -74,18 +74,7 @@ function horizonWorld(post){
  assert.deepEqual(scenery,[true,false,false,false],'scenery quality still follows');
 }
 
-// Contact shadow: dark under a parked aircraft, gone by 40 m.
-{
- const w=Object.create(World.prototype),mesh=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({transparent:true}));
- w.contactShadow=mesh;w.time='day';const dims=new T.Vector3(70,19,64),pos=new T.Vector3(120,3,-40);
- w.updateContactShadow(pos,dims,0,90);
- assert.equal(mesh.visible,true);near(mesh.material.opacity,.38);near(mesh.position.x,120);near(mesh.position.z,-40);assert(mesh.position.y>.08&&mesh.position.y<.1,'sits above the pavement layers');
- near(mesh.rotation.y,0,1e-9,'heading 090 points along +x');near(mesh.scale.x,77,1e-9);
- w.updateContactShadow(pos,dims,20,90);assert(mesh.material.opacity>0&&mesh.material.opacity<.38,'fades while climbing');
- w.updateContactShadow(pos,dims,45,90);assert.equal(mesh.visible,false,'hidden in the air');
- w.time='night';w.updateContactShadow(pos,dims,0,180);assert(mesh.material.opacity<.38,'subtler at night');near(mesh.rotation.y,-Math.PI/2,1e-9);
- Object.create(World.prototype).updateContactShadow(pos,dims,0,0);
-}
+// Wheel-contact shadows have dedicated transform, fade and draw-budget tests in wheel-contact-shadow.mjs.
 
 // Aircraft reflection finish.
 {

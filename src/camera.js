@@ -5,6 +5,20 @@ import {cameraPose,applyCameraBuffet,applyCameraPose} from './camera-follow.js';
 import {$,all} from './ui/dom.js';
 const radians=x=>x*Math.PI/180;
 
+// Fit the overview footprint to the narrower horizontal FOV on portrait phones.
+// A 0.60-span radius and 10% distance margin allow for swept wings and model
+// origins that are not quite centred. Other viewport classes retain their
+// established distances, including the old narrow-landscape calculation.
+export function overviewOrbitDistance(plane,width,height){
+ if(width>=760)return plane.type==='shuttle'?80:125;
+ const aspect=Math.max(.1,width/Math.max(1,height));
+ const halfHorizontal=Math.atan(Math.tan(radians(43)/2)*aspect);
+ const span=plane.dimensions?Math.max(plane.dimensions.x,plane.dimensions.z):70;
+ const min=plane.type==='shuttle'?70:165;
+ const fit=width<600&&width<height?span*.60*1.1/Math.sin(halfHorizontal):span*.58/Math.sin(halfHorizontal)*1.35;
+ return clamp(Math.max(min,fit),min,1200);
+}
+
 export function createCamera({renderer,camera,display,sim,getPlane,getCockpit,getPanel,cancelCameraGestures}){
  const _yAxis=new T.Vector3(0,1,0);
  let camMode='orbit',orbitAngle=.87,orbitHeight=.29,orbitDistance=137,focus=new T.Vector3(0,2,0);
@@ -13,15 +27,7 @@ export function createCamera({renderer,camera,display,sim,getPlane,getCockpit,ge
  let lastViewX=NaN,lastW=0,lastH=0,lastFov=0,lastNear=0;
  const camPos=new T.Vector3(),targetPos=new T.Vector3();
  const panRight=new T.Vector3(),panUp=new T.Vector3(),inverseHeading=new T.Quaternion();
-function overviewDistance(){
- if(innerWidth>=760)return getPlane().type==='shuttle'?80:125;
- // Portrait narrows the horizontal field of view. Fit the aircraft's full
- // footprint rather than reusing a fixed desktop distance.
- const aspect=Math.max(.1,innerWidth/Math.max(1,innerHeight));
- const halfHorizontal=Math.atan(Math.tan(radians(43)/2)*aspect);
- const dimensions=getPlane().dimensions,span=dimensions?Math.max(dimensions.x,dimensions.z):70;
- const min=getPlane().type==='shuttle'?70:165;return clamp(Math.max(min,span*.58/Math.sin(halfHorizontal)*1.35),min,1200);
-}
+function overviewDistance(){return overviewOrbitDistance(getPlane(),innerWidth,innerHeight);}
 function setCam(mode){if(getPlane().type==='concorde'&&['cockpit','wing'].includes(mode))return;cancelCameraGestures();camMode=mode;focus.set(0,2,0);lookYaw=lookPitch=0;viewFov=mode==='cockpit'?66:43;towerZoom=1;if(mode==='orbit'){orbitAngle=.87;orbitHeight=.25;orbitOverview=true;overviewCraft=getPlane();orbitDistance=overviewDistance();}setCockpitAirframeVisibility(getPlane(),camMode);all('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));$('#cockpitOverlay').hidden=mode!=='cockpit'||!!getCockpit();document.body.classList.toggle('cockpit-mode',mode==='cockpit');}
 function beginCameraGesture(kind){if(camMode==='chase'||(camMode==='tower'&&kind!=='zoom'))setCam('orbit');}
 function rotateCamera(dx,dy){

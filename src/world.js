@@ -7,6 +7,7 @@ import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js'
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {AirportLights} from './world/airport-lights.js';
 import {AirportMarkings,configureMarkingAntialias} from './world/airport-markings.js';
+import {WheelContactShadow} from './world/wheel-contact-shadow.js';
 import {rnd,mat,boxGeo,nearLandmark,LANDMARK_SITES,speckle,noiseTexture,canvasTex,fieldTexture,facadeTexture,facadeBoxGeometry,glowTexture,cumulusTextures,pavementTexture,standPadTexture,grassBumpTexture,waterNormalTexture,mountainGeometry,rollingHillGeometry,pineGeometry,oakGeometry,UNIT_PLANE} from './world/procedural.js';
 const SUN_UP=new T.Vector3(0,1,0),_right=new T.Vector3(),_up=new T.Vector3(),_anchor=new T.Vector3(),_lampM=new T.Matrix4(),_lampC=new T.Color();
 
@@ -49,7 +50,7 @@ export class World{
   this.envs={};
   this.hemi=new T.HemisphereLight(0xcde9ff,0x758466,1.15);scene.add(this.hemi);
   this.sun=new T.DirectionalLight(0xfff5de,3.2);this.sun.position.set(300,500,-250);this.sun.castShadow=true;this.sun.shadow.mapSize.set(2048,2048);Object.assign(this.sun.shadow.camera,{left:-150,right:150,top:150,bottom:-150,near:10,far:1600});this.sun.shadow.bias=-.0001;this.sun.shadow.normalBias=.08;this.sun.shadow.radius=2.2;this.sun.shadow.intensity=.6;this.fill=new T.DirectionalLight(LIGHTING.day.fillColor,LIGHTING.day.fill);this.fill.position.set(-420,260,360);this.fill.castShadow=false;scene.add(this.sun,this.sun.target,this.fill,this.fill.target);
-  this.buildContactShadow();
+  this.contactShadow=new WheelContactShadow(scene);
   const grass=mat('#ffffff',.95);grass.map=fieldTexture();grass.map.repeat.set(48,48);grass.bumpMap=grassBumpTexture();grass.bumpMap.repeat.set(900,900);grass.bumpScale=1.2;
   // The grass stops at the shore: under the sea there is nothing to see, and a grass plane beneath the water leaked through it
   // in green streaks at long range where the depth buffer cannot separate the layers.
@@ -472,23 +473,7 @@ export class World{
   const shadow=this.sun.shadow,texel=(shadow.camera.right-shadow.camera.left)/shadow.mapSize.x;
   shadow.normalBias=Math.min(.09,Math.max(.025,texel*.9));
  }
- // Ambient-occlusion blob under the aircraft: darkens the pavement where the fuselage blocks the sky, so wheels and
- // belly settle onto the ground. It fades out over the first 40 m of climb.
- buildContactShadow(){
-  const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,0,64,64,64);
-  r.addColorStop(0,'rgba(0,0,0,.9)');r.addColorStop(.3,'rgba(0,0,0,.55)');r.addColorStop(.65,'rgba(0,0,0,.14)');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,128,128);
-  const mesh=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:canvasTex(c),transparent:true,depthWrite:false,opacity:0,fog:false}));
-  mesh.rotation.order='YXZ';mesh.rotation.x=-Math.PI/2;mesh.renderOrder=201;mesh.visible=false;mesh.frustumCulled=false;
-  this.scene.add(mesh);this.contactShadow=mesh;
- }
- updateContactShadow(position,dimensions,altitude,heading){
-  const mesh=this.contactShadow;if(!mesh)return;
-  const fade=1-Math.min(1,Math.max(0,(altitude-2)/38));
-  if(fade<=.01||!dimensions){mesh.visible=false;return;}
-  mesh.visible=true;mesh.material.opacity=(this.time==='night'?.22:.38)*fade;
-  mesh.position.set(position.x,.088,position.z);mesh.rotation.y=(90-heading)*Math.PI/180;
-  mesh.scale.set(dimensions.x*1.1,dimensions.z*.75,1);
- }
+ updateContactShadow(plane,sim){this.contactShadow?.update(plane,sim,this.time);}
  // A soft contact shadow so aircraft that cast no real shadow still sit on the apron.
  softShadow(x,z,w,d,rotY=0,opacity=.42){
   if(!this.blobTex){const c=document.createElement('canvas');c.width=c.height=128;const g=c.getContext('2d'),r=g.createRadialGradient(64,64,6,64,64,64);r.addColorStop(0,'rgba(0,0,0,1)');r.addColorStop(.55,'rgba(0,0,0,.55)');r.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=r;g.fillRect(0,0,128,128);this.blobTex=canvasTex(c);this.blobMat=new T.MeshBasicMaterial({map:this.blobTex,transparent:true,depthWrite:false,opacity});}
