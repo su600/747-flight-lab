@@ -5,6 +5,7 @@
 // note: one short Chinese sentence shown under the livery list.
 export const B747_REALITY={
  BOE:{status:'family',note:'波音 747-400 原型机 N401PW 为银色裸金属机身、蓝红线条与“747”尾标；本模型的白机身蓝腰线为波音厂色的近似适配，并非原型机涂装。'},
+ ANA:{status:'real',note:'参考全日空 747-400 的经典蓝白涂装；标识与细节为近似绘制。'},
  CCA:{status:'real',note:'国航 747-400（如 B-2443、B-2447、B-2472）的红凤凰涂装。'},
  CEA:{status:'none',note:'东航没有 747 客机，仅旗下中国货运航空飞过 747 货机；此为东航客机涂装的适配。'},
  CSN:{status:'family',note:'南航只有货运 747-400F（B-2461、B-2473，约 2002–2022 年），没有 747 客机；客机涂装为适配。'},

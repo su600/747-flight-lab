@@ -46,7 +46,7 @@ function flapDrag(flaps){
 }
 
 export class Flight{
- constructor(){this.windDirection=0;this.windSpeed=0;this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
+ constructor(){this.windDirection=0;this.windSpeed=0;this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.noseCargoDoorAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
  reset(mode='inspect'){
   this.mode=mode;
   this.mass=mode==='land'?AIRCRAFT.landingMass:AIRCRAFT.mass;
@@ -71,6 +71,7 @@ export class Flight{
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;this.autoGroundSpoilers=false;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;this.chuteJettisoned=false;
   this.door=0;this.doorTarget=0;
+  this.noseCargoDoor=0;this.noseCargoDoorTarget=0;
   this.onGround=!['free','land'].includes(mode);
   this.park=mode==='inspect';this.brake=0;this.landingBrake=0;this.brakePressure=0;
   this.aileron=0;this.elevator=0;this.rudder=0;this.trim=0;
@@ -96,6 +97,7 @@ export class Flight{
  control(name,value){
   // Placard limits (gear, flaps, spoilers, VMO) are indicated airspeeds, not true airspeed.
   const ias=Math.max(0,this.speed)*Math.sqrt(this.atmosphere()/RHO0);
+  if(name==='throttle'&&value>0&&(this.noseCargoDoorTarget||this.noseCargoDoor>.02))return '请先关闭机头货舱门';
   if(['throttle','pitch','roll','yaw'].includes(name)&&['takeoff','land'].includes(this.mode)){this.mode='manual';this.complete=false;}
   if(name==='gear'){
    if(this.onGround&&this.mode!=='inspect')return '地面滑行时要放下起落架';
@@ -108,6 +110,11 @@ export class Flight{
    this.flapTarget=value;
   }
   if(name==='door'){if(!this.onGround||this.speed>1)return '请停稳飞机后再开货舱门';this.doorTarget=value;}
+  if(name==='noseCargoDoor'){
+   if(!this.noseCargoDoorAvailable)return '仅 747 货运涂装可开启机头货舱门';
+   if(value&&(!this.onGround||this.speed>1||this.throttle>.001))return '请在地面停稳并收回油门后再开机头货舱门';
+   this.noseCargoDoorTarget=value?1:0;
+  }
   if(name==='reverse'){
    if(this.unpowered)return '这架飞机没有反推';
    if(!this.onGround)return '落地后才能使用反推';
@@ -185,6 +192,8 @@ export class Flight{
   this.reverse=approach(this.reverse,this.reverseTarget,.45,dt);
   this.chute=approach(this.chute,this.chuteTarget,1.1,dt);
   this.door=approach(this.door,this.doorTarget,.22,dt);
+  if(!this.noseCargoDoorAvailable||!this.onGround||this.speed>1||this.throttle>.001)this.noseCargoDoorTarget=0;
+  this.noseCargoDoor=approach(this.noseCargoDoor,this.noseCargoDoorTarget,.32,dt);
  }
  updateControlInput(dt,pilot,guided){
   if(guided){

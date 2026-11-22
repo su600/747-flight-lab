@@ -10,6 +10,49 @@ def _stripe(body, lo, hi, color, x0=-23.5, x1=36.5):
 def _edge(xs, ys):
     return lambda x: float(np.interp(x, xs, ys))
 
+def ana(body, fin):
+    """Standard ANA blue, inspired by JA742A 777-200ER in May 2026.
+
+    Reference: https://commons.wikimedia.org/wiki/File:JA742A_CTS_2026-05-20.jpg
+    Photo by LMP 2001 (CC BY-SA 4.0), viewed for proportions only; no pixels
+    copied. 200LR geometry, engines and door positions are not a 200ER and
+    ANA did not operate the LR. No registration is applied to this adaptation.
+    """
+    BLUE, SKY, GREY = '#103584', '#159cda', '#c4c8cb'
+    body.rect_all(WHITE)
+    # Silver-grey underside and rising dark-blue band, like the photographed
+    # 200ER. Narrow cyan line only appears along the aft lower blue edge.
+    body.poly(band(-25.4, 37.8, -1.2, -.70), GREY)
+    xs = [-25.4, -23.5, -18, -8, 2, 12, 22, 30, 37.8]
+    lower = _edge(xs, [-1.4, -1.65, -1.7, -1.52, -1.24, -.86, -.4, .10, .45])
+    upper = _edge(xs, [-1.4, -1.58, -1.42, -.70, .45, 1.10, 1.70, 2.03, 2.3])
+    body.poly(abs_band(-25.4, 37.8, lower, upper), BLUE)
+    cyan_width = _edge([4, 20, 37.8], [.08, .16, .30])
+    body.poly(abs_band(4, 37.8, lambda x: lower(x)-cyan_width(x), lambda x: lower(x)+cyan_width(x)), SKY)
+    # Flag and front ANA symbol sit between doors 1 and 2; slogan follows
+    # door 2 above the window line, using a close sans-serif approximation.
+    # Reflect the flag and bars about the text on starboard so the symbol
+    # remains ANA followed by the bars, rather than a reversed brand lockup.
+    bx = lambda x: x if body.side == 'port' else -27.3-x
+    poly = lambda pts: [(bx(x), y) for x, y in pts]
+    body.poly(poly([(-16.9,1.35),(-15.9,1.35),(-15.9,1.95),(-16.9,1.95)]), '#f7f7f7', stroke='#c8c8c8', sw=.025)
+    body.circle((bx(-16.4),1.65), .18, '#c72d36')
+    body.text(-13.65, 1.31, 'ANA', 1.15, BLUE, family='Arial', weight='bold', style='italic', length=2.8)
+    body.poly(poly([(-12.0,1.25),(-11.45,1.25),(-11.15,2.1),(-11.7,2.1)]), BLUE)
+    body.poly(poly([(-11.45,1.25),(-11.22,1.25),(-10.92,2.1),(-11.15,2.1)]), SKY)
+    body.text(-2.2, 1.30, 'Inspiration of JAPAN', .84, '#142d60', family='Arial', weight='normal', length=8.6)
+    # ANA letters are slanted up the swept fin, not horizontal or mirrored.
+    # The base and fin-edge strips extend past the geometry intentionally.
+    fin.rect_all(BLUE)
+    fin.poly(fin_poly(.90, 1.12, 2.0, 13.5), SKY)
+    fin.poly(fin_poly(-.08, .045, 2.0, 13.5), WHITE)
+    cx, cy = fin_pt(.50, 7.2)[0], 7.2
+    u, v = fin.uv(cx, cy)
+    angle = -43 if fin.side == 'port' else 43
+    fin.text(cx, cy, 'ANA', 2.65, WHITE, family='Arial', weight='bold', style='italic', length=6.0,
+             extra=f'transform="rotate({angle} {u:.3f} {v:.3f})"')
+    return dict(engine=dict(base='#ffffff'))
+
 def cca(body, fin):
     """Air China 777 (777-300ER family): white, red titles, navy/grey cheatline, red phoenix on a white fin."""
     RED, NAVY, GREY = '#d3202f', '#16337a', '#aeb7c4'
@@ -127,9 +170,12 @@ def fedex(body, fin):
     body.text(-11.2, .05, 'Ex', 2.5, ORANGE, family='Arial', weight='bold', anchor='start', spacing=-.08)
     body.text(-11.2, -.62, 'Express', .78, '#666a70', weight='bold')
     fin.rect_all(PURPLE)
-    fin.text(31.2, 7.7, 'Fed', 1.5, '#ffffff', weight='bold', anchor='end', spacing=-.05)
-    fin.text(31.2, 7.7, 'Ex', 1.5, ORANGE, weight='bold', anchor='start', spacing=-.05)
-    fin.text(31.4, 6.7, 'Express', .45, '#ffffff', weight='bold')
+    # The leading edge is swept: x=31 at this height clips half the mark.
+    # Position both halves relative to the measured fin chord instead.
+    cx = fin_pt(.52, 7.5)[0]
+    fin.text(cx, 7.5, 'Fed', 1.05, '#ffffff', weight='bold', anchor='end', spacing=-.04)
+    fin.text(cx, 7.5, 'Ex', 1.05, ORANGE, weight='bold', anchor='start', spacing=-.04)
+    fin.text(fin_pt(.52, 6.8)[0], 6.8, 'Express', .34, '#ffffff', weight='bold')
     return dict(engine=dict(base='#ffffff'))
 
 def sf(body, fin):

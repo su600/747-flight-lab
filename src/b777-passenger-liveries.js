@@ -1,11 +1,16 @@
 // Approximate 777-200LR interpretations, not airline-authorised liveries.
 // FlightGear source/UV and GPL-2.0 attribution: assets/accurate-b777/CREDITS.txt.
 const ROOT='/assets/b777-liveries/passenger/';
-const ids=['BOE','CCA','CEA','CSN','CHH','UAE','BAW','KLM','DLH','DLH100','AF1_CLASSIC','AF1_2026'];
+const ids=['BOE','ANA','CCA','CEA','CSN','CHH','UAE','BAW','KLM','DLH','DLH100','AF1_CLASSIC','AF1_2026'];
 export const B777_PASSENGER_LIVERY_IDS=Object.freeze(ids);
+// Only these two schemes have a real 200LR counterpart; neither atlas is an
+// exact aircraft/registration. The remaining menu IDs are adaptations.
+const real200LR=new Set(['BOE','UAE']);
 export const B777_PASSENGER_LIVERY_INFO=Object.freeze(Object.fromEntries(ids.map(id=>[id,Object.freeze({
- model:'777-200LR',approximate:true,fictional:true,
- disclosure:'777-200LR 近似／假想演绎，非官方涂装或实机复刻；发动机保持中性。',
+ model:'777-200LR',approximate:true,fictional:!real200LR.has(id),
+ disclosure:real200LR.has(id)
+  ? '参考真实 777-200LR 涂装的近似绘制，非官方或特定实机复刻。'
+  : '其他机型涂装的 777-200LR 假想适配，非官方或实机复刻。',
 })])));
 const known=new Set(ids);
 /** Provider for createB777LiveryController({variant:'passenger',manifestFor,...}). */

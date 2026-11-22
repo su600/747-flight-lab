@@ -50,7 +50,7 @@ for side in ('port', 'stbd'):
 
 base = load_rgb(spec['base'], spec['n'])
 ids = [ident for ident in build.LIVERIES if ident not in build.CARGO_IDS]
-assert len(ids) == 12
+assert len(ids) == 13
 for ident in ids:
     canvases = {}
     for side in ('port', 'stbd'):

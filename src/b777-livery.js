@@ -1,5 +1,5 @@
-// FlightGear 777 candidate atlas adapter. FedEx follows the real 777F scheme; SF has no real 777F and is a
-// fictional adaptation of its 747 styling. Atlases are baked by tests/b777_livery_build.py.
+// FlightGear 777 candidate atlas adapter. FedEx approximates a real 777F scheme;
+// SF is a fictional adaptation. Atlases are baked by tests/b777_livery_build.py.
 // Upstream model/UV attribution and GPL-2.0: assets/accurate-b777/CREDITS.txt.
 import {Texture} from 'three';
 import {LIVERIES} from './aircraft.js';
@@ -8,8 +8,8 @@ import {CARGO_LIVERIES} from './cargo-liveries.js';
 const cargoIds = new Set(CARGO_LIVERIES.map(x => x.id));
 export const B777_LIVERY_IDS = Object.freeze(LIVERIES.filter(x => !x.embedded && !x.a380Only).map(x => x.id));
 export const B777_CARGO_LIVERY_INFO = Object.freeze({
- fedex:Object.freeze({model:'777-200F',fictional:false,disclosure:'FedEx 777F 实机涂装：白色机身、紫色后下机身与垂尾；原创矢量绘制，注册号与细节不保证与特定实机一致。'}),
- sf:Object.freeze({model:'777-200F',fictional:true,disclosure:'真机无此涂装：顺丰航空没有 777 货机（机队为 737/757/767），此为按顺丰 747 货机风格的假想适配。'}),
+ fedex:Object.freeze({model:'777-200F',approximate:true,fictional:false,disclosure:'参考 FedEx 777F 涂装的原创近似绘制；文字、注册号与细节并非特定实机复刻。'}),
+ sf:Object.freeze({model:'777-200F',approximate:true,fictional:true,disclosure:'未能核实顺丰航空有 777F；此为参考其货机风格的假想适配。'}),
 });
 const CARGO_ATLAS_ROOT = '/assets/b777-liveries/cargo/';
 export function b777CargoManifest({id,variant}) {

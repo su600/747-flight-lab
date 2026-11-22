@@ -79,6 +79,52 @@ assert(html.includes('id="chute"'),'drag chute control missing');
 const css=await readFile(new URL('../src/hud.css',import.meta.url),'utf8');
 assert(css.includes('body.shuttle-mode'),'shuttle-mode CSS missing');
 
+// --- Main gear doors: real parsed geometry, materials and animation ---------
+// parseAC loads textures asynchronously; use texture/fetch stubs but the actual AC files.
+const originalTextureLoad=T.TextureLoader.prototype.load,originalFetch=globalThis.fetch;
+let landingShuttle;
+try{
+ T.TextureLoader.prototype.load=function(){return new T.Texture({width:1,height:1});};
+ globalThis.fetch=async url=>({ok:true,text:()=>read(url.split('/').pop())});
+ landingShuttle=await new SpaceShuttle().load();
+}finally{
+ T.TextureLoader.prototype.load=originalTextureLoad;globalThis.fetch=originalFetch;
+}
+for(const [name,side] of [['GearDoorL',1],['GearDoorR',-1]]){
+ const door=landingShuttle.body.getObjectByName(name),mesh=door.getObjectByName(name+'#mesh');
+ assert(mesh&&!mesh.geometry.index,`${name} needs the actual non-indexed AC mesh`);
+ const {position,normal}=mesh.geometry.attributes;
+ let area=0;
+ for(let i=0;i<position.count;i+=3){
+  const a=new T.Vector3().fromBufferAttribute(position,i),b=new T.Vector3().fromBufferAttribute(position,i+1),c=new T.Vector3().fromBufferAttribute(position,i+2);
+  const face=b.sub(a).cross(c.sub(a)),faceArea=face.length()/2;
+  if(faceArea<1e-8)continue; // Source contains a few degenerate triangles.
+  area+=faceArea;face.normalize();
+  for(let j=0;j<3;j++)assert(new T.Vector3().fromBufferAttribute(normal,i+j).dot(face)>.999,`${name} triangle ${i/3} needs a valid flat normal`);
+ }
+ assert(area>13,`${name} must retain both sides of the source shell`);
+ assert.equal(mesh.userData.texture,'spstob_1.webp',`${name} must retain its authored texture`);
+ for(const material of mesh.material){
+  assert(material.map,`${name} must keep its source texture`);
+  assert.equal(material.transparent,false,`${name} must be opaque`);
+  assert.equal(material.opacity,1);assert.equal(material.depthWrite,true);assert.equal(material.side,T.DoubleSide);
+ }
+ let closedCenter;
+ for(const gearPosition of [0,.5,1]){
+  landingShuttle.update({gear:gearPosition});landingShuttle.root.updateMatrixWorld(true);
+  assert(Math.abs(door.quaternion.angleTo(new T.Quaternion())-Math.PI/2*gearPosition)<1e-6,`${name} must animate with gear`);
+  // Shoot through the middle from both sides in each pose; do not rely on material flags alone.
+  const center=mesh.localToWorld(new T.Vector3(2.4,-5.15,side*3.4));
+  if(gearPosition===0)closedCenter=center.clone();
+  if(gearPosition===1)assert(center.y<closedCenter.y-.75,`${name} must swing down when opened`);
+  const outward=new T.Vector3(0,-1,0).transformDirection(mesh.matrixWorld);
+  for(const direction of [-1,1]){
+   const ray=new T.Raycaster(center.clone().addScaledVector(outward,direction),outward.clone().multiplyScalar(-direction),0,2);
+   assert(ray.intersectObject(door,true).length>=2,`${name} shell must cover both sides at gear ${gearPosition}`);
+  }
+ }
+}
+
 // --- Drag chute -------------------------------------------------------------
 assert.equal(new SpaceShuttle().hasDragChute,true,'orbiter must expose a drag chute');
 assert.equal(typeof new SpaceShuttle().dropChute,'function','orbiter must be able to jettison the chute');

@@ -3,6 +3,7 @@ import {toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {liveryForModel} from './livery-for-model.js';
 import {projectWingtipPoints} from './navigation-lights.js';
+import {prepare747NoseCargoDoor} from './747-nose-cargo-door.js';
 const ROOT='/assets/aircraft/';
 const LIVERY_TEXTURE_VERSION='20261110-1';
 const VERSIONED_LIVERIES=new Set(['CEA.png','CHH.png','CSN.png','sf.png']);
@@ -77,6 +78,7 @@ export const LIVERIES=[
  {id:'DLH100',name:'汉莎航空 · 100周年',en:'LUFTHANSA · 100 YEARS',color:'#102958',symbol:'100',logo:'lufthansa.png'},
  {id:'AF1_CLASSIC',name:'空军一号 · 经典涂装',en:'AIR FORCE ONE · CLASSIC',color:'#377fa3',symbol:'AF1',logo:'us-flag.png'},
  {id:'AF1_2026',name:'空军一号 · 2026新版',en:'AIR FORCE ONE · 2026',color:'#142a50',symbol:'AF1',logo:'us-flag.png'},
+ {id:'ANA',name:'全日空 · 经典蓝白',en:'ANA · ALL NIPPON AIRWAYS',color:'#143e89',symbol:'ANA',logo:'ana-blue.png',models:['b747','b777']},
  {id:'ANA_ORANGE',name:'全日空 · 橙色海龟',en:'ANA · ORANGE HONU',color:'#f0802e',symbol:'ANA',logo:'ana-tail-mark.png',a380Only:true},
  {id:'ANA_GREEN',name:'全日空 · 绿色海龟',en:'ANA · GREEN HONU',color:'#2bb5b0',symbol:'ANA',logo:'ana-tail-mark.png',a380Only:true},
  {id:'NASA_SHUTTLE',name:'NASA 航天飞机涂装',en:'NASA SPACE SHUTTLE',color:'#f2f3f4',symbol:'NASA',logo:'us-flag.png',embedded:true},
@@ -85,13 +87,17 @@ export const LIVERIES=[
 
 export class Aircraft{
  static liveryForModel(id,type){return liveryForModel(LIVERIES.find(x=>x.id===id),type);}
+ get canOpenNoseCargoDoor(){return this.type==='b747'&&!!this.noseCargoDoorRig&&CARGO_LIVERIES.some(l=>l.id===this.livery);}
  constructor(options={}){this.type='b747';this.root=new T.Group();this.native=new T.Group();this.native.rotation.y=Math.PI;this.root.add(this.native);this.animations=[];this.livery='BOE';this.liveryMats=[];this.lights=[];this.wingSurface=null;this.wingtipPoints=[];this.gearCompression=0;this.groundSettle=0;this.liveryRequest=0;this.liveryTimeoutMs=options.liveryTimeoutMs??DEFAULT_LIVERY_TIMEOUT_MS;}
  async load(){
   const names=['747-400_fuselage','747-400_wings','747-400_gear','GE_CF6-80C2B1F'];
   const raw=await Promise.all(names.map(async n=>{const [ac,xml]=await Promise.all([fetch(ROOT+n+'.ac').then(r=>r.text()),fetch(ROOT+n+'.xml').then(r=>r.text())]);return{n,ac,doc:new DOMParser().parseFromString(xml,'application/xml').documentElement};}));
   for(const part of raw.slice(0,3)){const group=parseAC(part.ac);this.native.add(group);if(part.n==='747-400_wings')this.wingSurface=group;this.bind(group,part.doc);
    // Replaced by the shared cockpit/exterior blades on the forward panes.
-   if(part.n==='747-400_fuselage')for(const side of ['LH','RH'])for(const suffix of ['','.arm','.blade']){const legacy=group.getObjectByName(side+'wiper'+suffix);if(legacy)legacy.visible=false;}
+   if(part.n==='747-400_fuselage'){
+    for(const side of ['LH','RH'])for(const suffix of ['','.arm','.blade']){const legacy=group.getObjectByName(side+'wiper'+suffix);if(legacy)legacy.visible=false;}
+    try{this.noseCargoDoorRig=prepare747NoseCargoDoor(group);}catch(error){console.warn('747 nose cargo door unavailable:',error);}
+   }
   }
   const engineBase=parseAC(raw[3].ac);
   for(const [x,y,z] of [[4.83,-21.23,-1.99],[-2.67,-13.46,-2.60],[-2.67,13.46,-2.60],[4.83,21.23,-1.99]]){const g=engineBase.clone(true);g.position.copy(fg(x,y,z));this.native.add(g);this.bind(g,raw[3].doc);}
@@ -145,6 +151,7 @@ export class Aircraft{
   return 0;
  }
  update(s,dt){
+  this.noseCargoDoorRig?.update(this.canOpenNoseCargoDoor?s.noseCargoDoor:0);
   if(this.type==='b747'){
    const compressionTarget=s.onGround&&(s.gear??1)>.95?.25:0;
    this.gearCompression=dt>0?T.MathUtils.damp(this.gearCompression,compressionTarget,8,dt):compressionTarget;
@@ -162,7 +169,7 @@ export class Aircraft{
  async setLivery(id){
   const livery=Aircraft.liveryForModel(id,this.type);if(!livery)return false;
   const request=++this.liveryRequest;
-  if(this.paintLivery){this.paintLivery(livery);this.livery=id;return true;}
+  if(this.paintLivery){this.paintLivery(livery);this.livery=id;this.noseCargoDoorRig?.setEnabled(this.canOpenNoseCargoDoor);return true;}
   const name=livery.file||id+'.png',t=texture(name);
   let timer;
   try{
@@ -173,6 +180,6 @@ export class Aircraft{
    throw error;
   }finally{clearTimeout(timer);}
   if(request!==this.liveryRequest)return false;
-  this.liveryMats.forEach(m=>{m.map=t;m.needsUpdate=true;});this.livery=id;return true;
+  this.liveryMats.forEach(m=>{m.map=t;m.needsUpdate=true;});this.livery=id;this.noseCargoDoorRig?.setEnabled(this.canOpenNoseCargoDoor);return true;
  }
 }

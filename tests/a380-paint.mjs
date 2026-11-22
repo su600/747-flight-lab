@@ -18,8 +18,9 @@ async function geometryOnlyGLB(name){
  out.write('glTF');out.writeUInt32LE(2,4);out.writeUInt32LE(out.length,8);out.writeUInt32LE(n,12);out.write('JSON',16);text.copy(out,20);bin.copy(out,20+n);
  return new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(out.buffer.slice(out.byteOffset,out.byteOffset+out.byteLength),'');
 }
-// Catalog, atlas files and reality table agree.
-for(const l of LIVERIES.filter(x=>!x.embedded)){
+// Catalog, atlas files and reality table agree (including legacy 747-only atlases still on disk).
+const atlasLiveries=LIVERIES.filter(x=>!x.embedded&&(!x.models||x.models.includes('a380')));
+for(const l of atlasLiveries){
  assert(A380_STYLE[l.id],`style for ${l.id}`);assert(A380_REALITY[l.id],`reality for ${l.id}`);
  assert(['real','family','none'].includes(A380_REALITY[l.id].status));assert(A380_REALITY[l.id].note.length<=70,`${l.id} note length`);
  for(const side of ['port','starboard'])await access(new URL(`../assets/a380-liveries/${l.id}-${side}.webp`,import.meta.url));
@@ -35,6 +36,7 @@ for(const id of ['ANA_ORANGE','ANA_GREEN']){
  assert.equal(Aircraft.liveryForModel(id,'a380').id,id,`${id} is available on A380`);
  for(const type of ['b747','a330','b777'])assert.equal(Aircraft.liveryForModel(id,type),null,`${id} must not appear on ${type}`);
 }
+assert.equal(Aircraft.liveryForModel('ANA','a380'),null,'standard ANA paint is not a Flying Honu scheme');
 const anaMark=await readFile(new URL('../assets/livery-logos/ana-tail-mark.png',import.meta.url));
 assert.equal(anaMark.subarray(0,8).toString('hex'),'89504e470d0a1a0a','tail ANA mark remains a real-image PNG');
 assert.equal(A380_STYLE.CHH.stabilizer,'#ed1c24','Hainan stabilizers match the red fin');
@@ -96,4 +98,4 @@ assert.equal(paint.current,'DLH100');assert.deepEqual(loads.slice(beforeDLH100).
 assert(loads.slice(beforeDLH100).every(u=>version(u)===A380_ATLAS_VERSION),'DLH100 uses the current atlas version');
 assert.equal(paint.uniforms.uLiveryPort.value.url,loads[beforeDLH100]);
 paint.dispose();
-console.log(`A380 paint: ${projectedMeshes} projected skin meshes, ${total} window caps, ${LIVERIES.length} liveries with atlas files, status table consistent.`);
+console.log(`A380 paint: ${projectedMeshes} projected skin meshes, ${total} window caps, ${atlasLiveries.length} liveries with atlas files, status table consistent.`);

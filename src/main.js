@@ -79,14 +79,55 @@ const b777VisualMappings=[
  ...[50,51,60,61].map(i=>({state:'spoiler',property:`sim/multiplay/generic/float[${i}]`,gain:45,min:0,max:1})),
  ...[0,1].map(i=>({state:'engine',property:`engines/engine[${i}]/rpm`,gain:80,min:0,max:1})),
 ];
+// Start exclusive paint leases alongside geometry, but transfer ownership only
+// when the paint controller requests them. Abort/failure releases unused and
+// late leases; the controller remains responsible for any claimed lease.
+function createB777PreparedLiveryLoader({createB777LiveryLoader,loadB777CargoTexture,manifestFor}){
+ const options={timeoutMs:180000,manifestFor};
+ const normal=createB777LiveryLoader(options);
+ normal.prepare=({livery,variant,signal})=>{
+  const maps=manifestFor({id:livery.id,variant}).maps,controller=new AbortController(),entries=new Map();let disposed=false;
+  const release=lease=>{try{lease?.dispose();}catch{}};
+  const dispose=()=>{
+   if(disposed)return;disposed=true;signal?.removeEventListener('abort',dispose);controller.abort();
+   for(const entry of entries.values())if(!entry.claimed&&entry.lease){release(entry.lease);entry.lease=null;}
+  };
+  signal?.addEventListener('abort',dispose,{once:true});
+  if(signal?.aborted)dispose();
+  if(!disposed)for(const item of maps){
+   const entry={claimed:false,lease:null};entries.set(item.sourceTexture,entry);
+   // Convert rejection to a value immediately, even if geometry never completes.
+   entry.result=Promise.resolve().then(()=>loadB777CargoTexture({...item,id:livery.id,variant,signal:controller.signal})).then(lease=>{
+    if(disposed&&!entry.claimed)release(lease);else entry.lease=lease;
+    return {ok:true,lease};
+   },error=>({ok:false,error}));
+  }
+  return {
+   load(request){
+    const paint=createB777LiveryLoader({...options,loadTexture:async item=>{
+     // Once preparation is finished, the retained controller handles later
+     // same-variant repaints using the normal provider, not the old leases.
+     if(disposed)return loadB777CargoTexture(item);
+     const entry=entries.get(item.sourceTexture);
+     if(!entry||entry.claimed)throw Object.assign(Error('B777 texture load cancelled'),{name:'AbortError'});
+     entry.claimed=true;const result=await entry.result;
+     if(!result.ok)throw result.error;
+     entry.lease=null;return result.lease;
+    }});
+    return paint(request);
+   },dispose,
+  };
+ };
+ return normal;
+}
 let b777LiveryLoader;
-async function modelFactory(type,initialLivery=desiredLivery){
+async function modelFactory(type,initialLivery=desiredLivery,initialLoadBarrier=null){
  if(type==='a380'){const {A380Aircraft}=await import('./a380-aircraft.js');return new A380Aircraft();}
  if(type==='a330'){const {AccurateA330}=await import('./accurate-a330.js');return new AccurateA330();}
  if(type==='shuttle'){const {SpaceShuttle}=await import('./space-shuttle.js');return new SpaceShuttle();}
- const [{AccurateB777Candidate},{createB777LiveryLoader,b777CargoManifest},{b777PassengerManifest}]=await Promise.all([import('./accurate-b777.js'),import('./b777-livery.js'),import('./b777-passenger-liveries.js')]);
- b777LiveryLoader??=createB777LiveryLoader({timeoutMs:180000,manifestFor:request=>request.variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request)});
- return new AccurateB777Candidate({initialLivery,liveryLoader:b777LiveryLoader,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
+ const [{AccurateB777Candidate},{createB777LiveryLoader,loadB777CargoTexture,b777CargoManifest},{b777PassengerManifest}]=await Promise.all([import('./accurate-b777.js'),import('./b777-livery.js'),import('./b777-passenger-liveries.js')]);
+ b777LiveryLoader??=createB777PreparedLiveryLoader({createB777LiveryLoader,loadB777CargoTexture,manifestFor:request=>request.variant==='cargo'?b777CargoManifest(request):b777PassengerManifest(request)});
+ return new AccurateB777Candidate({initialLivery,liveryLoader:b777LiveryLoader,initialLoadBarrier,timeoutMs:420000,visualMappings:{passenger:b777VisualMappings,cargo:b777VisualMappings}});
 }
 // Thin loading bar plus a status line; a newer request owns the display, so a superseded load never clears it.
 let loadToken=0,loadHideTimer;
@@ -102,7 +143,8 @@ function beginLoad(type,livery=desiredLivery){
    const {fraction}=progress,pct=fraction>=1?100:Math.floor(fraction*100);
    bar.hidden=false;fill.style.width=pct+'%';
    if(fraction>=1)bar.classList.add('busy');
-   status.textContent=`${name} · ${progressText(progress)}`+(fraction>=1?' · 正在构建模型…':'');$('#loadProgress').textContent=status.textContent;
+   const finishing=type==='b777'?' · 正在构建模型并应用涂装…':' · 正在构建模型…';
+   status.textContent=`${name} · ${progressText(progress)}`+(fraction>=1?finishing:'');$('#loadProgress').textContent=status.textContent;
   },
   done(){
    if(token!==loadToken)return;
@@ -117,11 +159,14 @@ function syncCabinTime(craft){if(typeof craft.setCabinTime==='function')craft.se
 function getAircraft(type,onProgress,livery=desiredLivery){
  if(!aircraftCache.has(type)){
   const p=(async()=>{
-   // Download first (reported as progress); the loader below then reads from the HTTP cache.
-   await preloadAircraft(type,{livery,priority:'high',onProgress:isPreloaded(type,{livery})?undefined:onProgress});
-   const craft=await modelFactory(type,livery);
+   const preload=preloadAircraft(type,{livery,priority:'high',onProgress:isPreloaded(type,{livery})?undefined:onProgress});
+   // Factory/import failures can precede this promise; still observe any rejection.
+   preload.catch(()=>{});
+   // 777 fetches join the per-file preloads, so module import, XML parsing and
+   // paint can overlap the GLB download without a second model transfer.
+   const craft=type==='b777'?await modelFactory(type,livery,preload):(await preload,await modelFactory(type,livery));
    let loaded=false;
-   try{await craft.load();loaded=true;fixAircraftWingShading(craft);applyAircraftFinish(craft,!renderLow);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
+   try{await craft.load();loaded=true;await preload;fixAircraftWingShading(craft);applyAircraftFinish(craft,!renderLow);if(typeof craft.setCabinTime!=='function')addCabinLights(craft);syncCabinTime(craft);return craft;}
    // Both externally loaded aircraft already clean up a failed load; only
    // dispose here if a later coordinator step failed after successful loading.
    catch(error){if(loaded)craft.dispose?.();throw error;}
@@ -152,7 +197,15 @@ function showLivery(){
  details.hidden=false;details.className='fine-print reality-'+reality.status;
  details.textContent=`【${reality.label}】${reality.note}`+(plane.cargoMode&&plane.liveryInfo?.disclosure?' '+plane.liveryInfo.disclosure:'');
 }
+function syncNoseCargoDoor(craft){
+ const available=craft.type==='b747'&&!!craft.canOpenNoseCargoDoor;
+ sim.noseCargoDoorAvailable=available;
+ if(!available)sim.noseCargoDoor=sim.noseCargoDoorTarget=0;
+ $('#noseCargoDoor').hidden=!available;
+ $('#noseCargoDoor').disabled=!available;
+}
 function showAircraft(){
+ syncNoseCargoDoor(plane);
  const info=AIRCRAFT_INFO[plane.type],isA330=plane.type==='a330',cargo=isA330&&plane.cargoMode,is777Cargo=plane.type==='b777'&&plane.cargoMode,isShuttle=plane.type==='shuttle';document.body.classList.toggle('shuttle-mode',isShuttle);
  $('#aircraftSelect').value=plane.type;$('#aircraftName').textContent=cargo?'AIRBUS A330–300 · 货运外观示意':is777Cargo?'BOEING 777F':info.name;$('#gearDescription').textContent=info.gear;$('#engineLabel').textContent=info.engine;
  const door=$('#door');door.disabled=(isA330&&!cargo)||isShuttle;$('#doorLabel').textContent=isA330?'主货舱门（示意）':'下层货舱门';
@@ -206,7 +259,8 @@ async function selectAircraft(type){
   }while(!applied||selected!==desiredLivery);
   const wasUnpowered=!!plane.unpowered;
   next.root.position.copy(plane.root.position);next.root.quaternion.copy(plane.root.quaternion);next.root.visible=plane.root.visible;
-  next.update(sim,0);syncCabinTime(next);
+  // The cargo nose door never carries over to another airframe.
+  sim.noseCargoDoor=sim.noseCargoDoorTarget=0;next.update(sim,0);syncCabinTime(next);
   // Detached chutes are scene children, not part of the old aircraft root.
   plane.clearDroppedChutes?.();scene.remove(plane.root);plane=next;sound.engine?.setAircraft(plane.type);scene.add(plane.root);setEmitters(plane);sim.pitchLimit=makePitchLimit(tailSamples(plane.root),plane.contact);
   // Only the orbiter carries a drag chute; stow it when leaving that aircraft.
@@ -259,6 +313,11 @@ function bindUI(){
  $('#parkBrake').onclick=()=>notify(sim.control('park',!sim.park));
  for(const [id,key] of [['aileron','roll'],['elevator','pitch'],['rudder','yaw']])$('#'+id).oninput=e=>{surface[key]=Number(e.target.value);if(sim.mode!=='inspect')manualControl();};
  $('#neutral').onclick=()=>{surface.roll=surface.pitch=surface.yaw=0;all('#aileron,#elevator,#rudder').forEach(s=>s.value=0);};
+ $('#noseCargoDoor').onclick=()=>{
+  const message=sim.control('noseCargoDoor',sim.noseCargoDoorTarget?0:1);
+  if(message){notify(message);return;}
+  setCam('orbit');setOrbit(.65,.21,28,[29,1,0]);updateUI();
+ };
  $('#spoiler').onclick=()=>notify(sim.control('spoiler',sim.spoilerTarget?0:1));$('#reverse').onclick=()=>notify(sim.control('reverse',sim.reverseTarget?0:1));$('#chute').onclick=()=>notify(sim.control('chute',sim.chuteTarget?0:1));$('#door').onclick=()=>{focusPart('engine');cameraControl.orbitAngle=-.8;if(plane.type==='a330')cameraControl.focus.set(13.6,1,-2.8);else cameraControl.focus.set(16,-1,0);cameraControl.orbitDistance=46;notify(sim.control('door',sim.doorTarget?0:1));};
  $('#lights').onclick=()=>sim.lights=!sim.lights;$('#wipers').onclick=()=>{sim.wipers=!sim.wipers;const next=cameraModeForWiperToggle(cameraControl.mode,sim.wipers);if(next!==cameraControl.mode)setCam(next);};
  $('#landingLights').onclick=()=>{sim.landingLights=!sim.landingLights;};

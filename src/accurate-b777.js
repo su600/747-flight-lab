@@ -320,6 +320,10 @@ export function b777PropertiesFromState(s={},variant='passenger',visualMappings=
  * liveryLoader({bundle,livery,variant,signal}) stages paint on detached bundle,
  * returns a lease {dispose()}, cleans partial resources on failure. No shared GPU
  * resource is released without provider refcounting. Late completions are cleaned.
+ * Optionally liveryLoader.prepare({livery,variant,signal}) returns synchronously
+ * {load(request),dispose()}: it can start independent paint work before geometry.
+ * It must release unused/late resources on abort and dispose, and transfer any
+ * claimed leases to load's controller. Called only for a fresh variant bundle.
  * Fresh bundle/lease/scene per request. A whole staged switch may temporarily
  * double model/texture memory. No implicit GLB URLs, scaling or fake fallback.
  */
@@ -334,8 +338,8 @@ function validateBundle(b,variant){
 const abortError=()=>Object.assign(new Error('B777 operation cancelled'),{name:'AbortError'});
 
 export class AccurateB777Research extends Aircraft{
- constructor({geometryLoader,liveryLoader,timeoutMs=30000,initialLivery='BOE',visualMappings={}}={}){
-  super();this.type='b777';this.geometryLoader=geometryLoader;this.liveryLoader=liveryLoader;
+ constructor({geometryLoader,liveryLoader,timeoutMs=30000,initialLivery='BOE',initialLoadBarrier=null,visualMappings={}}={}){
+  super();this.type='b777';this.geometryLoader=geometryLoader;this.liveryLoader=liveryLoader;this.initialLoadBarrier=initialLoadBarrier;
   if(!Number.isFinite(timeoutMs)||timeoutMs<=0)throw Error('Invalid B777 timeout');
   this.timeoutMs=timeoutMs;this.initialLivery=initialLivery;this.livery=null;
   this.visualMappings={passenger:visualMappings.passenger??[],cargo:visualMappings.cargo??[]};
@@ -383,9 +387,14 @@ export class AccurateB777Research extends Aircraft{
   const cancellation=new Promise((_,reject)=>{rejectCancel=reject;});
   const op={cancel(why){if(cancelled)return;cancelled=true;reason=why;controller.abort();rejectCancel(abortError());}};
   this._pending=op;
-  const timer=setTimeout(()=>op.cancel('timeout'),this.timeoutMs);
+  // Initial preloading used to finish before the model timeout started. Keep
+  // that slow-link allowance while overlapping work with the shared download.
+  let timer,finished=false;
+  const startTimer=()=>{if(!finished&&!cancelled)timer=setTimeout(()=>op.cancel('timeout'),this.timeoutMs);};
+  if(!this._current&&this.initialLoadBarrier)Promise.resolve(this.initialLoadBarrier).then(startTimer,startTimer);
+  else startTimer();
   const work=(async()=>{
-   let bundle,lease,lighting,committed=false;
+   let bundle,lease,lighting,prepared,committed=false;
    try{
     // Repaint an already-loaded variant in place. The paint controller stages
     // its textures and commits atomically; switching airlines must not parse
@@ -397,10 +406,12 @@ export class AccurateB777Research extends Aircraft{
      if(!applied)return false;
      this.livery=id;this.cargoMode=variant==='cargo';return true;
     }
+    prepared=this.liveryLoader.prepare?.({livery,variant,signal:controller.signal});
     bundle=await this.geometryLoader({variant,source:B777_SOURCE[variant],signal:controller.signal});
     if(cancelled)throw abortError();
     const dimensions=validateBundle(bundle,variant);
-    lease=await this.liveryLoader({bundle,livery,variant,signal:controller.signal});
+    const request={bundle,livery,variant,signal:controller.signal};
+    lease=await (prepared?prepared.load(request):this.liveryLoader(request));
     if(cancelled)throw abortError();
     if(!lease||typeof lease.dispose!=='function')throw Error('B777 paint lease dispose required');
     // Prepare fully before attaching; old scene remains live on failure.
@@ -414,12 +425,13 @@ export class AccurateB777Research extends Aircraft{
     if(previous){this.native.remove(previous.bundle.scene);this._release(previous.bundle,previous.lease,previous.lighting);}
     return true;
    }finally{
+    try{prepared?.dispose();}catch(e){this.releaseErrors.push(e);}
     if(!committed)this._release(bundle,lease,lighting);
    }
   })();
   try{return await Promise.race([work,cancellation]);}
   catch(error){if(cancelled&&reason!=='timeout')return false;if(cancelled)throw Error('B777 resource load timed out; retry');throw error;}
-  finally{clearTimeout(timer);if(this._pending===op)this._pending=null;}
+  finally{finished=true;clearTimeout(timer);if(this._pending===op)this._pending=null;}
  }
  dispose(){
   if(this._disposed)return;this._disposed=true;

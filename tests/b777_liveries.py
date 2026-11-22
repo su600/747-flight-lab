@@ -13,29 +13,34 @@ def finrel(f):  # callable giving a y offset for a stripe family that rises towa
 
 # ---------------------------------------------------------------------------------------------
 def uae(body, fin):
-    """Emirates 777-200LR (1999-2023 livery): white, gold titles, UAE-flag fin and red tail swoosh."""
+    """Interpretation of the earlier Emirates 200LR scheme, not a particular airframe."""
     GOLD, RED, GREEN, BLACK = '#a98a55', '#d6232b', '#00843d', '#101214'
     body.rect_all(WHITE)
-    body.text(-10.2, -.02, 'Emirates', 2.05, GOLD, family='Georgia', weight='bold', length=13.0)
-    body.text(-1.4, .12, 'الإمارات', 1.7, GOLD, family='Segoe UI', weight='bold')
+    # Separate the titles from the actual window meshes. The Arabic is set
+    # above the windows, not appended to the English title at window level.
+    # Standard fonts are deliberately an approximation of the custom marks.
+    # The 200LR mesh has door skins at x=-18.2 and -7.7 on both sides.
+    body.text(-13.0, -1.02, 'Emirates', 1.65, GOLD, family='Georgia', weight='bold', length=8.8)
+    body.text(-13.0, 1.05, 'الإمارات', 1.12, GOLD, family='DejaVu Sans', weight='bold')
     body.text(-23.6, 1.15, 'BOEING 777-200LR', .2, '#6b6b6b', weight='normal', anchor='start')
     # black strip along the upper rear fuselage (continuation of the fin's black stripe)
     body.poly([(27.6, 2.4), (30.6, 2.9), (34.2, 2.2), (37.4, 1.55), (37.5, 1.2), (33.5, 1.3), (29.4, 1.5)], BLACK)
-    # red swoosh: from the fin root forward, tapering to a point near window level
-    body.poly([(31.8, 3.4), (28.6, 2.75), (25.6, 1.6), (21.0, .9), (15.2, .35), (20.4, -.55), (25.0, -1.3), (30.0, -1.5), (31.5, 0)], RED)
+    # Restrict the red sweep to the upper tail root; the old polygon painted
+    # a large red slab over the rear windows and lower fuselage.
+    body.poly([(31.8, 3.4), (28.6, 2.75), (25.4, 2.1), (21.0, 1.8), (25.2, 1.65), (29.8, 1.7), (31.7, 2.0)], RED)
     # ---- fin
     fin.rect_all(WHITE)
     slope = .40
     def stripe(y0, y1, color):   # heights given at the trailing edge (x=37); stripes rise toward the tail
         xs = np.arange(23.5, 39.0, .5)
         fin.poly([(x, y1+slope*(x-37)) for x in xs]+[(x, y0+slope*(x-37)) for x in xs[::-1]], color)
-    stripe(3.9, 6.3, BLACK); stripe(8.4, 10.8, GREEN)
+    stripe(3.9, 6.3, BLACK); stripe(8.4, 16.0, GREEN)
     # red leading-edge wedge, widening toward the root
     fin.poly([(29.7, 7.5), (24.2, 2.45), (24.2, 1.6), (31.9, 1.6), (31.9, 3.3), (31.0, 4.8)], RED)
     return dict(engine=dict(base='#ffffff'))
 
 def boe(body, fin):
-    """Boeing 777-200LR 'Worldliner' demonstrator (N6066Z) house livery."""
+    """Approximate 777-200LR Worldliner house scheme, not a specific registration."""
     NAVY, BLUE, LIGHT = '#0a2a86', '#1766c9', '#4aa3ea'
     body.rect_all(WHITE)
     edge = lambda x: float(np.interp(x, [-25.4, -23, -19, -14, -8, -2, 5, 12, 20, 27, 33, 37.8], [.9, .55, .15, -.1, -.45, -.62, -.6, -.45, -.2, .15, .5, .7]))
@@ -48,9 +53,9 @@ def boe(body, fin):
         body.poly(band(-6, 37.8, lambda x, k=k: edge(x)-.18*(k+1)-.06, lambda x, k=k: edge(x)-.18*(k+1)), '#ffffff', opacity=.16)
     # white swoosh edge line
     body.poly(band(-25.4, 37.8, lambda x: edge(x)-.06, lambda x: edge(x)+.04), '#e8f2ff')
-    body.logo('boeing.png', -11.6, -1.75, 11.4, mirror=False, tint='white')
-    body.text(-1.5, -2.35, 'WORLDLINER', .28, '#dfeaff', weight='normal', style='italic', spacing=.05)
-    body.text(-14.6, -.72, '777-200LR', .3, '#dfeaff', weight='bold', style='italic', anchor='start')
+    # Keep the wordmark clear of the wing/engine and the lower UV edge.
+    body.logo('boeing.png', -15.0, -1.48, 7.3, mirror=False, tint='white')
+    body.text(-14.3, -2.12, 'WORLDLINER', .32, '#dfeaff', weight='normal', style='italic', spacing=.05)
     # fin: bright blue with white 777
     fin.rect_all(BLUE)
     fin.poly([(24.0, 2.0), (38.5, 2.0), (38.5, 3.2), (24.0, 3.2)], NAVY, opacity=.0)
@@ -91,5 +96,5 @@ def _thick(P, a, b, w):
 
 LIVERIES = {'UAE': uae, 'BOE': boe, 'BAW': baw}
 
-LIVERIES = {'BOE': boe, 'CCA': cca, 'CEA': cea, 'CSN': csn, 'CHH': chh, 'UAE': uae, 'BAW': baw, 'KLM': klm, 'DLH': dlh,
+LIVERIES = {'BOE': boe, 'ANA': ana, 'CCA': cca, 'CEA': cea, 'CSN': csn, 'CHH': chh, 'UAE': uae, 'BAW': baw, 'KLM': klm, 'DLH': dlh,
             'DLH100': dlh100, 'AF1_CLASSIC': af1c, 'AF1_2026': af1n, 'fedex': fedex, 'sf': sf}

@@ -106,6 +106,13 @@ export class SpaceShuttle extends Aircraft{
    if(object)hinge(object,door.center,new T.Vector3(1,0,0),door.sign*BAY_CLOSED);
   }
   this.gearDoors=GEAR_DOORS.map(d=>({...d,object:body.getObjectByName(d.name)}));
+  // The main doors have crease 0 in the AC source. parseAC's creased-normal
+  // helper uses a strict dot > cos(crease) test, leaving most normals zero at
+  // zero degrees. Restore flat face normals on these non-indexed door meshes;
+  // their opaque, textured inner and outer skins are already in the source.
+  for(const name of ['GearDoorL','GearDoorR'])body.getObjectByName(name)?.traverse(o=>{
+   if(o.isMesh)o.geometry.computeVertexNormals();
+  });
   // Retraction hinges from the FlightGear animation XML (gear-pos-norm 0 -> 97/110 deg).
   this.mainGearPivots=[
    {object:gear.getObjectByName('TrunionFittingL'),center:fg(4.04917,-3.44992,-4.87976),axis:fg(0,1,0),deg:97.17},

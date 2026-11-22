@@ -1,7 +1,6 @@
-// Aircraft download manager. The model loaders fetch their files themselves; this module
-// fetches the same URLs first, so that the loaders are served from the browser's HTTP cache
-// and a model switch only pays for parsing. It also reports byte progress for the loading
-// indicator and can warm the cache while the browser is idle or the user hovers a model button.
+// Aircraft download manager. Model loaders fetch their files themselves; this module
+// warms the cache and reports byte progress. The 777 loader can also join individual
+// in-flight downloads, so it need not wait for every file before starting work.
 import {CARGO_LIVERIES} from './cargo-liveries.js';
 import {BoundedStore} from './bounded-store.js';
 import {AIRCRAFT_DOWNLOAD_SIZES} from './aircraft-download-sizes.js';
@@ -35,6 +34,9 @@ export function aircraftFiles(type,{livery='BOE'}={}){
 }
 
 const jobs=new Map();
+// Only the 777 loader runs during its preload. Wait for each in-flight file
+// rather than starting a second transfer; the completed body is still one-shot.
+const b777FilesInFlight=new Map();
 // Every download, however it was started (background queue, picker click, loader), reports here so the UI never disagrees with the cache.
 const observers=new Set();
 export function observeAircraftDownloads(fn){observers.add(fn);return()=>observers.delete(fn);}
@@ -87,18 +89,28 @@ async function pull(path,estimate,job,priority){
 // (and any second request, e.g. after the 777 switches between passenger and cargo) goes to the network/HTTP cache.
 export function installPreloadedFetch(){
  if(!nativeFetch||globalThis.fetch.preloaded)return;
+ const aborted=()=>new DOMException('The operation was aborted.','AbortError');
  const wrapped=(input,init)=>{
   const method=(init?.method||input?.method||'GET').toUpperCase();
-  if(method==='GET'){
-   const key=new URL(typeof input==='string'?input:input.url||String(input),location.href).href,hit=store.get(key);
-   if(hit){
-    store.delete(key);
-    const signal=init?.signal||input?.signal;
-    if(signal?.aborted)return Promise.reject(new DOMException('The operation was aborted.','AbortError'));
-    return Promise.resolve(new Response(hit.body,{status:200,headers:{'Content-Type':hit.type}}));
-   }
-  }
-  return nativeFetch(input,init);
+  if(method!=='GET')return nativeFetch(input,init);
+  const key=new URL(typeof input==='string'?input:input.url||String(input),location.href).href;
+  const signal=init?.signal||input?.signal;
+  const serve=()=>{
+   if(signal?.aborted)return Promise.reject(aborted());
+   const hit=store.get(key);
+   if(!hit)return nativeFetch(input,init);
+   store.delete(key);
+   return Promise.resolve(new Response(hit.body,{status:200,headers:{'Content-Type':hit.type}}));
+  };
+  const pending=b777FilesInFlight.get(key);
+  if(!pending)return serve();
+  if(signal?.aborted)return Promise.reject(aborted());
+  // Aborting a loader must not cancel the shared prefetch or consume its body.
+  return new Promise((resolve,reject)=>{
+   const onAbort=()=>{signal?.removeEventListener('abort',onAbort);reject(aborted());};
+   signal?.addEventListener('abort',onAbort,{once:true});
+   pending.then(()=>{signal?.removeEventListener('abort',onAbort);if(signal?.aborted)reject(aborted());else resolve(serve());},error=>{signal?.removeEventListener('abort',onAbort);reject(error);});
+  });
  };
  wrapped.preloaded=true;globalThis.fetch=wrapped;
 }
@@ -114,7 +126,12 @@ export function preloadAircraft(type,{livery='BOE',priority='low',onProgress}={}
   job={type,loaded:0,total:files.reduce((n,f)=>n+f[1],0),listeners,done:false,
    notify(){const p={loaded:Math.min(this.loaded,this.total),total:this.total,fraction:this.total?Math.min(1,this.loaded/this.total):1,excess:this.loaded-this.total};for(const fn of listeners)fn(p);for(const fn of observers)fn(type,{...p,done:false,failed:false});}};
   const queue=files.slice();
-  const worker=async()=>{for(let file;(file=queue.shift());)await pull(file[0],file[1],job,priority);};
+  const worker=async()=>{for(let file;(file=queue.shift());){
+   const key=type==='b777'?new URL(ASSETS+file[0],location.href).href:null;
+   const task=pull(file[0],file[1],job,priority);
+   if(key)b777FilesInFlight.set(key,task);
+   try{await task;}finally{if(key&&b777FilesInFlight.get(key)===task)b777FilesInFlight.delete(key);}
+  }};
   job.promise=Promise.all(Array.from({length:Math.min(MAX_PARALLEL,files.length)},worker)).then(()=>{job.done=!job.failed;if(job.failed)jobs.delete(key);job.notify();for(const fn of observers)fn(type,{fraction:job.done?1:0,done:job.done,failed:!!job.failed,error:job.lastError});});
   jobs.set(key,job);
  }
