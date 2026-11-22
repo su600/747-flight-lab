@@ -18,6 +18,7 @@ export function liveryForModel(livery,type){
  if(!livery)return livery;
  if(type==='shuttle')return SHUTTLE_ONLY.has(livery.id)?livery:null;
  if(SHUTTLE_ONLY.has(livery.id))return null;
+ if(type==='concorde')return livery.models?.includes('concorde')?livery:null;
  if(AF1_747_ONLY.has(livery.id)&&type!=='b747')return null;
  if(livery.models&&!livery.models.includes(type))return null;
  // Entries flagged a380Only (ANA's Flying Honu, flown on the A380 alone) are offered on that model only.

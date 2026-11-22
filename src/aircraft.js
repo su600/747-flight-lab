@@ -81,6 +81,8 @@ export const LIVERIES=[
  {id:'ANA',name:'全日空 · 经典蓝白',en:'ANA · ALL NIPPON AIRWAYS',color:'#143e89',symbol:'ANA',logo:'ana-blue.png',models:['b747','b777']},
  {id:'ANA_ORANGE',name:'全日空 · 橙色海龟',en:'ANA · ORANGE HONU',color:'#f0802e',symbol:'ANA',logo:'ana-tail-mark.png',a380Only:true},
  {id:'ANA_GREEN',name:'全日空 · 绿色海龟',en:'ANA · GREEN HONU',color:'#2bb5b0',symbol:'ANA',logo:'ana-tail-mark.png',a380Only:true},
+ {id:'CONCORDE_BAW',name:'协和号 · 英国航空',en:'BRITISH AIRWAYS · CONCORDE',color:'#192e54',symbol:'BA',logo:'british-airways.png',models:['concorde'],embedded:true},
+ {id:'CONCORDE_AFR',name:'协和号 · 法国航空',en:'AIR FRANCE · CONCORDE',color:'#17335d',symbol:'AF',logo:'fr-flag.png',models:['concorde'],embedded:true},
  {id:'NASA_SHUTTLE',name:'NASA 航天飞机涂装',en:'NASA SPACE SHUTTLE',color:'#f2f3f4',symbol:'NASA',logo:'us-flag.png',embedded:true},
  ...CARGO_LIVERIES,
 ];

@@ -32,6 +32,7 @@
   <button class="mode" data-mode="takeoff"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5.5 14.5 18 8"/><path d="M12.5 6.8 18.4 7.6 17.3 13.4"/></svg></span><span class="mode-txt"><b>看飞机起飞</b><small>加速 · 抬头 · 飞向蓝天</small></span><span class="mode-no">01</span></button>
   <button class="mode" data-mode="land"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M3 20h18"/><path d="M5.5 6.5 18 12.5"/><path d="M12.6 12.8 18.2 12.6 15.8 7.4"/></svg></span><span class="mode-txt"><b>看飞机降落</b><small>下降 · 放起落架 · 拉平 · 稳稳接地</small></span><span class="mode-no">02</span></button>
   <button class="mode" data-mode="free"><span class="mode-ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.2"/><path d="M12 10.7V17"/><path d="M6.5 20.5h11M8 17h8"/></svg></span><span class="mode-txt"><b>我来开飞机</b><small>空中出发，尽情探索</small></span><span class="mode-no">03</span></button>
+  <button class="mode" data-mode="supersonic" type="button" hidden><span class="mode-ico"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 18 16-6L3 6l4 6zM13 12h8"/></svg></span><span class="mode-txt"><b>超音速巡航</b><small>从 55,000 英尺附近体验 Mach 2</small></span><span class="mode-no">M2</span></button>
   <button class="mode mode-inspect active" data-mode="inspect"><span class="mode-ico"><svg viewBox="0 0 24 24"><path d="M2 12s3.6-6.5 10-6.5S22 12 22 12s-3.6 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="2.8"/></svg></span><span class="mode-txt"><b>地面观察</b><small>换涂装，动动部件</small></span><span class="mode-no">00</span></button>
   <div class="copilot"><span class="copilot-no" id="lessonNo">01 / EXPLORE</span><p id="lesson">左键或单指拖动环绕，滚轮或双指张合缩放；右键或双指移动可平移。</p></div>
   <div class="modes-foot"><span id="modeLabel">观察模式</span><div><button id="pause" class="chip-btn" title="暂停 / 继续">Ⅱ</button><button id="rate" class="chip-btn" title="演示速度">1×</button></div></div>
@@ -51,22 +52,32 @@
  <aside id="drawer" class="glass" hidden>
   <div class="drawer-head"><div><span class="panel-label">EXPLORE · 探索</span><h2 id="drawerTitle">可动部件</h2></div><button id="closeDrawer" aria-label="关闭面板">×</button></div>
   <section id="aircraftPanel" class="drawer-content" hidden>
-   <p class="hint">保留当前飞行状态与涂装。打开页面后会按列表顺序在后台依次下载其余机型（显示进度），点选时立即优先下载；载入过一次后即可快速切换。驾驶舱与飞行模型为共用 747 简化示意。</p>
-   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–200LR / 777F</option><option value="shuttle">NASA Space Shuttle</option></select>
+   <p class="hint">尽量保留飞行状态与涂装；进入或离开协和号时回到地面观察。其余机型会依次在后台下载，点选时优先载入。部分机型使用共用示意驾驶舱。</p>
+   <label for="aircraftSelect" class="aircraft-select-label">选择机型</label><select id="aircraftSelect"><option value="b747">Boeing 747–400</option><option value="a380">Airbus A380–800</option><option value="a330">Airbus A330–303</option><option value="b777">Boeing 777–200LR / 777F</option><option value="shuttle">NASA Space Shuttle</option><option value="concorde">协和号 · Concorde</option></select>
    <div id="aircraftChoices" class="aircraft-choices" role="group" aria-label="机型快捷选择">
     <button data-aircraft="b747" class="active" aria-pressed="true"><b>BOEING 747–400</b><small>四发 · 标志性上层客舱</small></button>
     <button data-aircraft="a380" aria-pressed="false"><b>AIRBUS A380–800</b><small>四发 · 全长双层客舱</small></button>
     <button data-aircraft="a330" aria-pressed="false"><b>AIRBUS A330–303</b><small>双发 GE CF6 · FlightGear 外部模型</small></button>
     <button data-aircraft="b777" aria-pressed="false"><b>BOEING 777–200LR / 777F</b><small>双发 · 客机与货机外形</small></button>
+    <button data-aircraft="concorde" aria-pressed="false"><b>CONCORDE · 协和号</b><small>四发 Olympus 593 · Mach 2</small></button>
     <button data-aircraft="shuttle" aria-pressed="false"><b>NASA SPACE SHUTTLE</b><small>无动力滑翔 · 仅降落与地面观察</small></button>
    </div><p id="aircraftStatus" class="fine-print" role="status"></p><p class="fine-print">A380 模型采用 FlyByWire A380X，CC BY-NC 4.0，仅限非商业用途。<a href="/assets/a380/CREDITS.txt" target="_blank">模型署名与许可 ↗</a></p>
   </section>
   <section id="partsPanel" class="drawer-content" hidden>
    <p class="hint">地面观察时也能收放起落架，看看轮子藏到哪里。点击部件名称可拉近镜头。</p>
    <div class="part-row"><button class="part-name" data-focus="gear">起落架 <small id="gearDescription">18 个轮子，5 组支撑</small></button><button class="toggle active" id="gear">已放下</button></div>
-   <div class="part-control"><div><button class="part-name" data-focus="wing">襟翼 <small>让飞机慢一点也能飞</small></button><output id="flapsValue">0°</output></div><input id="flaps" type="range" min="0" max="30" step="5" value="0" aria-label="襟翼角度"><div class="range-labels"><span>收起</span><span>起飞 20°</span><span>着陆 30°</span></div></div>
-   <div class="part-control"><div><button class="part-name" data-focus="wing">副翼</button><output id="aileronValue">0°</output></div><input id="aileron" type="range" min="-1" max="1" step=".05" value="0" aria-label="副翼"></div>
-   <div class="part-control"><div><button class="part-name" data-focus="tail">升降舵</button><output id="elevatorValue">0°</output></div><input id="elevator" type="range" min="-1" max="1" step=".05" value="0" aria-label="升降舵"></div>
+   <div id="concordeControls" hidden>
+    <div class="part-row"><button class="part-name" type="button" data-focus="nose">下垂机鼻与风挡护罩<small>改善滑行和着陆视野</small></button><output id="concordeNoseValue">0°</output></div>
+    <div class="part-grid" role="group" aria-label="协和号机鼻档位">
+     <button type="button" data-concorde-nose="0" aria-pressed="true">0°<span>抬起 · 巡航</span></button>
+     <button type="button" data-concorde-nose="5" aria-pressed="false">5°<span>下垂 · 起飞／滑行</span></button>
+     <button type="button" data-concorde-nose="12.5" aria-pressed="false">12.5°<span>全放 · 着陆</span></button>
+     <button id="concordeReheat" type="button" aria-pressed="false">加力燃烧<span>关闭</span></button>
+    </div>
+   </div>
+   <div id="flapControl" class="part-control"><div><button class="part-name" data-focus="wing">襟翼 <small>让飞机慢一点也能飞</small></button><output id="flapsValue">0°</output></div><input id="flaps" type="range" min="0" max="30" step="5" value="0" aria-label="襟翼角度"><div class="range-labels"><span>收起</span><span>起飞 20°</span><span>着陆 30°</span></div></div>
+   <div class="part-control"><div><button class="part-name" data-focus="wing" id="rollPartLabel">副翼</button><output id="aileronValue">0°</output></div><input id="aileron" type="range" min="-1" max="1" step=".05" value="0" aria-label="副翼"></div>
+   <div class="part-control"><div><button class="part-name" data-focus="tail" id="pitchPartLabel">升降舵</button><output id="elevatorValue">0°</output></div><input id="elevator" type="range" min="-1" max="1" step=".05" value="0" aria-label="升降舵"></div>
    <div class="part-control"><div><button class="part-name" data-focus="tail">方向舵</button><output id="rudderValue">0°</output></div><input id="rudder" type="range" min="-1" max="1" step=".05" value="0" aria-label="方向舵"></div>
    <div class="part-grid"><button id="spoiler">扰流板<span>收起</span></button><button id="reverse">发动机反推<span>关闭</span></button><button id="door"><b id="doorLabel">下层货舱门</b><span>关闭</span></button><button id="noseCargoDoor" type="button" aria-pressed="false" title="地面停稳、收回油门后可开启" hidden>机头货舱门<span>关闭</span></button><button id="lights" class="active">航行灯<span>开启</span></button><button id="chute">减速伞<span>收起</span></button><button id="wipers">驾驶舱雨刷<span>关闭</span></button><button id="landingLights" title="夜间进近时自动打开">着陆灯<span>关闭</span></button></div>
    <button class="wide-btn" id="neutral">舵面回到中立位置</button>
@@ -113,7 +124,7 @@
 
  <section class="deck glass" aria-label="飞行仪表与推力杆">
   <div class="cell cell-att"><canvas id="attitude" width="200" height="150" aria-label="姿态仪"></canvas><span class="cell-cap" id="flightState">地面 · α 0° · 1.0 G</span></div>
-  <div class="cell cell-metric"><span class="cap">速度 <small>AIRSPEED</small></span><strong id="speedValue">0<small> km/h</small></strong><em id="speedKts">0 KTS · M 0.00</em></div>
+  <div class="cell cell-metric"><span class="cap">速度 <small id="speedMetricLabel">AIRSPEED</small></span><strong id="speedValue">0<small> km/h</small></strong><em id="speedKts">0 KTS · M 0.00</em></div>
   <div class="cell cell-metric"><span class="cap">高度 <small>ALTITUDE</small></span><strong id="altValue">0<small> m</small></strong><em id="verticalValue">垂直速度 0 m/s</em></div>
   <div class="cell cell-thrust" aria-label="发动机推力控制台">
    <div class="thrust-head"><span class="cap">推力 <small>THRUST</small></span><output id="throttleValue">慢车</output></div>

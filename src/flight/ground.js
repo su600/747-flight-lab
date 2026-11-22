@@ -1,8 +1,10 @@
-import {clamp,approach,D2R,R2D,KNOT,RUNWAY,AIRCRAFT} from './constants.js';
-const G=AIRCRAFT.gravity;
+import {clamp,approach,D2R,R2D,KNOT,RUNWAY,AIRCRAFT as BASE_AIRCRAFT} from './constants.js';
+import {CONCORDE} from '../concorde-flight.js';
+const G=BASE_AIRCRAFT.gravity;
 
 export class Ground{
  integrateGround(dt,pilot,aero){
+  const AIRCRAFT=this.aircraftType==='concorde'?CONCORDE:BASE_AIRCRAFT;
   this.gamma=0;this.vs=0;
   const normal=Math.max(0,this.weight-aero.lift-this.thrust*Math.sin(this.pitch*D2R));
   this.normalForce=normal;
@@ -39,13 +41,13 @@ export class Ground{
    return;
   }
   if(this.onGround&&(Math.abs(this.z)>55||this.x>RUNWAY.end+80)&&this.mode!=='inspect'){
-   this.failed=true;this.message='飞机驶出了跑道。放襟翼、轻轻抬头，并预留足够滑跑距离再试一次';
+   this.failed=true;this.message=this.aircraftType==='concorde'?'飞机驶出了跑道。达到抬轮速度后轻轻抬头，并预留足够滑跑距离再试一次':'飞机驶出了跑道。放襟翼、轻轻抬头，并预留足够滑跑距离再试一次';
   }
  }
  // Rotation on the ground is limited by the weight still carried by the nose gear:
  // the elevator can only lift the nose once enough lift has been generated.
  updateGroundPitch(dt){
-  const vrTarget=74;
+  const vrTarget=this.aircraftType==='concorde'?90:74;
   const authority=clamp(Math.pow(this.speed/vrTarget,2),0,1.5);
   const noseLoad=clamp((this.weight-this.lift)/this.weight,0,1);
   let rate;
@@ -63,7 +65,7 @@ export class Ground{
   const gearDown=this.gear>.97,level=Math.abs(this.bank)<12&&this.pitch>-.5;
   this.touchdown={rate:sink,x:this.x,z:this.z,speed:this.speed,heading:this.heading,time:this.time,valid:false};
   this.altitude=0;
-  const maxTouchdown=this.unpowered?120:95;
+  const maxTouchdown=this.unpowered?120:this.aircraftType==='concorde'?105:95;
   if(!runway||!gearDown||sink>4.6||!level||this.speed>maxTouchdown){
    this.failed=true;
    this.message=!runway?'偏离跑道啦，重新对准再试一次':!gearDown?'记得放下起落架，再轻轻着陆':sink>4.6?'下降有点快，接近地面时轻轻抬头':!level?'先把机翼放平、轻轻抬起机头':'接地速度较快，先减速再尝试着陆';

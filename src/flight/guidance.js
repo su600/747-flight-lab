@@ -20,6 +20,12 @@ export class Guidance{
   return clamp(rateError*.32,-1,1);
  }
  takeoffPitchTarget(){
+  if(this.aircraftType==='concorde'){
+   if(this.onGround)return this.speed<86?0:10.8;
+   const targetSpeed=this.altitude<200?104:this.altitude<450?120:135;
+   const gammaTarget=this.altitude<560?clamp(7+(this.speed-targetSpeed)*.18,2,10):clamp((600-this.altitude)*.05,-2,2);
+   return clamp(gammaTarget+this.trimAlpha()*R2D,0,20);
+  }
   if(this.speed<72&&this.onGround)return 0;
   if(this.onGround)return 10.5;
   const targetSpeed=this.altitude<200?94:this.altitude<450?112:128;
@@ -36,15 +42,27 @@ export class Guidance{
   const pathAltitude=Math.max(0,(distance-30)*Math.tan(glide*D2R));
   const minGamma=this.unpowered?-12:-4.5;
   let gammaTarget=this.altitude>flareAlt?clamp(-glide+(pathAltitude-this.altitude)*.06,minGamma,-1):clamp(-.8-this.altitude*.06,-1.6,-.6);
-  const targetSpeed=this.unpowered?approach:(distance>350?77:73);
+  const targetSpeed=this.aircraftType==='concorde'?(distance>350?82:78):this.unpowered?approach:(distance>350?77:73);
   const alpha=this.trimAlpha(this.speed,this.flaps,0)*R2D;
   this.guidanceGamma=gammaTarget;
   this.guidanceAltitude=pathAltitude;
   this.guidanceSpeed=targetSpeed;
   // The lower limit allows the steeper descent from the start altitude back to the glide path.
-  return clamp(gammaTarget+alpha+(gammaTarget-this.gamma*R2D)*2,-6,12);
+  return clamp(gammaTarget+alpha+(gammaTarget-this.gamma*R2D)*2,-6,this.aircraftType==='concorde'?18:12);
  }
  takeoffGuidance(){
+  if(this.aircraftType==='concorde'){
+   this.park=false;this.brake=0;this.landingBrake=0;this.flapTarget=0;
+   this.concordeReheatTarget=this.altitude<480?1:0;
+   if(this.onGround){this.throttle=1;this.gearTarget=1;}
+   else{
+    const targetSpeed=this.altitude<200?104:this.altitude<450?120:135;
+    this.throttle=this.altitude<480?1:clamp(this.trimThrottle(0)+(targetSpeed-this.speed)*.02,.1,.85);
+    this.gearTarget=this.altitude>30?0:1;
+    if(this.altitude>200)this.concordeNoseTarget=0;
+   }
+   return;
+  }
   this.park=false;this.brake=0;this.landingBrake=0;
   if(this.onGround){this.throttle=1;this.flapTarget=20;this.gearTarget=1;}
   else{
@@ -57,10 +75,10 @@ export class Guidance{
  landingGuidance(){
   const distance=RUNWAY.touch-this.x;
   const glide=this.landingGlide||3,approach=this.landingSpeed||77;
-  this.flapTarget=this.unpowered?0:30;
+  this.flapTarget=this.unpowered||this.aircraftType==='concorde'?0:30;
   this.gearTarget=this.altitude<(this.unpowered?120:GEAR_DOWN_ALTITUDE)?1:0;
   if(!this.onGround){
-   const targetSpeed=this.unpowered?approach:(distance>350?77:73);
+   const targetSpeed=this.aircraftType==='concorde'?(distance>350?82:78):this.unpowered?approach:(distance>350?77:73);
    this.throttle=this.unpowered?0:clamp(this.trimThrottle(-glide*D2R)+(targetSpeed-this.speed)*.03,.04,.75);
    if(!this.unpowered&&this.altitude<9)this.throttle=0;
    this.reverseTarget=0;this.landingBrake=0;this.spoilerTarget=0;

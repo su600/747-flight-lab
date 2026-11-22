@@ -524,6 +524,10 @@ body.shuttle-mode #door,body.shuttle-mode #wipers,body.shuttle-mode #neutral,bod
 /* The drag chute exists only on the orbiter. */
 #chute{display:none}
 body.shuttle-mode #chute{display:block}
+body.concorde-mode :is(#courseStart,#runwayStart,[data-camera="cockpit"],[data-camera="wing"],#flapControl,#quickFlaps,#spoiler,#door,#wipers){display:none!important}
+#concordeControls .part-grid{margin-top:8px}
+body.concorde-mode :is(#speedValue,#altValue){font-size:clamp(22px,3vw,36px);white-space:nowrap}
+body.concorde-mode #speedKts{font-weight:700;white-space:nowrap}
 
 /* ---------- Eye-rest reminder: a slim banner across the very top, shown for a short break ---------- */
 .eye-rest{position:fixed;z-index:30;top:0;left:50%;transform:translate(-50%,-110%);display:flex;align-items:center;gap:12px;width:min(calc(100vw - 24px),760px);padding:12px 16px 12px 20px;border-radius:0 0 20px 20px;

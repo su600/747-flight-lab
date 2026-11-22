@@ -41,9 +41,11 @@ function warningList(){
  return list;
 }
 function updateUI(){
+ const aircraft=getPlane(),concorde=aircraft.type==='concorde';
  document.body.classList.toggle('ground-inspect',sim.mode==='inspect');
- setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[getPlane().type].name:(copilotHidden()&&manualTakeoffLesson()?.join(' · '))||sim.phase);$('#takeControl').hidden=!['takeoff','land'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
- setHTML($('#speedValue'),Math.round(sim.speed*3.6)+'<small> km/h</small>');setText($('#speedKts'),Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
+ setText($('#phase'),sim.paused?'已暂停 · 可以转动镜头仔细观察':sim.mode==='inspect'?'认识你的 '+AIRCRAFT_INFO[getPlane().type].name:(copilotHidden()&&manualTakeoffLesson()?.join(' · '))||sim.phase);$('#takeControl').hidden=!['takeoff','land','supersonic'].includes(sim.mode);setText($('#pause'),sim.paused?'▶':'Ⅱ');$('#pause').ariaLabel=sim.paused?'继续飞行':'暂停飞行';
+ setText($('#speedMetricLabel'),concorde?'TAS':'AIRSPEED');
+ setHTML($('#speedValue'),Math.round(sim.speed*3.6)+'<small> km/h</small>');setText($('#speedKts'),concorde?`MACH ${sim.mach.toFixed(2)}`:Math.round(sim.speed*1.94384)+' KTS · M '+sim.mach.toFixed(2));
  setHTML($('#altValue'),Math.round(sim.altitude)+'<small> m</small>');setText($('#verticalValue'),'垂直速度 '+(sim.vs>=0?'+':'')+sim.vs.toFixed(1)+' m/s');
  setHTML($('#headingValue'),String(Math.round(sim.heading)%360).padStart(3,'0')+'<small> °</small>');
  setText($('#flightState'),(sim.onGround?'地面':'空中')+' · α '+sim.alpha.toFixed(1)+'° · '+sim.loadFactor.toFixed(1)+' G');
@@ -65,9 +67,22 @@ function updateUI(){
   noseDoor.classList.toggle('active',opening);noseDoor.setAttribute('aria-pressed',String(opening));
   setText($('#noseCargoDoor span'),moving?(opening?'开启中…':'关闭中…'):(opening?'已开启':'关闭'));
  }
+ if(concorde){
+  const selected=sim.concordeNoseTarget??0,angle=sim.concordeNose??0;
+  setText($('#concordeNoseValue'),`${Number(angle.toFixed(1))}° · 护罩${(sim.concordeVisor??1)>.5?'升起':'放下'}`);
+  for(const b of document.querySelectorAll('[data-concorde-nose]')){const active=Number(b.dataset.concordeNose)===selected;b.classList.toggle('active',active);b.setAttribute('aria-pressed',String(active));}
+  const reheat=!!(sim.concordeReheatTarget??sim.concordeReheat),lit=!!sim.concordeReheat;
+  $('#concordeReheat').classList.toggle('active',reheat);$('#concordeReheat').setAttribute('aria-pressed',String(reheat));
+  setText($('#concordeReheat span'),lit?'加力中':reheat?'待命':'关闭');
+ }
  const n1=Math.round(sim.engineN1*100);
  for(const id of ['n1a','n1b','n1c','n1d']){const el=$('#'+id);el.style.setProperty('--n1',n1+'%');el.parentElement.querySelector('b').textContent=n1;}
- const [no,text]=manualTakeoffLesson()||lessons[sim.mode]||lessons.manual;$('#lessonNo').textContent=no;$('#lesson').textContent=text;$('#modeLabel').textContent={inspect:'观察模式',takeoff:'自动起飞演示',land:'自动降落演示',free:'自由飞行',manual:getManualTakeoffGuide()?'手动起飞练习':'手动驾驶'}[sim.mode];drawAttitude();
+ const concordeLesson=concorde?{
+  takeoff:['02 / TAKEOFF','机鼻下垂 5°，用加力起飞。离地后收起起落架，随后关闭加力。'],
+  land:['03 / LANDING','协和号没有襟翼。放下起落架，机鼻下垂 12.5°，保持进近姿态。'],
+  supersonic:['M2 / CRUISE','机鼻与护罩升起，以约 Mach 2 巡航。画面速度为真空速，巡航不需加力。'],
+ }[sim.mode]:null;
+ const [no,text]=concordeLesson||manualTakeoffLesson()||lessons[sim.mode]||lessons.manual;$('#lessonNo').textContent=no;$('#lesson').textContent=text;$('#modeLabel').textContent={inspect:'观察模式',takeoff:'自动起飞演示',land:'自动降落演示',free:'自由飞行',supersonic:'超音速巡航',manual:getManualTakeoffGuide()?'手动起飞练习':'手动驾驶'}[sim.mode];drawAttitude();
  const warnings=warningList();
  if(warnings.length){$('#warningText').textContent=warnings[0];$('#warningBadge').hidden=false;}else $('#warningBadge').hidden=true;
  if(sim.events.length){const events=sim.events.splice(0,sim.events.length);notify(events[events.length-1]);}

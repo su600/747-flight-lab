@@ -4,7 +4,11 @@ import {A330_REALITY} from './reality-a330.js';
 import {B777_REALITY} from './reality-b777.js';
 import {SHUTTLE_REALITY} from './reality-shuttle.js';
 
-const TABLES={b747:B747_REALITY,a380:A380_REALITY,a330:A330_REALITY,b777:B777_REALITY,shuttle:SHUTTLE_REALITY};
+const CONCORDE_REALITY={
+ CONCORDE_BAW:{status:'real',note:'英国航空实际运营的协和号涂装。'},
+ CONCORDE_AFR:{status:'real',note:'法国航空实际运营的协和号涂装。'},
+};
+const TABLES={b747:B747_REALITY,a380:A380_REALITY,a330:A330_REALITY,b777:B777_REALITY,shuttle:SHUTTLE_REALITY,concorde:CONCORDE_REALITY};
 export const REALITY_LABELS={real:'真机涂装',family:'同系列机型',none:'真机无此涂装'};
 // Missing entries are reported as adaptations so that an unreviewed livery is never presented as authentic.
 export function realityFor(type,id){

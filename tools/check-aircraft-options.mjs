@@ -33,9 +33,9 @@ export async function verifyAircraftSelectionAdapter(adapter){
  const options=await adapter.listAircraft();
  assert(Array.isArray(options),'listAircraft() must return an array');
  const ids=options.map(option=>typeof option==='string'?option:option?.id);
- const expected=['b747','a380','a330','b777','shuttle'];
- assert.deepEqual([...ids].sort(),[...expected].sort(),'runtime selector must expose the five supported aircraft');
- assert.equal(new Set(ids).size,5,'aircraft choice IDs must be unique');
+ const expected=['b747','a380','a330','b777','shuttle','concorde'];
+ assert.deepEqual([...ids].sort(),[...expected].sort(),'runtime selector must expose all supported aircraft');
+ assert.equal(new Set(ids).size,expected.length,'aircraft choice IDs must be unique');
  assert.equal(await adapter.isRenderingPaused(),true,'state/resource mode must explicitly pause per-frame rendering');
  console.log('[aircraft-options] renderingPaused=true; visual rendering is intentionally not measured');
  const selectedAircraft=async()=>{
@@ -153,15 +153,15 @@ export async function verifyAircraftSelectionAdapter(adapter){
  return {ids,liveries:{normal:normal.id,fedex:fedex.id,sf:sf.id},resourceSnapshot:repeated};
 }
 
-// The current UI defines four stable option IDs. Reading the markup avoids depending on
+// Reading the markup avoids depending on
 // AIRCRAFT_INFO's private shape while still detecting missing/duplicate selector choices.
 async function verifyAircraftChoiceMarkup(){
  const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
  const ids=[...html.matchAll(/<button\b[^>]*\bdata-aircraft=[\"']([^\"']+)[\"']/g)].map(match=>match[1]);
- const expected=['b747','a380','a330','b777','shuttle'];
- assert.equal(ids.length,5,`aircraft selector should expose five choices, found ${ids.length}`);
- assert.equal(new Set(ids).size,5,'aircraft selector choices must be unique');
- assert.deepEqual([...ids].sort(),[...expected].sort(),'aircraft selector should cover 747, A380, A330, 777 and the orbiter');
+ const expected=['b747','a380','a330','b777','shuttle','concorde'];
+ assert.equal(ids.length,expected.length,`aircraft selector: found ${ids.length} choices`);
+ assert.equal(new Set(ids).size,expected.length,'aircraft selector choices must be unique');
+ assert.deepEqual([...ids].sort(),[...expected].sort(),'aircraft selector should include Concorde and all existing models');
  const glbNames=['fuselage','wings','nose','wing-left','wing-right','body-left','body-right'];
  for(const name of glbNames){
   const data=await readFile(new URL(`../assets/a380/${name}.glb`,import.meta.url));

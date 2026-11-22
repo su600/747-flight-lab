@@ -1,0 +1,76 @@
+Concorde exterior — source, credits and license evidence
+=======================================================
+
+Source: FlightGear FGAddon, Aircraft/Concorde, repository revision 21802
+(2026-11-22 snapshot; the Concorde directory last changed at r15322).
+https://svn.code.sf.net/p/flightgear/fgaddon/trunk/Aircraft/Concorde/
+https://sourceforge.net/p/flightgear/fgaddon/HEAD/tree/trunk/Aircraft/Concorde/
+
+Unmodified source files included here:
+  concorde.ac         Models/concorde.ac          (5,998,160 bytes)
+  concorde.png        Models/concorde.png         (British Airways)
+  concorde-window.png Models/concorde-window.png  (windows)
+  AF.png              Models/Liveries/AF.png      (Air France; renamed)
+  UPSTREAM-ReadmeModel.txt and UPSTREAM-ReadmeLiveries.txt retain upstream
+  credit and modeling notes (with minor formatting normalization only).
+  No upstream scripts, cockpit or effect textures
+  are included. The full AC file remains intact; the adapter removes cockpit
+  and effect objects in memory before parsing it.
+
+SHA-256:
+  concorde.ac          1e3dd3115c08a969a98a56cd6a27c79353222d977e2c47d0390265e87c9fc21e
+  concorde.png         4b1d7e721fcd166c37eb4a8c4985dfd3775e0958f917aa4c3dd79cf8f330d81c
+  concorde-window.png  25b36f7ee5f432fb4f6d4f79301768404ed1ee8c9914b10d0c94bee17f2322e2
+  AF.png               545bf0f693b5533aed3919b755d89a7a373f816855e51b8285dbfc7b5a192c66
+
+Authors: the original exterior model is credited to "Bogey" (full name
+unknown), made available to FlightGear after a request by M. Franz. The
+upstream model notes credit C. Schmitt and E. Huminiuc for named changes and
+list further uncredited changes. T. Hoffmann is credited for all airframe
+liveries in Models/Liveries, including AF.png. The British Airways texture
+is the original model texture; the notes do not separately name its artist.
+Preserve the upstream notices and the above attributions.
+
+Licensing evidence and limitation
+---------------------------------
+FlightGear's project license page says FlightGear is GPL:
+https://www.flightgear.org/about/license/
+Its official repository policy says aircraft released under GPL2+ may be
+hosted on FGAddon and requires FGAddon contributions to be GPL compatible:
+https://www.flightgear.org/about/policy/
+The FlightGear data repository README says the project is GPL'd and refers
+to COPYING: https://sourceforge.net/p/flightgear/fgdata/ci/next/tree/README
+A Concorde fork containing the same four blobs carries GPL version 2 text:
+https://github.com/FGMEMBERS/Concorde/blob/master/COPYING
+That COPYING was added by the fork maintainer in 2015:
+https://github.com/FGMEMBERS/Concorde/commit/70a835845bdea09115e2541a3c68b64cdec62743
+The present four source blobs match that fork's master (Git blob IDs:
+3a51aa02ccfe77cceebfd2bb5c6f7b9ee5cb9028,
+d51ce7ca757d8123bd42b24dba039a092d462364,
+b5afef509c54b20c052e89597c0e67f4b871755f,
+6f6f362e147d44597e7adc71ffb10f9af0e8415b respectively). Both airline
+textures match the 2010 FlightGear history commit by Curtis L. Olson:
+https://github.com/FGMEMBERS/Concorde/commit/e7dc574b7701951009c02c2af4ca51853b97719b
+The FGAddon SVN source itself contains no Concorde-specific COPYING or
+explicit individual license grant for Bogey's mesh or Hoffmann's livery.
+The 2015 fork license is a repository-level assertion by a fork maintainer,
+not a direct statement from either artist. Thus GPLv2 is the documented
+project/fork license basis, but independent rights-holder permission for
+these particular assets could not be verified. Obtain upstream/rights-holder
+confirmation before relying on this provenance for redistribution. The
+actual GPLv2 text from that fork is included as COPYING. Names and airline
+marks can also have separate trademark restrictions.
+
+Adaptation and limits
+---------------------
+The adapter uses the AC source in metres, rotating the native frame to the
+simulator's +X-forward convention. It selects only BA and AF airline paints;
+the upstream XML's airframe/nose paint targets and approximate hinge axes
+inform the implementation. It drives droop nose, visor, main/nose/tail gear,
+selected gear doors, wheels, elevons, rudder and four pairs of nozzle/reverse
+buckets. Bucket axes and forward/reverse angles come from the upstream model
+XML and engine-system definitions; the simulator's reverse transition timing
+is simplified. The gear linkage, visor sequencing and control mixing are also
+simplified; cockpit, heat effects and full FlightGear systems are not reproduced. The upstream notes
+list known geometry limitations, including excess cabin windows and imperfect
+gear doors. No photos or upstream executable code are included.

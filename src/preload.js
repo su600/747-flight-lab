@@ -7,7 +7,7 @@ import {AIRCRAFT_DOWNLOAD_SIZES} from './aircraft-download-sizes.js';
 
 const ASSETS='/assets/';
 const MB=1048576;
-// Room for every non-default aircraft (~57 MB decoded) so background downloads are not evicted before use.
+// Bound retained decoded model bodies across the six aircraft.
 const MAX_PREFETCH_BODY_BYTES=64*MB;
 // Fixed uncompressed sizes match the decoded fetch stream, including when HTTP uses gzip.
 // Regenerate the manifest whenever one of these files changes.
@@ -22,6 +22,7 @@ const B777={
 };
 const cargoIds=new Set(CARGO_LIVERIES.map(l=>l.id));
 
+const CONCORDE=sized(['concorde/concorde.ac','concorde/concorde.png','concorde/concorde-window.png']);
 const SHUTTLE=sized(['shuttle_o2.ac','LandingGears-slim.ac','DragChute.ac','SSME.ac','spstob_1.webp','chutes.png'].map(n=>'space-shuttle/Models/'+n));
 
 export function aircraftFiles(type,{livery='BOE'}={}){
@@ -29,6 +30,7 @@ export function aircraftFiles(type,{livery='BOE'}={}){
  if(type==='a380')return A380;
  if(type==='a330')return A330;
  if(type==='shuttle')return SHUTTLE;
+ if(type==='concorde')return CONCORDE;
  if(type==='b777')return B777[cargoIds.has(livery)?'cargo':'passenger'];
  return [];
 }

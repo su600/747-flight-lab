@@ -15,15 +15,14 @@
 // approximation, not a trainer-level aerodynamic database.
 
 import {windVector,groundVelocity,runwayCrab} from './weather-math.js';
-import {clamp,mix,approach,D2R,R2D,KNOT,RUNWAY,LANDING_START_ALTITUDE,AIRCRAFT} from './flight/constants.js';
+import {clamp,mix,approach,D2R,R2D,KNOT,RUNWAY,LANDING_START_ALTITUDE,AIRCRAFT as BASE_AIRCRAFT} from './flight/constants.js';
 import {Guidance} from './flight/guidance.js';
 import {Ground} from './flight/ground.js';
+import {CONCORDE,concordeWaveDrag,concordeThrust} from './concorde-flight.js';
 export {clamp,RUNWAY,groundLift,FLAP_DETENTS,THRUST_DETENTS,AIRCRAFT} from './flight/constants.js';
 
-const M=AIRCRAFT.mass,S=AIRCRAFT.wingArea,G=AIRCRAFT.gravity,W=M*G;
-const RHO0=AIRCRAFT.rho0;
-const AR=AIRCRAFT.wingSpan*AIRCRAFT.wingSpan/S;
-const INDUCED=1/(Math.PI*AR*AIRCRAFT.oswald);
+const AIRCRAFT=BASE_AIRCRAFT;
+const G=AIRCRAFT.gravity,RHO0=AIRCRAFT.rho0;
 const FLAP_DRAG=[0,.006,.013,.030,.045,.062];
 // Orbiter drag chute: 40 ft ringsail canopy, Cd ~0.85 on the canopy area.
 const CHUTE_DIAMETER=12.19,CHUTE_AREA=Math.PI*(CHUTE_DIAMETER/2)**2,CHUTE_CD=.85;
@@ -46,33 +45,39 @@ function flapDrag(flaps){
 }
 
 export class Flight{
- constructor(){this.windDirection=0;this.windSpeed=0;this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.noseCargoDoorAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.reset('inspect');}
+ constructor(){this.windDirection=0;this.windSpeed=0;this.assist=true;this.pitchLimit=null;this.chuteAvailable=false;this.noseCargoDoorAvailable=false;this.unpowered=false;this.landingGlide=3;this.landingSpeed=77;this.aircraftType='b747';this.reset('inspect');}
+ setAircraftType(type){this.aircraftType=type;}
  reset(mode='inspect'){
+  const concorde=this.aircraftType==='concorde',profile=concorde?CONCORDE:AIRCRAFT;
+  const cruise=concorde&&(mode==='supersonic'||mode==='supersonic-cruise');
   this.mode=mode;
-  this.mass=mode==='land'?AIRCRAFT.landingMass:AIRCRAFT.mass;
+  this.mass=mode==='land'?profile.landingMass:profile.mass;
   this.weight=this.mass*G;
-  this.phase=mode==='inspect'?'认识你的 747':mode==='takeoff'?'起飞前检查':mode==='land'?'对准跑道，开始进近':'你来当机长';
+  this.phase=mode==='inspect'?(concorde?'认识你的协和式飞机':'认识你的 747'):mode==='takeoff'?'起飞前检查':mode==='land'?'对准跑道，开始进近':'你来当机长';
   this.x=mode==='inspect'?-850:mode==='land'?-5300:-1730;
   this.z=mode==='inspect'?-300:0;
   const glide=this.landingGlide||3,approach=this.landingSpeed||78;
   const pathAltitude=(RUNWAY.touch-this.x)*Math.tan(glide*D2R);
-  this.altitude=mode==='land'?(this.unpowered?pathAltitude:Math.max(pathAltitude,LANDING_START_ALTITUDE)):mode==='free'?700:0;
+  this.altitude=cruise?17000:mode==='land'?(this.unpowered?pathAltitude:Math.max(pathAltitude,LANDING_START_ALTITUDE)):mode==='free'?700:0;
   this.heading=90;this.windCompensating=false;
   this.bank=0;this.rollRate=0;
   this.gamma=mode==='land'?-glide*D2R:0;
-  this.speed=mode==='land'?approach:mode==='free'?125:0;
+  this.speed=cruise?2*speedOfSound(this.altitude):mode==='land'?(concorde?82:approach):mode==='free'?125:0;
   this.pitch=mode==='free'||mode==='land'?0:0;
   this.pitchRate=0;
   this.throttle=0;this.engineN1=.22;this.engine=this.engineN1;
   // The orbiter lowers its gear late in the approach so the extension is visible.
   // Gear starts up for the approach and lowers during it (free flight starts up too).
-  this.gear=mode==='free'||mode==='land'?0:1;this.gearTarget=this.gear;
-  this.flaps=mode==='land'?(this.unpowered?0:20):0;this.flapTarget=this.unpowered?0:(mode==='land'?30:0);
+  this.gear=cruise||mode==='free'||mode==='land'?0:1;this.gearTarget=this.gear;
+  this.flaps=concorde?0:mode==='land'?(this.unpowered?0:20):0;this.flapTarget=concorde||this.unpowered?0:(mode==='land'?30:0);
+  this.concordeNose=concorde?(mode==='land'?12.5:mode==='takeoff'?5:0):0;
+  this.concordeNoseTarget=this.concordeNose;this.concordeVisor=this.concordeNose?0:1;
+  this.concordeReheatTarget=concorde&&mode==='takeoff'?1:0;this.concordeReheat=0;
   this.spoiler=0;this.spoilerTarget=0;this.reverse=0;this.reverseTarget=0;this.autoGroundSpoilers=false;
   this.chute=0;this.chuteTarget=0;this.chuteDrag=0;this.chuteJettisoned=false;
   this.door=0;this.doorTarget=0;
   this.noseCargoDoor=0;this.noseCargoDoorTarget=0;
-  this.onGround=!['free','land'].includes(mode);
+  this.onGround=!['free','land'].includes(mode)&&!cruise;
   this.park=mode==='inspect';this.brake=0;this.landingBrake=0;this.brakePressure=0;
   this.aileron=0;this.elevator=0;this.rudder=0;this.trim=0;
   this.elevatorCmd=0;this.rollCmd=0;
@@ -98,13 +103,25 @@ export class Flight{
   // Placard limits (gear, flaps, spoilers, VMO) are indicated airspeeds, not true airspeed.
   const ias=Math.max(0,this.speed)*Math.sqrt(this.atmosphere()/RHO0);
   if(name==='throttle'&&value>0&&(this.noseCargoDoorTarget||this.noseCargoDoor>.02))return '请先关闭机头货舱门';
-  if(['throttle','pitch','roll','yaw'].includes(name)&&['takeoff','land'].includes(this.mode)){this.mode='manual';this.complete=false;}
+  if(['throttle','pitch','roll','yaw'].includes(name)&&['takeoff','land','supersonic','supersonic-cruise'].includes(this.mode)){this.mode='manual';this.complete=false;}
   if(name==='gear'){
    if(this.onGround&&this.mode!=='inspect')return '地面滑行时要放下起落架';
    if(value===0&&ias>270*KNOT)return '速度超过 270 节，请先减速';
    this.gearTarget=value;
   }
+  if(name==='concordeNose'){
+   if(this.aircraftType!=='concorde')return '仅协和式飞机可操作机鼻';
+   if(![0,5,12.5].includes(value))return '机鼻档位为 0、5 或 12.5 度';
+   if(value&&(ias>(value===12.5?270:325)*KNOT||this.mach>=.8||(value===12.5&&this.altitude>=6096)))return '速度或高度超限，无法降低机鼻';
+   this.concordeNoseTarget=value;
+  }
+  if(name==='concordeReheat'){
+   if(this.aircraftType!=='concorde')return '仅协和式飞机可操作加力';
+   if(value!==0&&value!==1)return '加力档位为 0 或 1';
+   this.concordeReheatTarget=value;
+  }
   if(name==='flaps'){
+   if(this.aircraftType==='concorde'){this.flaps=0;this.flapTarget=0;return value?'协和式飞机没有襟翼，使用升降副翼':'';}
    const maxKts=value<=1?280:value<=5?260:value<=10?240:value<=20?230:value<=25?205:180;
    if(value>this.flapTarget&&ias>maxKts*KNOT)return `当前襟翼档位速度限制约 ${Math.round(maxKts)} 节，请减速`;
    this.flapTarget=value;
@@ -146,16 +163,30 @@ export class Flight{
  step(dt,input={}){
   if(this.paused||this.failed||dt<=0)return;
   dt=Math.min(dt,.1);
+  // The delta wing's higher cruise dynamic pressure needs smaller integration
+  // steps for stable pitch dynamics even when an external caller uses 100 ms.
+  if(this.aircraftType==='concorde'&&dt>.025){
+   const n=Math.ceil(dt/.025);
+   for(let i=0;i<n;i++)this.step(dt/n,input);
+   return;
+  }
   this.time+=dt;
-  const guided=this.mode==='takeoff'||this.mode==='land';
+  let cruise=this.aircraftType==='concorde'&&(this.mode==='supersonic'||this.mode==='supersonic-cruise');
   const pilot={
    pitch:clamp(input.pitch||0,-1,1),
    roll:clamp(input.roll||0,-1,1),
    yaw:clamp(input.yaw||0,-1,1),
    brake:clamp(input.brake||0,0,1)
   };
+  if(cruise&&(Math.abs(pilot.pitch)>.04||Math.abs(pilot.roll)>.04||Math.abs(pilot.yaw)>.04)){
+   this.mode='manual';cruise=false;
+  }
+  const guided=this.mode==='takeoff'||this.mode==='land'||cruise;
   if(this.mode==='takeoff')this.takeoffGuidance();
   else if(this.mode==='land')this.landingGuidance();
+  else if(cruise){
+   this.throttle=clamp(this.trimThrottle(0)+(2*speedOfSound(this.altitude)-this.speed)*.01,0,1);
+  }
   // Only retract spoilers we deployed automatically; manual speedbrake control remains independent.
   if(!this.unpowered&&this.autoGroundSpoilers&&((this.mode!=='land'&&this.throttle>.2&&!this.reverseTarget&&this.reverse<.05)||(this.onGround&&this.speed<.5))){
    this.spoilerTarget=0;this.autoGroundSpoilers=false;
@@ -181,7 +212,20 @@ export class Flight{
   }
  }
  updateSystems(dt){
-  const n1Target=.22+.78*this.throttle;
+  const concorde=this.aircraftType==='concorde';
+  // Reheat is available for takeoff and transonic acceleration, not Mach 2 cruise.
+  this.concordeReheat=concorde&&!this.unpowered&&this.concordeReheatTarget&&this.throttle>.5&&this.mach<1.7?1:0;
+  if(concorde){
+   const ias=Math.max(0,this.speed)*Math.sqrt(this.atmosphere()/RHO0);
+   if(ias>325*KNOT||this.mach>=.8)this.concordeNoseTarget=0;
+   else if((ias>270*KNOT||this.altitude>=6096)&&this.concordeNoseTarget>5)this.concordeNoseTarget=5;
+   const visorTarget=this.concordeNoseTarget===0&&this.concordeNose<.01?1:0;
+   this.concordeVisor=approach(this.concordeVisor,visorTarget,.25,dt);
+   if(this.concordeNoseTarget===0||this.concordeVisor<.01)this.concordeNose=approach(this.concordeNose,this.concordeNoseTarget,1.25,dt);
+   this.flapTarget=0;this.flaps=0;
+  }
+  const effectiveThrottle=concorde&&this.mach>=CONCORDE.mmo?Math.min(this.throttle,.2):this.throttle;
+  const n1Target=.22+.78*effectiveThrottle;
   // Big turbofans spool up slower than they spool down.
   const tau=n1Target>this.engineN1?2.4:1.7;
   this.engineN1+=(n1Target-this.engineN1)*(1-Math.exp(-dt/tau));
@@ -197,7 +241,7 @@ export class Flight{
  }
  updateControlInput(dt,pilot,guided){
   if(guided){
-   const target=this.mode==='takeoff'?this.takeoffPitchTarget():this.landingPitchTarget();
+   const target=(this.mode==='supersonic'||this.mode==='supersonic-cruise')?this.trimAlpha()*R2D+clamp((17000-this.altitude)*.003-this.gamma*R2D*1.5,-3,3):this.mode==='takeoff'?this.takeoffPitchTarget():this.landingPitchTarget();
    this.autopilotTarget=target;
    this.elevatorCmd=this.autoElevator(target);
    this.rollCmd=clamp(-this.bank*.06,-.5,.5);
@@ -224,6 +268,8 @@ export class Flight{
  atmosphere(){return atmosphere(this.altitude);}
  gust(){return 0;}
  calculateAero(){
+  const concorde=this.aircraftType==='concorde',AIRCRAFT=concorde?CONCORDE:BASE_AIRCRAFT;
+  const S=AIRCRAFT.wingArea,INDUCED=1/(Math.PI*(AIRCRAFT.wingSpan**2/S)*AIRCRAFT.oswald);
   const rho=this.atmosphere(),v=Math.max(0,this.speed);
   const qbar=.5*rho*v*v;
   const flapFrac=clamp(this.flaps/30,0,1);
@@ -239,14 +285,14 @@ export class Flight{
   const groundEffect=Math.exp(-Math.max(0,this.altitude)/(AIRCRAFT.wingSpan*.35));
   const induced=INDUCED*cl*cl*(1-.55*groundEffect);
   const mach=v/speedOfSound(this.altitude);
-  const wave=mach>.82?.045*Math.pow((mach-.82)/.1,2):0;
+  const wave=concorde?concordeWaveDrag(mach):mach>.82?.045*Math.pow((mach-.82)/.1,2):0;
   const stallDrag=alpha>stallAngle?1.4*(alpha-stallAngle):0;
   const cd=AIRCRAFT.cd0+induced+flapDrag(this.flaps)+AIRCRAFT.gearDrag*this.gear
    +AIRCRAFT.spoilerDrag*this.spoiler+wave+stallDrag;
   const n1=clamp((this.engineN1-.22)/.78,0,1);
   const sigma=rho/RHO0;
   const lapse=Math.pow(sigma,.82)*Math.max(.1,1-.28*mach-.10*mach*mach);
-  const thrust=this.unpowered?0:AIRCRAFT.engines*AIRCRAFT.engineThrust*(.045+.955*Math.pow(n1,1.3))*lapse;
+  const thrust=this.unpowered?0:concorde?concordeThrust(rho,mach,n1,this.concordeReheat):AIRCRAFT.engines*AIRCRAFT.engineThrust*(.045+.955*Math.pow(n1,1.3))*lapse;
   const lift=qbar*S*cl;
   // The drag chute adds a large, speed-squared force once it inflates.
   const chuteDrag=qbar*CHUTE_CD*CHUTE_AREA*this.chute;
@@ -263,26 +309,30 @@ export class Flight{
   return{rho,qbar,alpha,flapFrac,cl,cd,lift,drag,thrust,stallAngle,mach};
  }
  trimAlpha(speed=this.speed,flaps=this.flaps,bank=this.bank){
+  const concorde=this.aircraftType==='concorde',AIRCRAFT=concorde?CONCORDE:BASE_AIRCRAFT,S=AIRCRAFT.wingArea;
   const rho=this.atmosphere(),qS=.5*rho*Math.max(30,speed)**2*S;
   const f=clamp(flaps/30,0,1);
   const cl0=AIRCRAFT.cleanLiftAtZero+AIRCRAFT.flapLiftGain*f;
   const stallAngle=AIRCRAFT.cleanStallAngle+AIRCRAFT.flapStallAngleGain*f;
   const desired=(this.weight/Math.max(.35,Math.cos(bank*D2R)))/Math.max(1,qS);
-  return clamp((desired-cl0)/AIRCRAFT.liftSlope,2.2*D2R,(stallAngle-1.6)*D2R);
+  return clamp((desired-cl0)/AIRCRAFT.liftSlope,(concorde?-3:2.2)*D2R,(stallAngle-1.6)*D2R);
  }
  trimThrottle(gamma=this.gamma){
+  const concorde=this.aircraftType==='concorde',AIRCRAFT=concorde?CONCORDE:BASE_AIRCRAFT,S=AIRCRAFT.wingArea;
+  const INDUCED=1/(Math.PI*(AIRCRAFT.wingSpan**2/S)*AIRCRAFT.oswald);
   const a=this.trimAlpha(),f=clamp(this.flaps/30,0,1);
   const cl=AIRCRAFT.cleanLiftAtZero+AIRCRAFT.flapLiftGain*f+AIRCRAFT.liftSlope*a;
   const qbar=.5*this.atmosphere()*Math.max(20,this.speed)**2;
-  const cd=AIRCRAFT.cd0+INDUCED*cl*cl+flapDrag(this.flaps)+AIRCRAFT.gearDrag*this.gear;
-  const drag=qbar*S*cd;
   const rho=this.atmosphere(),mach=this.speed/speedOfSound(this.altitude);
+  const cd=AIRCRAFT.cd0+INDUCED*cl*cl+flapDrag(this.flaps)+AIRCRAFT.gearDrag*this.gear+(concorde?concordeWaveDrag(mach):0);
+  const drag=qbar*S*cd;
   const lapse=Math.pow(rho/RHO0,.82)*Math.max(.1,1-.28*mach-.10*mach*mach);
-  const available=AIRCRAFT.engines*AIRCRAFT.engineThrust*lapse;
+  const available=concorde?concordeThrust(rho,mach,1,this.concordeReheat):AIRCRAFT.engines*AIRCRAFT.engineThrust*lapse;
   const power=clamp((drag+this.weight*Math.sin(gamma))/(Math.max(1,available)*Math.cos(a)),.045,1);
   return clamp(Math.pow((power-.045)/.955,1/1.3),0,1);
  }
  integrateAirborne(dt,pilot,aero){
+  const AIRCRAFT=this.aircraftType==='concorde'?CONCORDE:BASE_AIRCRAFT,S=AIRCRAFT.wingArea;
   const V=Math.max(12,this.speed);
   const bank=this.bank*D2R;
   const alpha=aero.alpha;
@@ -337,6 +387,7 @@ export class Flight{
   }
  }
  updateAirData(){
+  const AIRCRAFT=this.aircraftType==='concorde'?CONCORDE:BASE_AIRCRAFT,S=AIRCRAFT.wingArea;
   const rho=this.atmosphere(),V=Math.max(0,this.speed);
   this.vs=this.onGround?0:V*Math.sin(this.gamma);
   const velocity=groundVelocity(this.heading,V*Math.cos(this.gamma),this.windDirection,this.onGround?0:this.windSpeed);
@@ -352,9 +403,13 @@ export class Flight{
   this.indicatedSpeed=V*Math.sqrt(rho/RHO0);
  }
  updateWarnings(){
+  const AIRCRAFT=this.aircraftType==='concorde'?CONCORDE:BASE_AIRCRAFT;
   this.stallWarning=!this.onGround&&this.alpha>this.stallAngle-2.5&&this.speed>22;
   this.buffet=!this.onGround&&this.alpha>this.stallAngle-1.2;
-  this.overspeed=this.indicatedSpeed>AIRCRAFT.vmo*1.02||this.mach>AIRCRAFT.mmo*1.01;
+  // Air data here uses equivalent rather than calibrated IAS; allow for the
+  // supersonic compressibility difference while still checking low-speed VMO.
+  const iasLimit=AIRCRAFT.vmo*1.02+(this.aircraftType==='concorde'?40*clamp(this.mach-1,0,1):0);
+  this.overspeed=this.indicatedSpeed>iasLimit||this.mach>AIRCRAFT.mmo*(this.aircraftType==='concorde'?1:1.01);
   this.gearOverspeed=this.gear>.02&&this.indicatedSpeed>270*KNOT;
   if(this.stallWarning&&!this.calls.stall){this.calls.stall=true;this.say('机翼快失速了，松杆并加推力');}
   if(this.overspeed&&!this.calls.overspeed){this.calls.overspeed=true;this.say('速度太快了，收一点油门');}
@@ -362,12 +417,13 @@ export class Flight{
  updatePhase(){
   if(this.mode==='inspect')return;
   if(this.mode==='takeoff'){
-   this.phase=this.onGround?(this.speed<72?'四台发动机全推力 · 沿跑道加速':'达到抬轮速度 · 轻轻抬头'):this.altitude<35?'升力托起飞机 · 保持爬升':this.altitude<200?'正爬升 · 收起起落架':'收襟翼 · 加速爬升';
+   this.phase=this.onGround?(this.speed<(this.aircraftType==='concorde'?86:72)?'四台发动机全推力 · 沿跑道加速':'达到抬轮速度 · 轻轻抬头'):this.altitude<35?'升力托起飞机 · 保持爬升':this.altitude<200?'正爬升 · 收起起落架':this.aircraftType==='concorde'?'收起机鼻 · 加速爬升':'收襟翼 · 加速爬升';
    if(this.altitude>585&&Math.abs(this.vs)<2){this.complete=true;this.phase='起飞成功 · 已进入平飞，可以接管';}
   }else if(this.mode==='land'){
    this.phase=!this.onGround?(this.altitude<14?'轻轻拉平 · 减少下降率':this.gearTarget===1&&this.gear<.98?'正在放下起落架 · 保持进近速度':'保持进近速度 · 沿下滑道下降'):this.speed>25?(this.chute>.5?'减速伞已放出 · 轮刹与减速伞一起减速':this.unpowered?'主轮接地 · 减速板与轮刹减速':'主轮接地 · 轮刹、反推与扰流板减速'):'慢慢停稳 · 欢迎抵达';
    if(this.onGround&&this.speed<.2){this.complete=true;this.phase='降落成功 · 飞机已停稳';}
-  }else if(this.stalled)this.phase='失速！松杆、压低机头并加推力';
+  }else if(this.aircraftType==='concorde'&&(this.mode==='supersonic'||this.mode==='supersonic-cruise'))this.phase='协和式超音速巡航 · Mach 2 · 加力关闭';
+  else if(this.stalled)this.phase='失速！松杆、压低机头并加推力';
   else if(this.overspeed)this.phase='速度过大 · 收油门并轻轻带杆';
   else if(this.onGround)this.phase=this.speed>30?'滑跑中 · 保持跑道中心线':'地面滑行 · 用 Q / E 转向';
   else if(this.speed<this.stallSpeed*1.1)this.phase='速度偏低 · 减小迎角并加推力';

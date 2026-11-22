@@ -22,7 +22,7 @@ function overviewDistance(){
  const dimensions=getPlane().dimensions,span=dimensions?Math.max(dimensions.x,dimensions.z):70;
  const min=getPlane().type==='shuttle'?70:165;return clamp(Math.max(min,span*.58/Math.sin(halfHorizontal)*1.35),min,1200);
 }
-function setCam(mode){cancelCameraGestures();camMode=mode;focus.set(0,2,0);lookYaw=lookPitch=0;viewFov=mode==='cockpit'?66:43;towerZoom=1;if(mode==='orbit'){orbitAngle=.87;orbitHeight=.25;orbitOverview=true;overviewCraft=getPlane();orbitDistance=overviewDistance();}setCockpitAirframeVisibility(getPlane(),camMode);all('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));$('#cockpitOverlay').hidden=mode!=='cockpit'||!!getCockpit();document.body.classList.toggle('cockpit-mode',mode==='cockpit');}
+function setCam(mode){if(getPlane().type==='concorde'&&['cockpit','wing'].includes(mode))return;cancelCameraGestures();camMode=mode;focus.set(0,2,0);lookYaw=lookPitch=0;viewFov=mode==='cockpit'?66:43;towerZoom=1;if(mode==='orbit'){orbitAngle=.87;orbitHeight=.25;orbitOverview=true;overviewCraft=getPlane();orbitDistance=overviewDistance();}setCockpitAirframeVisibility(getPlane(),camMode);all('[data-camera]').forEach(b=>b.classList.toggle('active',b.dataset.camera===mode));$('#cockpitOverlay').hidden=mode!=='cockpit'||!!getCockpit();document.body.classList.toggle('cockpit-mode',mode==='cockpit');}
 function beginCameraGesture(kind){if(camMode==='chase'||(camMode==='tower'&&kind!=='zoom'))setCam('orbit');}
 function rotateCamera(dx,dy){
  if(camMode==='cockpit'||camMode==='wing'){lookYaw-=dx*.005;lookPitch=clamp(lookPitch-dy*.005,-1.3,1.3);}
@@ -43,7 +43,7 @@ function zoomCamera(factor){
  else if(camMode==='cockpit'||camMode==='wing')viewFov=clamp(viewFov*factor,25,100);
  else if(camMode==='tower')towerZoom=clamp(towerZoom*factor,.1,8);
 }
-function focusPart(part){setCam('orbit');orbitOverview=false;const specs={gear:[9,-3,0,52,.1,1.1],wing:[-5,0,17,65,.5,.9],tail:[-31,4,0,53,.25,1.0],engine:[2,-2,13,35,.12,.7]};if(getPlane().type==='shuttle')Object.assign(specs,{gear:[-1,-1.5,0,30,.1,1.1],wing:[-7,0,0,40,.5,.9],tail:[-14,4,0,30,.25,1]});if(getPlane().type==='a330'){specs.gear=[-5.8,-4.5,5,45,.1,1.1];specs.engine=[-1.5,-2.35,9.4,32,.12,.7];specs.tail=[-27,4,0,50,.25,1];}const [x,y,z,d,h,a]=specs[part];focus.set(x,y,z);orbitDistance=d;orbitHeight=h;orbitAngle=a;}
+function focusPart(part){setCam('orbit');orbitOverview=false;const specs={gear:[9,-3,0,52,.1,1.1],wing:[-5,0,17,65,.5,.9],tail:[-31,4,0,53,.25,1.0],engine:[2,-2,13,35,.12,.7],nose:[28,0,0,33,.12,.8]};if(getPlane().type==='concorde')Object.assign(specs,{gear:[1,-2,0,37,.13,1.18],wing:[-12,0,6,38,.35,1.1],tail:[-24,2,0,34,.27,1.0],engine:[-14,-1,6,33,.15,1.9]});if(getPlane().type==='shuttle')Object.assign(specs,{gear:[-1,-1.5,0,30,.1,1.1],wing:[-7,0,0,40,.5,.9],tail:[-14,4,0,30,.25,1]});if(getPlane().type==='a330'){specs.gear=[-5.8,-4.5,5,45,.1,1.1];specs.engine=[-1.5,-2.35,9.4,32,.12,.7];specs.tail=[-27,4,0,50,.25,1];}const [x,y,z,d,h,a]=specs[part];focus.set(x,y,z);orbitDistance=d;orbitHeight=h;orbitAngle=a;}
 function updateCamera(){
  if(camMode==='orbit'&&orbitOverview&&overviewCraft!==getPlane()){overviewCraft=getPlane();orbitDistance=overviewDistance();}
  // Attached views have no world-height clamp (it would cause drift); only the user-driven orbit view keeps one (camera-follow.js).

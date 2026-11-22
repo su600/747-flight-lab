@@ -14,8 +14,8 @@ const hud=await readFile(new URL('../src/ui/hud.js',import.meta.url),'utf8');
 const html=await readFile(new URL('../index.html',import.meta.url),'utf8');
 const slice=(s,a,b)=>{const start=s.indexOf(a),end=s.indexOf(b,start+1);assert(start>=0&&end>start);return s.slice(start,end);};
 vm.runInContext(`${slice(main,'function syncNoseCargoDoor(','\nfunction showAircraft(')}
-${slice(main," $('#noseCargoDoor').onclick=", "\n $('#spoiler').onclick=")}
-function updateDoor(){${slice(hud," const noseDoor=$('#noseCargoDoor');",'\n const n1=')}}`,context);
+${slice(main," $('#noseCargoDoor').onclick=", "\n all('[data-concorde-nose]')")}
+function updateDoor(){${slice(hud," const noseDoor=$('#noseCargoDoor');",'\n if(concorde){')}}`,context);
 assert.match(html,/<button id="noseCargoDoor"[^>]*\baria-pressed="false"[^>]*\bhidden>机头货舱门/);
 assert.match(main,/function showAircraft\(\)\{\s*syncNoseCargoDoor\(plane\)/);
 assert.match(main,/sim\.noseCargoDoor=sim\.noseCargoDoorTarget=0;next\.update\(sim,0\)/);
